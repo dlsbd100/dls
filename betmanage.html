@@ -28,7 +28,7 @@
   <!-- Bet Modal -->
   <div id="betModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-white w-full max-w-md rounded-lg p-6 space-y-4 relative">
-      <h3 class="text-lg font-bold mb-2">Add Bet Info</h3>
+      <h3 class="text-lg font-bold mb-2">Add/Edit Bet Info</h3>
       <input type="text" id="popup-betTitle" placeholder="Bet Title" class="w-full border px-4 py-2 rounded" />
 
       <div class="flex gap-2">
@@ -51,7 +51,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
-      getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, arrayUnion
+      getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, arrayUnion, getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -71,6 +71,7 @@
 
     const matchList = document.getElementById("matchList");
     let currentTaskId = null;
+    let editingBetIndex = null;
 
     const showToast = (msg) => alert(msg);
 
@@ -98,10 +99,11 @@
               betsHTML += `
                 <div class="p-3 border rounded bg-gray-50">
                   <p class="mb-2 font-semibold text-gray-700">${bet.betTitle}</p>
-                  <div class="flex gap-2">
+                  <div class="flex gap-2 mb-2">
                     <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
                     <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
                   </div>
+                  <button class="text-sm px-3 py-1 bg-yellow-500 text-white rounded" onclick='editBet("${docSnap.id}", ${idx})'>Edit</button>
                 </div>`;
             });
             betsHTML += `</div></div>`;
@@ -131,6 +133,23 @@
 
     window.openModal = (id) => {
       currentTaskId = id;
+      editingBetIndex = null;
+      document.getElementById("betModal").classList.remove("hidden");
+    };
+
+    window.editBet = async (taskId, betIndex) => {
+      currentTaskId = taskId;
+      editingBetIndex = betIndex;
+      const taskSnap = await getDoc(doc(db, "tasks", taskId));
+      const taskData = taskSnap.data();
+      const bet = taskData.bets[betIndex];
+
+      document.getElementById("popup-betTitle").value = bet.betTitle || "";
+      document.getElementById("popup-option1").value = bet.option1 || "";
+      document.getElementById("popup-odds1").value = bet.odds1 || "";
+      document.getElementById("popup-option2").value = bet.option2 || "";
+      document.getElementById("popup-odds2").value = bet.odds2 || "";
+
       document.getElementById("betModal").classList.remove("hidden");
     };
 
@@ -141,6 +160,7 @@
       document.getElementById("popup-option2").value = "";
       document.getElementById("popup-odds1").value = "";
       document.getElementById("popup-odds2").value = "";
+      editingBetIndex = null;
     };
 
     window.deleteTask = async (id) => {
@@ -170,9 +190,17 @@
       }
 
       try {
-        await updateDoc(doc(db, "tasks", currentTaskId), {
-          bets: arrayUnion(betData)
-        });
+        const taskRef = doc(db, "tasks", currentTaskId);
+        const taskSnap = await getDoc(taskRef);
+        let existingBets = taskSnap.data().bets || [];
+
+        if (editingBetIndex !== null) {
+          existingBets[editingBetIndex] = betData;
+        } else {
+          existingBets.push(betData);
+        }
+
+        await updateDoc(taskRef, { bets: existingBets });
         closeModal();
         showToast("Bet Info Saved");
       } catch (e) {
