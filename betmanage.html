@@ -107,19 +107,25 @@
               <div class="space-y-3">`;
 
             data.bets.forEach((bet, idx) => {
-              const option1 = `<input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/3 border px-3 py-1 rounded bg-white" readonly />`;
-              const drawInput = bet.drawOption && bet.drawOdds
-                ? `<input type="text" value="${bet.drawOption} - ${bet.drawOdds}" class="w-1/3 border px-3 py-1 rounded bg-white" readonly />`
-                : `<div class="w-1/3"></div>`;
-              const option2 = `<input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/3 border px-3 py-1 rounded bg-white" readonly />`;
+              const inputs = [];
+
+              const option1 = `<input type="text" value="${bet.option1} - ${bet.odds1}" class="border px-3 py-1 rounded bg-white" readonly />`;
+              const option2 = `<input type="text" value="${bet.option2} - ${bet.odds2}" class="border px-3 py-1 rounded bg-white" readonly />`;
+
+              if (bet.drawOption && bet.drawOdds) {
+                const draw = `<input type="text" value="${bet.drawOption} - ${bet.drawOdds}" class="border px-3 py-1 rounded bg-white" readonly />`;
+                inputs.push(option1, draw, option2);
+              } else {
+                inputs.push(option1, option2);
+              }
+
+              const inputWidthClass = inputs.length === 2 ? "w-full" : "w-1/3";
 
               betsHTML += `
                 <div class="p-3 border rounded bg-gray-50">
                   <p class="mb-2 font-semibold text-gray-700">${bet.betTitle}</p>
                   <div class="flex gap-2 mb-2">
-                    ${option1}
-                    ${drawInput}
-                    ${option2}
+                    ${inputs.map(input => input.replace('class="', `class="${inputWidthClass} `)).join("\n")}
                   </div>
                   <button class="text-sm px-3 py-1 bg-yellow-500 text-white rounded mt-2" onclick='editBet("${docSnap.id}", ${idx})'>Edit</button>
                 </div>`;
