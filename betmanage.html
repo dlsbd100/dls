@@ -109,11 +109,11 @@
             data.bets.forEach((bet, idx) => {
               const inputs = [];
 
-              const option1 = `<input type="text" value="${bet.option1} - ${bet.odds1}" class="border px-3 py-1 rounded bg-white" readonly />`;
-              const option2 = `<input type="text" value="${bet.option2} - ${bet.odds2}" class="border px-3 py-1 rounded bg-white" readonly />`;
+              const option1 = `<input type="text" value="${bet.option1} - ${bet.odds1}" class="px-3 py-1 rounded bg-white" readonly />`;
+              const option2 = `<input type="text" value="${bet.option2} - ${bet.odds2}" class="px-3 py-1 rounded bg-white" readonly />`;
 
               if (bet.drawOption && bet.drawOdds) {
-                const draw = `<input type="text" value="${bet.drawOption} - ${bet.drawOdds}" class="border px-3 py-1 rounded bg-white" readonly />`;
+                const draw = `<input type="text" value="${bet.drawOption} - ${bet.drawOdds}" class="px-3 py-1 rounded bg-white" readonly />`;
                 inputs.push(option1, draw, option2);
               } else {
                 inputs.push(option1, option2);
