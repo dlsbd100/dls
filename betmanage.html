@@ -36,15 +36,15 @@
         <input type="text" id="popup-odds1" placeholder="Odds 1" class="w-1/2 border px-4 py-2 rounded" />
       </div>
 
+      <div class="flex gap-2">
+        <input type="text" id="popup-option2" placeholder="Option 2" class="w-1/2 border px-4 py-2 rounded" />
+        <input type="text" id="popup-odds2" placeholder="Odds 2" class="w-1/2 border px-4 py-2 rounded" />
+      </div>
+
       <!-- Draw option - initially hidden -->
       <div id="drawOption" class="flex gap-2 hidden">
         <input type="text" id="popup-drawOption" placeholder="Draw Option (optional)" class="w-1/2 border px-4 py-2 rounded" />
         <input type="text" id="popup-drawOdds" placeholder="Draw Odds (optional)" class="w-1/2 border px-4 py-2 rounded" />
-      </div>
-
-      <div class="flex gap-2">
-        <input type="text" id="popup-option2" placeholder="Option 2" class="w-1/2 border px-4 py-2 rounded" />
-        <input type="text" id="popup-odds2" placeholder="Odds 2" class="w-1/2 border px-4 py-2 rounded" />
       </div>
 
       <div class="flex justify-between items-center">
@@ -60,7 +60,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
-      getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, getDoc
+      getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, arrayUnion, getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -105,12 +105,10 @@
               <h4 class="font-semibold text-indigo-600 mb-2">Bets:</h4>
               <div class="space-y-3">`;
             data.bets.forEach((bet, idx) => {
-              let drawInputs = "";
+              // Show draw option if exists
+              let drawInfo = "";
               if (bet.drawOption || bet.drawOdds) {
-                drawInputs = `
-                  <div class="flex gap-2 mb-2">
-                    <input type="text" value="${bet.drawOption || ''} - ${bet.drawOdds || ''}" class="w-full border px-3 py-1 rounded bg-white" readonly />
-                  </div>`;
+                drawInfo = `<input type="text" value="${bet.drawOption || ''} - ${bet.drawOdds || ''}" class="w-full border px-3 py-1 rounded bg-white mt-1" readonly />`;
               }
 
               betsHTML += `
@@ -118,11 +116,9 @@
                   <p class="mb-2 font-semibold text-gray-700">${bet.betTitle}</p>
                   <div class="flex gap-2 mb-2">
                     <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
-                  </div>
-                  ${drawInputs}
-                  <div class="flex gap-2 mb-2">
                     <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
                   </div>
+                  ${drawInfo}
                   <button class="text-sm px-3 py-1 bg-yellow-500 text-white rounded mt-2" onclick='editBet("${docSnap.id}", ${idx})'>Edit</button>
                 </div>`;
             });
@@ -132,12 +128,15 @@
           div.innerHTML = `
             <p class="font-bold text-indigo-700">${data.name}</p>
             <p class="text-sm text-gray-600">${data.description || ""}</p>
+
             <div class="my-2 flex items-center justify-center gap-2 text-gray-800 font-semibold">
               <span>${data.reward}</span>
               <span class="text-red-600 font-bold">VS</span>
               <span>${data.view || ""}</span>
             </div>
+
             ${betsHTML}
+
             <div class="flex gap-2 mt-4">
               <button class="bg-blue-600 text-white px-3 py-1 rounded" onclick='openModal("${docSnap.id}")'>Add Bet Info</button>
               <button class="bg-red-600 text-white px-3 py-1 rounded" onclick='deleteTask("${docSnap.id}")'>Delete</button>
