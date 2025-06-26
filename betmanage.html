@@ -32,26 +32,13 @@
       <input type="text" id="popup-betTitle" placeholder="Bet Title" class="w-full border px-4 py-2 rounded" />
 
       <div class="flex gap-2">
-        <input type="text" id="popup-option1" placeholder="Option 1" class="w-1/3 border px-4 py-2 rounded" />
-        <input type="text" id="popup-odds1" placeholder="Odds 1" class="w-1/3 border px-4 py-2 rounded" />
+        <input type="text" id="popup-option1" placeholder="Option 1" class="w-1/2 border px-4 py-2 rounded" />
+        <input type="text" id="popup-odds1" placeholder="Odds 1" class="w-1/2 border px-4 py-2 rounded" />
       </div>
 
       <div class="flex gap-2">
-        <input type="text" id="popup-option2" placeholder="Option 2" class="w-1/3 border px-4 py-2 rounded" />
-        <input type="text" id="popup-odds2" placeholder="Odds 2" class="w-1/3 border px-4 py-2 rounded" />
-      </div>
-
-      <!-- Hidden Draw option, initially hidden -->
-      <div id="drawSection" class="flex gap-2 hidden">
-        <input type="text" id="popup-drawOption" placeholder="Draw Option (optional)" class="w-1/3 border px-4 py-2 rounded" />
-        <input type="text" id="popup-drawOdds" placeholder="Draw Odds (optional)" class="w-1/3 border px-4 py-2 rounded" />
-      </div>
-
-      <!-- Add More button to show draw inputs -->
-      <div>
-        <button id="addMoreBtn" type="button" class="text-indigo-600 underline text-sm hover:text-indigo-800">
-          Add More Options
-        </button>
+        <input type="text" id="popup-option2" placeholder="Option 2" class="w-1/2 border px-4 py-2 rounded" />
+        <input type="text" id="popup-odds2" placeholder="Odds 2" class="w-1/2 border px-4 py-2 rounded" />
       </div>
 
       <div class="flex justify-end gap-2">
@@ -64,7 +51,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
-      getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, getDoc
+      getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, arrayUnion, getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -109,17 +96,12 @@
               <h4 class="font-semibold text-indigo-600 mb-2">Bets:</h4>
               <div class="space-y-3">`;
             data.bets.forEach((bet, idx) => {
-              let drawHTML = "";
-              if(bet.drawOption || bet.drawOdds) {
-                drawHTML = `<input type="text" value="${bet.drawOption || ''} - ${bet.drawOdds || ''}" class="w-1/3 border px-3 py-1 rounded bg-white" readonly />`;
-              }
               betsHTML += `
                 <div class="p-3 border rounded bg-gray-50">
                   <p class="mb-2 font-semibold text-gray-700">${bet.betTitle}</p>
                   <div class="flex gap-2 mb-2">
-                    <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/3 border px-3 py-1 rounded bg-white" readonly />
-                    <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/3 border px-3 py-1 rounded bg-white" readonly />
-                    ${drawHTML}
+                    <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
+                    <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
                   </div>
                   <button class="text-sm px-3 py-1 bg-yellow-500 text-white rounded" onclick='editBet("${docSnap.id}", ${idx})'>Edit</button>
                 </div>`;
@@ -153,9 +135,6 @@
       currentTaskId = id;
       editingBetIndex = null;
       document.getElementById("betModal").classList.remove("hidden");
-      // Hide draw section by default when opening modal for new bet
-      document.getElementById("drawSection").classList.add("hidden");
-      document.getElementById("addMoreBtn").style.display = "inline-block";
     };
 
     window.editBet = async (taskId, betIndex) => {
@@ -171,19 +150,6 @@
       document.getElementById("popup-option2").value = bet.option2 || "";
       document.getElementById("popup-odds2").value = bet.odds2 || "";
 
-      // Set draw inputs and show/hide drawSection accordingly
-      if (bet.drawOption || bet.drawOdds) {
-        document.getElementById("popup-drawOption").value = bet.drawOption || "";
-        document.getElementById("popup-drawOdds").value = bet.drawOdds || "";
-        document.getElementById("drawSection").classList.remove("hidden");
-        document.getElementById("addMoreBtn").style.display = "none";
-      } else {
-        document.getElementById("popup-drawOption").value = "";
-        document.getElementById("popup-drawOdds").value = "";
-        document.getElementById("drawSection").classList.add("hidden");
-        document.getElementById("addMoreBtn").style.display = "inline-block";
-      }
-
       document.getElementById("betModal").classList.remove("hidden");
     };
 
@@ -194,11 +160,7 @@
       document.getElementById("popup-option2").value = "";
       document.getElementById("popup-odds1").value = "";
       document.getElementById("popup-odds2").value = "";
-      document.getElementById("popup-drawOption").value = "";
-      document.getElementById("popup-drawOdds").value = "";
       editingBetIndex = null;
-      document.getElementById("drawSection").classList.add("hidden");
-      document.getElementById("addMoreBtn").style.display = "inline-block";
     };
 
     window.deleteTask = async (id) => {
@@ -211,11 +173,6 @@
       }
     };
 
-    document.getElementById("addMoreBtn").addEventListener("click", () => {
-      document.getElementById("drawSection").classList.remove("hidden");
-      document.getElementById("addMoreBtn").style.display = "none";
-    });
-
     document.getElementById("saveBetBtn").addEventListener("click", async () => {
       if (!currentTaskId) return;
 
@@ -225,9 +182,6 @@
         option2: document.getElementById("popup-option2").value.trim(),
         odds1: document.getElementById("popup-odds1").value.trim(),
         odds2: document.getElementById("popup-odds2").value.trim(),
-        // Optional draw fields
-        drawOption: document.getElementById("popup-drawOption").value.trim() || null,
-        drawOdds: document.getElementById("popup-drawOdds").value.trim() || null,
       };
 
       if (!betData.betTitle || !betData.option1 || !betData.option2) {
