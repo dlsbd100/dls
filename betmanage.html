@@ -99,12 +99,8 @@
                 <div class="p-3 border rounded bg-gray-50">
                   <p class="mb-2 font-semibold text-gray-700">${bet.betTitle}</p>
                   <div class="flex gap-2">
-                    <input type="text" value="${bet.option1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
-                    <input type="text" value="${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
-                  </div>
-                  <div class="flex gap-2 mt-2">
-                    <input type="text" value="${bet.option2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
-                    <input type="text" value="${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
+                    <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
+                    <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
                   </div>
                 </div>`;
             });
