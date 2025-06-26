@@ -30,17 +30,8 @@
     <div class="bg-white w-full max-w-md rounded-lg p-6 space-y-4 relative">
       <h3 class="text-lg font-bold mb-2">Add Bet Info</h3>
       <input type="text" id="popup-betTitle" placeholder="Bet Title" class="w-full border px-4 py-2 rounded" />
-
-      <div class="flex gap-2">
-        <input type="text" id="popup-option1" placeholder="Option 1" class="w-1/2 border px-4 py-2 rounded" />
-        <input type="text" id="popup-odds1" placeholder="Odds 1" class="w-1/2 border px-4 py-2 rounded" />
-      </div>
-
-      <div class="flex gap-2">
-        <input type="text" id="popup-option2" placeholder="Option 2" class="w-1/2 border px-4 py-2 rounded" />
-        <input type="text" id="popup-odds2" placeholder="Odds 2" class="w-1/2 border px-4 py-2 rounded" />
-      </div>
-
+      <input type="text" id="popup-combined1" placeholder="Option 1 | Odds 1 (e.g., Brazil | 1.25)" class="w-full border px-4 py-2 rounded" />
+      <input type="text" id="popup-combined2" placeholder="Option 2 | Odds 2 (e.g., Argentina | 2.75)" class="w-full border px-4 py-2 rounded" />
       <div class="flex justify-end gap-2">
         <button onclick="closeModal()" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
         <button id="saveBetBtn" class="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700">Save</button>
@@ -98,14 +89,8 @@
               betsHTML += `
                 <div class="p-3 border rounded bg-gray-50">
                   <p class="mb-2 font-semibold text-gray-700">${bet.betTitle}</p>
-                  <div class="flex gap-2">
-                    <input type="text" value="${bet.option1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
-                    <input type="text" value="${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
-                  </div>
-                  <div class="flex gap-2 mt-2">
-                    <input type="text" value="${bet.option2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
-                    <input type="text" value="${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
-                  </div>
+                  <input type="text" value="${bet.option1} | ${bet.odds1}" class="w-full border px-3 py-1 rounded bg-white mb-2" readonly />
+                  <input type="text" value="${bet.option2} | ${bet.odds2}" class="w-full border px-3 py-1 rounded bg-white" readonly />
                 </div>`;
             });
             betsHTML += `</div></div>`;
@@ -141,10 +126,8 @@
     window.closeModal = () => {
       document.getElementById("betModal").classList.add("hidden");
       document.getElementById("popup-betTitle").value = "";
-      document.getElementById("popup-option1").value = "";
-      document.getElementById("popup-option2").value = "";
-      document.getElementById("popup-odds1").value = "";
-      document.getElementById("popup-odds2").value = "";
+      document.getElementById("popup-combined1").value = "";
+      document.getElementById("popup-combined2").value = "";
     };
 
     window.deleteTask = async (id) => {
@@ -160,22 +143,21 @@
     document.getElementById("saveBetBtn").addEventListener("click", async () => {
       if (!currentTaskId) return;
 
-      const betData = {
-        betTitle: document.getElementById("popup-betTitle").value.trim(),
-        option1: document.getElementById("popup-option1").value.trim(),
-        option2: document.getElementById("popup-option2").value.trim(),
-        odds1: document.getElementById("popup-odds1").value.trim(),
-        odds2: document.getElementById("popup-odds2").value.trim(),
-      };
+      const betTitle = document.getElementById("popup-betTitle").value.trim();
+      const combined1 = document.getElementById("popup-combined1").value.trim();
+      const combined2 = document.getElementById("popup-combined2").value.trim();
 
-      if (!betData.betTitle || !betData.option1 || !betData.option2) {
-        showToast("Please fill at least Bet Title, Option 1 and Option 2");
+      const [option1, odds1] = combined1.split("|").map(s => s.trim());
+      const [option2, odds2] = combined2.split("|").map(s => s.trim());
+
+      if (!betTitle || !option1 || !option2) {
+        showToast("Please fill Bet Title, Option 1 and Option 2");
         return;
       }
 
       try {
         await updateDoc(doc(db, "tasks", currentTaskId), {
-          bets: arrayUnion(betData)
+          bets: arrayUnion({ betTitle, option1, odds1, option2, odds2 })
         });
         closeModal();
         showToast("Bet Info Saved");
