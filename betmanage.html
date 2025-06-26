@@ -29,7 +29,7 @@
   <div id="betModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-white w-full max-w-md rounded-lg p-6 space-y-4 relative">
       <h3 class="text-lg font-bold mb-2">Add Bet Info</h3>
-      <h4 id="popup-betTitle" class="text-md font-semibold text-gray-800 border px-4 py-2 rounded bg-gray-100">Bet Title</h4>
+      <input type="text" id="popup-betTitle" placeholder="Bet Title" class="w-full border px-4 py-2 rounded" />
 
       <div class="flex gap-2">
         <input type="text" id="popup-option1" placeholder="Option 1" class="w-1/2 border px-4 py-2 rounded" />
@@ -97,7 +97,7 @@
             data.bets.forEach((bet, idx) => {
               betsHTML += `
                 <div class="p-3 border rounded bg-gray-50">
-                  <h4 class="w-full mb-2 border px-3 py-1 rounded bg-white">${bet.betTitle}</h4>
+                  <input type="text" value="${bet.betTitle}" class="w-full mb-2 border px-3 py-1 rounded bg-white" readonly />
                   <div class="flex gap-2">
                     <input type="text" value="${bet.option1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
                     <input type="text" value="${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
@@ -140,7 +140,7 @@
 
     window.closeModal = () => {
       document.getElementById("betModal").classList.add("hidden");
-      document.getElementById("popup-betTitle").textContent = "Bet Title";
+      document.getElementById("popup-betTitle").value = "";
       document.getElementById("popup-option1").value = "";
       document.getElementById("popup-option2").value = "";
       document.getElementById("popup-odds1").value = "";
@@ -160,9 +160,8 @@
     document.getElementById("saveBetBtn").addEventListener("click", async () => {
       if (!currentTaskId) return;
 
-      const betTitleText = document.getElementById("popup-betTitle").textContent.trim();
       const betData = {
-        betTitle: betTitleText,
+        betTitle: document.getElementById("popup-betTitle").value.trim(),
         option1: document.getElementById("popup-option1").value.trim(),
         option2: document.getElementById("popup-option2").value.trim(),
         odds1: document.getElementById("popup-odds1").value.trim(),
