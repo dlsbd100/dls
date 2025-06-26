@@ -105,10 +105,11 @@
               <h4 class="font-semibold text-indigo-600 mb-2">Bets:</h4>
               <div class="space-y-3">`;
             data.bets.forEach((bet, idx) => {
-              // Show draw option if exists
-              let drawInfo = "";
+              let drawLabel = "";
               if (bet.drawOption || bet.drawOdds) {
-                drawInfo = `<input type="text" value="${bet.drawOption || ''} - ${bet.drawOdds || ''}" class="w-full border px-3 py-1 rounded bg-white mt-1" readonly />`;
+                drawLabel = `<div class="flex justify-center my-1">
+                  <span class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded">Draw</span>
+                </div>`;
               }
 
               betsHTML += `
@@ -118,7 +119,7 @@
                     <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
                     <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
                   </div>
-                  ${drawInfo}
+                  ${drawLabel}
                   <button class="text-sm px-3 py-1 bg-yellow-500 text-white rounded mt-2" onclick='editBet("${docSnap.id}", ${idx})'>Edit</button>
                 </div>`;
             });
