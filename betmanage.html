@@ -27,15 +27,19 @@
 
   <!-- Bet Modal -->
   <div id="betModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white w-full max-w-md rounded-lg p-6 space-y-4 relative overflow-y-auto max-h-[90vh]">
+    <div class="bg-white w-full max-w-md rounded-lg p-6 space-y-4 relative">
       <h3 class="text-lg font-bold mb-2">Add/Edit Bet Info</h3>
       <input type="text" id="popup-betTitle" placeholder="Bet Title" class="w-full border px-4 py-2 rounded" />
 
-      <div id="options-container" class="space-y-3"></div>
+      <div class="flex gap-2">
+        <input type="text" id="popup-option1" placeholder="Option 1" class="w-1/2 border px-4 py-2 rounded" />
+        <input type="text" id="popup-odds1" placeholder="Odds 1" class="w-1/2 border px-4 py-2 rounded" />
+      </div>
 
-      <button onclick="addOption()" class="w-full py-2 rounded bg-green-600 text-white hover:bg-green-700">
-        + Add Option
-      </button>
+      <div class="flex gap-2">
+        <input type="text" id="popup-option2" placeholder="Option 2" class="w-1/2 border px-4 py-2 rounded" />
+        <input type="text" id="popup-odds2" placeholder="Odds 2" class="w-1/2 border px-4 py-2 rounded" />
+      </div>
 
       <div class="flex justify-end gap-2">
         <button onclick="closeModal()" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
@@ -47,7 +51,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
-      getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, getDoc
+      getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, arrayUnion, getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -66,7 +70,6 @@
     const tasksCol = collection(db, "tasks");
 
     const matchList = document.getElementById("matchList");
-    const optionsContainer = document.getElementById("options-container");
     let currentTaskId = null;
     let editingBetIndex = null;
 
@@ -93,15 +96,13 @@
               <h4 class="font-semibold text-indigo-600 mb-2">Bets:</h4>
               <div class="space-y-3">`;
             data.bets.forEach((bet, idx) => {
-              let betOptions = bet.options?.map(opt => `
-                <div class="flex gap-2 mb-1">
-                  <input type="text" value="${opt.option} - ${opt.odds}" class="w-full border px-3 py-1 rounded bg-white" readonly />
-                </div>`).join("") || "";
-
               betsHTML += `
                 <div class="p-3 border rounded bg-gray-50">
                   <p class="mb-2 font-semibold text-gray-700">${bet.betTitle}</p>
-                  ${betOptions}
+                  <div class="flex gap-2 mb-2">
+                    <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
+                    <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
+                  </div>
                   <button class="text-sm px-3 py-1 bg-yellow-500 text-white rounded" onclick='editBet("${docSnap.id}", ${idx})'>Edit</button>
                 </div>`;
             });
@@ -133,10 +134,6 @@
     window.openModal = (id) => {
       currentTaskId = id;
       editingBetIndex = null;
-      document.getElementById("popup-betTitle").value = "";
-      optionsContainer.innerHTML = "";
-      addOption();
-      addOption();
       document.getElementById("betModal").classList.remove("hidden");
     };
 
@@ -144,12 +141,14 @@
       currentTaskId = taskId;
       editingBetIndex = betIndex;
       const taskSnap = await getDoc(doc(db, "tasks", taskId));
-      const bet = taskSnap.data().bets[betIndex];
+      const taskData = taskSnap.data();
+      const bet = taskData.bets[betIndex];
 
       document.getElementById("popup-betTitle").value = bet.betTitle || "";
-      optionsContainer.innerHTML = "";
-
-      (bet.options || []).forEach(opt => addOption(opt.option, opt.odds));
+      document.getElementById("popup-option1").value = bet.option1 || "";
+      document.getElementById("popup-odds1").value = bet.odds1 || "";
+      document.getElementById("popup-option2").value = bet.option2 || "";
+      document.getElementById("popup-odds2").value = bet.odds2 || "";
 
       document.getElementById("betModal").classList.remove("hidden");
     };
@@ -157,7 +156,10 @@
     window.closeModal = () => {
       document.getElementById("betModal").classList.add("hidden");
       document.getElementById("popup-betTitle").value = "";
-      optionsContainer.innerHTML = "";
+      document.getElementById("popup-option1").value = "";
+      document.getElementById("popup-option2").value = "";
+      document.getElementById("popup-odds1").value = "";
+      document.getElementById("popup-odds2").value = "";
       editingBetIndex = null;
     };
 
@@ -171,50 +173,21 @@
       }
     };
 
-    function addOption(option = "", odds = "") {
-      const wrapper = document.createElement("div");
-      wrapper.className = "flex gap-2";
-
-      const optInput = document.createElement("input");
-      optInput.type = "text";
-      optInput.placeholder = "Option";
-      optInput.value = option;
-      optInput.className = "w-1/2 border px-3 py-2 rounded";
-
-      const oddsInput = document.createElement("input");
-      oddsInput.type = "text";
-      oddsInput.placeholder = "Odds";
-      oddsInput.value = odds;
-      oddsInput.className = "w-1/2 border px-3 py-2 rounded";
-
-      wrapper.appendChild(optInput);
-      wrapper.appendChild(oddsInput);
-      optionsContainer.appendChild(wrapper);
-    }
-
     document.getElementById("saveBetBtn").addEventListener("click", async () => {
       if (!currentTaskId) return;
 
-      const betTitle = document.getElementById("popup-betTitle").value.trim();
-      if (!betTitle) {
-        return showToast("Please provide a bet title");
-      }
+      const betData = {
+        betTitle: document.getElementById("popup-betTitle").value.trim(),
+        option1: document.getElementById("popup-option1").value.trim(),
+        option2: document.getElementById("popup-option2").value.trim(),
+        odds1: document.getElementById("popup-odds1").value.trim(),
+        odds2: document.getElementById("popup-odds2").value.trim(),
+      };
 
-      const optionInputs = optionsContainer.querySelectorAll("input");
-      const options = [];
-      for (let i = 0; i < optionInputs.length; i += 2) {
-        const option = optionInputs[i].value.trim();
-        const odds = optionInputs[i + 1].value.trim();
-        if (option && odds) {
-          options.push({ option, odds });
-        }
+      if (!betData.betTitle || !betData.option1 || !betData.option2) {
+        showToast("Please fill at least Bet Title, Option 1 and Option 2");
+        return;
       }
-
-      if (options.length < 2) {
-        return showToast("At least 2 options with odds are required");
-      }
-
-      const betData = { betTitle, options };
 
       try {
         const taskRef = doc(db, "tasks", currentTaskId);
