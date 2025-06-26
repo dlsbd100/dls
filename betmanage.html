@@ -41,9 +41,18 @@
         <input type="text" id="popup-odds2" placeholder="Odds 2" class="w-1/2 border px-4 py-2 rounded" />
       </div>
 
-      <div class="flex justify-end gap-2">
-        <button onclick="closeModal()" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
-        <button id="saveBetBtn" class="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700">Save</button>
+      <!-- Draw option - initially hidden -->
+      <div id="drawOption" class="flex gap-2 hidden">
+        <input type="text" id="popup-drawOption" placeholder="Draw Option (optional)" class="w-1/2 border px-4 py-2 rounded" />
+        <input type="text" id="popup-drawOdds" placeholder="Draw Odds (optional)" class="w-1/2 border px-4 py-2 rounded" />
+      </div>
+
+      <div class="flex justify-between items-center">
+        <button id="addMoreBtn" class="text-indigo-600 hover:underline text-sm">+ Add More</button>
+        <div class="flex gap-2">
+          <button onclick="closeModal()" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
+          <button id="saveBetBtn" class="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700">Save</button>
+        </div>
       </div>
     </div>
   </div>
@@ -96,6 +105,12 @@
               <h4 class="font-semibold text-indigo-600 mb-2">Bets:</h4>
               <div class="space-y-3">`;
             data.bets.forEach((bet, idx) => {
+              // Show draw option if exists
+              let drawInfo = "";
+              if (bet.drawOption || bet.drawOdds) {
+                drawInfo = `<input type="text" value="${bet.drawOption || ''} - ${bet.drawOdds || ''}" class="w-full border px-3 py-1 rounded bg-white mt-1" readonly />`;
+              }
+
               betsHTML += `
                 <div class="p-3 border rounded bg-gray-50">
                   <p class="mb-2 font-semibold text-gray-700">${bet.betTitle}</p>
@@ -103,7 +118,8 @@
                     <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
                     <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
                   </div>
-                  <button class="text-sm px-3 py-1 bg-yellow-500 text-white rounded" onclick='editBet("${docSnap.id}", ${idx})'>Edit</button>
+                  ${drawInfo}
+                  <button class="text-sm px-3 py-1 bg-yellow-500 text-white rounded mt-2" onclick='editBet("${docSnap.id}", ${idx})'>Edit</button>
                 </div>`;
             });
             betsHTML += `</div></div>`;
@@ -134,6 +150,8 @@
     window.openModal = (id) => {
       currentTaskId = id;
       editingBetIndex = null;
+      resetModalFields();
+      hideDrawOption();
       document.getElementById("betModal").classList.remove("hidden");
     };
 
@@ -150,18 +168,50 @@
       document.getElementById("popup-option2").value = bet.option2 || "";
       document.getElementById("popup-odds2").value = bet.odds2 || "";
 
+      if (bet.drawOption || bet.drawOdds) {
+        document.getElementById("popup-drawOption").value = bet.drawOption || "";
+        document.getElementById("popup-drawOdds").value = bet.drawOdds || "";
+        showDrawOption();
+      } else {
+        hideDrawOption();
+        document.getElementById("popup-drawOption").value = "";
+        document.getElementById("popup-drawOdds").value = "";
+      }
+
       document.getElementById("betModal").classList.remove("hidden");
     };
 
     window.closeModal = () => {
       document.getElementById("betModal").classList.add("hidden");
+      resetModalFields();
+      hideDrawOption();
+      editingBetIndex = null;
+    };
+
+    function resetModalFields() {
       document.getElementById("popup-betTitle").value = "";
       document.getElementById("popup-option1").value = "";
       document.getElementById("popup-option2").value = "";
       document.getElementById("popup-odds1").value = "";
       document.getElementById("popup-odds2").value = "";
-      editingBetIndex = null;
-    };
+      document.getElementById("popup-drawOption").value = "";
+      document.getElementById("popup-drawOdds").value = "";
+    }
+
+    function showDrawOption() {
+      document.getElementById("drawOption").classList.remove("hidden");
+      document.getElementById("addMoreBtn").classList.add("hidden");
+    }
+
+    function hideDrawOption() {
+      document.getElementById("drawOption").classList.add("hidden");
+      document.getElementById("addMoreBtn").classList.remove("hidden");
+    }
+
+    document.getElementById("addMoreBtn").addEventListener("click", (e) => {
+      e.preventDefault();
+      showDrawOption();
+    });
 
     window.deleteTask = async (id) => {
       try {
@@ -182,6 +232,8 @@
         option2: document.getElementById("popup-option2").value.trim(),
         odds1: document.getElementById("popup-odds1").value.trim(),
         odds2: document.getElementById("popup-odds2").value.trim(),
+        drawOption: document.getElementById("popup-drawOption").value.trim() || null,
+        drawOdds: document.getElementById("popup-drawOdds").value.trim() || null,
       };
 
       if (!betData.betTitle || !betData.option1 || !betData.option2) {
