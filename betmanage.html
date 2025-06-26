@@ -105,22 +105,20 @@
               <h4 class="font-semibold text-indigo-600 mb-2">Bets:</h4>
               <div class="space-y-3">`;
             data.bets.forEach((bet, idx) => {
-              // Draw option always visible between Option1 and Option2 inputs
-              let drawInputsHTML = `
-                <div class="flex gap-2 mb-2">
-                  <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/3 border px-3 py-1 rounded bg-white" readonly />
-                  <div class="flex flex-col w-1/3 gap-1">
-                    <input type="text" value="${bet.drawOption || ''}" placeholder="Draw Option" class="border px-3 py-1 rounded bg-white" readonly />
-                    <input type="text" value="${bet.drawOdds || ''}" placeholder="Draw Odds" class="border px-3 py-1 rounded bg-white" readonly />
-                  </div>
-                  <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/3 border px-3 py-1 rounded bg-white" readonly />
-                </div>
-              `;
+              // Show draw option if exists
+              let drawInfo = "";
+              if (bet.drawOption || bet.drawOdds) {
+                drawInfo = `<input type="text" value="${bet.drawOption || ''} - ${bet.drawOdds || ''}" class="w-full border px-3 py-1 rounded bg-white mt-1" readonly />`;
+              }
 
               betsHTML += `
                 <div class="p-3 border rounded bg-gray-50">
                   <p class="mb-2 font-semibold text-gray-700">${bet.betTitle}</p>
-                  ${drawInputsHTML}
+                  <div class="flex gap-2 mb-2">
+                    <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
+                    <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
+                  </div>
+                  ${drawInfo}
                   <button class="text-sm px-3 py-1 bg-yellow-500 text-white rounded mt-2" onclick='editBet("${docSnap.id}", ${idx})'>Edit</button>
                 </div>`;
             });
