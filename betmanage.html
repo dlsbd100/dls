@@ -27,24 +27,21 @@
 
   <!-- Bet Modal -->
   <div id="betModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white w-full max-w-md rounded-lg p-6 space-y-4 relative max-h-screen overflow-y-auto">
+    <div class="bg-white w-full max-w-md rounded-lg p-6 space-y-4 relative">
       <h3 class="text-lg font-bold mb-2">Add/Edit Bet Info</h3>
       <input type="text" id="popup-betTitle" placeholder="Bet Title" class="w-full border px-4 py-2 rounded" />
 
-      <div id="optionsContainer" class="space-y-2">
-        <div class="flex gap-2">
-          <input type="text" placeholder="Option 1" class="option-input w-1/2 border px-4 py-2 rounded" />
-          <input type="text" placeholder="Odds 1" class="odds-input w-1/2 border px-4 py-2 rounded" />
-        </div>
-        <div class="flex gap-2">
-          <input type="text" placeholder="Option 2" class="option-input w-1/2 border px-4 py-2 rounded" />
-          <input type="text" placeholder="Odds 2" class="odds-input w-1/2 border px-4 py-2 rounded" />
-        </div>
+      <div class="flex gap-2">
+        <input type="text" id="popup-option1" placeholder="Option 1" class="w-1/2 border px-4 py-2 rounded" />
+        <input type="text" id="popup-odds1" placeholder="Odds 1" class="w-1/2 border px-4 py-2 rounded" />
       </div>
 
-      <button onclick="addMoreOption()" class="text-sm text-indigo-600 hover:underline">+ Add More Option</button>
+      <div class="flex gap-2">
+        <input type="text" id="popup-option2" placeholder="Option 2" class="w-1/2 border px-4 py-2 rounded" />
+        <input type="text" id="popup-odds2" placeholder="Odds 2" class="w-1/2 border px-4 py-2 rounded" />
+      </div>
 
-      <div class="flex justify-end gap-2 pt-4">
+      <div class="flex justify-end gap-2">
         <button onclick="closeModal()" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
         <button id="saveBetBtn" class="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700">Save</button>
       </div>
@@ -54,7 +51,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
-      getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, getDoc
+      getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, updateDoc, arrayUnion, getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -102,11 +99,10 @@
               betsHTML += `
                 <div class="p-3 border rounded bg-gray-50">
                   <p class="mb-2 font-semibold text-gray-700">${bet.betTitle}</p>
-                  <div class="space-y-1 mb-2">`;
-              (bet.options || []).forEach(opt => {
-                betsHTML += `<p class="text-sm">${opt.option} - ${opt.odds}</p>`;
-              });
-              betsHTML += `</div>
+                  <div class="flex gap-2 mb-2">
+                    <input type="text" value="${bet.option1} - ${bet.odds1}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
+                    <input type="text" value="${bet.option2} - ${bet.odds2}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
+                  </div>
                   <button class="text-sm px-3 py-1 bg-yellow-500 text-white rounded" onclick='editBet("${docSnap.id}", ${idx})'>Edit</button>
                 </div>`;
             });
@@ -135,68 +131,37 @@
       });
     }
 
-    window.addMoreOption = () => {
-      const container = document.getElementById("optionsContainer");
-      const div = document.createElement("div");
-      div.className = "flex gap-2";
-      div.innerHTML = `
-        <input type="text" placeholder="Option" class="option-input w-1/2 border px-4 py-2 rounded" />
-        <input type="text" placeholder="Odds" class="odds-input w-1/2 border px-4 py-2 rounded" />
-      `;
-      container.appendChild(div);
-    };
-
     window.openModal = (id) => {
       currentTaskId = id;
       editingBetIndex = null;
-      resetModal();
       document.getElementById("betModal").classList.remove("hidden");
     };
 
     window.editBet = async (taskId, betIndex) => {
       currentTaskId = taskId;
       editingBetIndex = betIndex;
-      resetModal();
-
       const taskSnap = await getDoc(doc(db, "tasks", taskId));
-      const bet = taskSnap.data().bets[betIndex];
+      const taskData = taskSnap.data();
+      const bet = taskData.bets[betIndex];
 
       document.getElementById("popup-betTitle").value = bet.betTitle || "";
-
-      const container = document.getElementById("optionsContainer");
-      container.innerHTML = "";
-      (bet.options || []).forEach(({ option, odds }) => {
-        const div = document.createElement("div");
-        div.className = "flex gap-2";
-        div.innerHTML = `
-          <input type="text" value="${option}" placeholder="Option" class="option-input w-1/2 border px-4 py-2 rounded" />
-          <input type="text" value="${odds}" placeholder="Odds" class="odds-input w-1/2 border px-4 py-2 rounded" />
-        `;
-        container.appendChild(div);
-      });
+      document.getElementById("popup-option1").value = bet.option1 || "";
+      document.getElementById("popup-odds1").value = bet.odds1 || "";
+      document.getElementById("popup-option2").value = bet.option2 || "";
+      document.getElementById("popup-odds2").value = bet.odds2 || "";
 
       document.getElementById("betModal").classList.remove("hidden");
     };
 
     window.closeModal = () => {
       document.getElementById("betModal").classList.add("hidden");
-      resetModal();
-    };
-
-    function resetModal() {
       document.getElementById("popup-betTitle").value = "";
-      const container = document.getElementById("optionsContainer");
-      container.innerHTML = `
-        <div class="flex gap-2">
-          <input type="text" placeholder="Option 1" class="option-input w-1/2 border px-4 py-2 rounded" />
-          <input type="text" placeholder="Odds 1" class="odds-input w-1/2 border px-4 py-2 rounded" />
-        </div>
-        <div class="flex gap-2">
-          <input type="text" placeholder="Option 2" class="option-input w-1/2 border px-4 py-2 rounded" />
-          <input type="text" placeholder="Odds 2" class="odds-input w-1/2 border px-4 py-2 rounded" />
-        </div>`;
+      document.getElementById("popup-option1").value = "";
+      document.getElementById("popup-option2").value = "";
+      document.getElementById("popup-odds1").value = "";
+      document.getElementById("popup-odds2").value = "";
       editingBetIndex = null;
-    }
+    };
 
     window.deleteTask = async (id) => {
       try {
@@ -211,22 +176,18 @@
     document.getElementById("saveBetBtn").addEventListener("click", async () => {
       if (!currentTaskId) return;
 
-      const betTitle = document.getElementById("popup-betTitle").value.trim();
-      if (!betTitle) return showToast("Bet title required");
+      const betData = {
+        betTitle: document.getElementById("popup-betTitle").value.trim(),
+        option1: document.getElementById("popup-option1").value.trim(),
+        option2: document.getElementById("popup-option2").value.trim(),
+        odds1: document.getElementById("popup-odds1").value.trim(),
+        odds2: document.getElementById("popup-odds2").value.trim(),
+      };
 
-      const options = [];
-      const optionInputs = document.querySelectorAll(".option-input");
-      const oddsInputs = document.querySelectorAll(".odds-input");
-
-      for (let i = 0; i < optionInputs.length; i++) {
-        const option = optionInputs[i].value.trim();
-        const odds = oddsInputs[i].value.trim();
-        if (option) options.push({ option, odds });
+      if (!betData.betTitle || !betData.option1 || !betData.option2) {
+        showToast("Please fill at least Bet Title, Option 1 and Option 2");
+        return;
       }
-
-      if (options.length < 2) return showToast("At least 2 options required");
-
-      const betData = { betTitle, options };
 
       try {
         const taskRef = doc(db, "tasks", currentTaskId);
