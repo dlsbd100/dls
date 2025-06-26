@@ -105,14 +105,10 @@
               <h4 class="font-semibold text-indigo-600 mb-2">Bets:</h4>
               <div class="space-y-3">`;
             data.bets.forEach((bet, idx) => {
-              // Show draw option as two inputs side by side if exists
+              // Show draw option if exists
               let drawInfo = "";
               if (bet.drawOption || bet.drawOdds) {
-                drawInfo = `
-                  <div class="flex gap-2 mb-2">
-                    <input type="text" value="${bet.drawOption || ''}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
-                    <input type="text" value="${bet.drawOdds || ''}" class="w-1/2 border px-3 py-1 rounded bg-white" readonly />
-                  </div>`;
+                drawInfo = `<input type="text" value="${bet.drawOption || ''} - ${bet.drawOdds || ''}" class="w-full border px-3 py-1 rounded bg-white mt-1" readonly />`;
               }
 
               betsHTML += `
