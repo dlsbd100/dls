@@ -112,17 +112,33 @@
         for (let i = 0; i < fixers.length; i += 2) {
           const left = fixers[i];
           const right = fixers[i + 1];
+
+          const leftHtml = `
+            <div class="flex-1 text-right">
+              <div class="font-semibold">${left.name}</div>
+              ${left.date ? `<div class="text-sm text-gray-500">${left.date}</div>` : ""}
+            </div>
+          `;
+
+          const rightHtml = right ? `
+            <div class="flex-1 text-left">
+              <div class="font-semibold">${right.name}</div>
+              ${right.date ? `<div class="text-sm text-gray-500">${right.date}</div>` : ""}
+            </div>
+          ` : "";
+
           if (right) {
             html += `
               <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
-                <div class="flex-1 text-right font-semibold">${left.name}</div>
+                ${leftHtml}
                 <div class="text-2xl font-bold text-red-500">VS</div>
-                <div class="flex-1 text-left font-semibold">${right.name}</div>
+                ${rightHtml}
               </div>`;
           } else {
             html += `
               <div class="text-center border p-4 rounded shadow-sm">
                 <div class="font-semibold">${left.name}</div>
+                ${left.date ? `<div class="text-sm text-gray-500">${left.date}</div>` : ""}
                 <p class="text-sm italic text-gray-400 mt-1">Waiting for opponent</p>
               </div>`;
           }
