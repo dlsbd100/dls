@@ -128,19 +128,24 @@
           const month = date.toLocaleString('default', { month: 'short' });
           const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-          // For each bet inside the task
+          // Build bets HTML including draw option if exists
           let betsHTML = "";
           if (Array.isArray(task.bets) && task.bets.length > 0) {
             task.bets.forEach(bet => {
               betsHTML += `
                 <div class="bg-gray-900 bg-opacity-30 py-1.5 mt-4 rounded-b-md">
-                  <div class="text-white text-md mb-1.5 font-bold ml-2">To win the match…?</div>
-                  <div class="flex divide-x divide-blue-400 border border-blue-400 overflow-hidden rounded-md">
-                    <div class="w-1/2 flex justify-between items-center p-1.5">
+                  <div class="text-white text-md mb-1.5 font-bold ml-2">${bet.betTitle || "To win the match…?"}</div>
+                  <div class="flex border border-blue-400 overflow-hidden rounded-md divide-x divide-blue-400">
+                    <div class="w-1/3 flex justify-between items-center p-1.5">
                       <span class="text-white text-sm font-semibold">${bet.option1 || '-'}</span>
                       <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.odds1 || '-'}</span>
                     </div>
-                    <div class="w-1/2 flex justify-between items-center p-1.5">
+                    ${bet.drawOption && bet.drawOdds ? `
+                    <div class="w-1/3 flex justify-between items-center p-1.5">
+                      <span class="text-white text-sm font-semibold">${bet.drawOption}</span>
+                      <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.drawOdds}</span>
+                    </div>` : ''}
+                    <div class="w-1/3 flex justify-between items-center p-1.5">
                       <span class="text-white text-sm font-semibold">${bet.option2 || '-'}</span>
                       <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.odds2 || '-'}</span>
                     </div>
