@@ -33,12 +33,14 @@
 
         <input type="text" id="team" name="team" required placeholder="আপনার দলের নাম লিখুন" class="w-full px-4 py-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
 
-        <!-- Updated DLS Rating input: allows decimal -->
         <input type="number" step="any" id="dls-rating" name="dls-rating" required placeholder="আপনার DLS রেটিং লিখুন" class="w-full px-4 py-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
 
         <input type="number" id="age" name="age" required placeholder="আপনার বয়স লিখুন" class="w-full px-4 py-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
 
         <input type="number" id="years-played" name="years-played" required placeholder="আপনি কত বছর DLS খেলে এসেছেন" class="w-full px-4 py-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+
+        <!-- Photo URL Input -->
+        <input type="url" id="photo-url" name="photo-url" required placeholder="আপনার ছবির লিঙ্ক দিন (Photo URL)" class="w-full px-4 py-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
 
         <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 rounded-md transition duration-300">নিবন্ধন করুন</button>
       </form>
@@ -47,40 +49,40 @@
 
   <!-- Bottom Navigation Bar -->
   <nav class="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-700 flex justify-around items-center py-2 rounded-t-2xl shadow-inner text-white h-16 z-10">
-  <a href="dashboard.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
-    <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
-      <i class="fa-solid fa-gamepad text-lg text-gray-300 hover:text-yellow-400"></i>
-    </div>
-    Home
-  </a>
+    <a href="dashboard.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
+      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
+        <i class="fa-solid fa-gamepad text-lg text-gray-300 hover:text-yellow-400"></i>
+      </div>
+      Home
+    </a>
 
-  <a href="result.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
-    <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
-      <i class="fa-solid fa-ranking-star text-lg text-gray-300 hover:text-yellow-400"></i>
-    </div>
-    Result
-  </a>
+    <a href="result.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
+      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
+        <i class="fa-solid fa-ranking-star text-lg text-gray-300 hover:text-yellow-400"></i>
+      </div>
+      Result
+    </a>
 
-  <a href="league.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
-    <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
-      <i class="fa-solid fa-trophy text-lg text-gray-300 hover:text-yellow-400"></i>
-    </div>
-    League
-  </a>
+    <a href="league.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
+      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
+        <i class="fa-solid fa-trophy text-lg text-gray-300 hover:text-yellow-400"></i>
+      </div>
+      League
+    </a>
 
-  <a href="match-history.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
-    <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
-      <i class="fa-solid fa-clock-rotate-left text-lg text-gray-300 hover:text-yellow-400"></i>
-    </div>
-    History
-  </a>
+    <a href="match-history.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
+      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
+        <i class="fa-solid fa-clock-rotate-left text-lg text-gray-300 hover:text-yellow-400"></i>
+      </div>
+      History
+    </a>
 
-  <a href="profile.html"class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
-    <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-400">
-      <i class="fa-solid fa-user text-lg text-gray-400 hover:text-yellow-400"></i>
-    </div> 
-    Profile
-  </a>
+    <a href="profile.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
+      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-400">
+        <i class="fa-solid fa-user text-lg text-gray-400 hover:text-yellow-400"></i>
+      </div> 
+      Profile
+    </a>
   </nav>
 
   <!-- Firebase Scripts -->
@@ -104,7 +106,6 @@
 
     let currentUser = null;
 
-    // Check user login
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = "login.html";
@@ -113,7 +114,6 @@
       }
     });
 
-    // Form submission
     const form = document.getElementById('registration-form');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -123,6 +123,7 @@
       const dlsRating = parseFloat(form['dls-rating'].value);
       const age = Number(form['age'].value);
       const yearsPlayed = Number(form['years-played'].value);
+      const photoUrl = form['photo-url'].value.trim();
 
       try {
         await addDoc(collection(db, 'playersform'), {
@@ -131,9 +132,11 @@
           dlsRating,
           age,
           yearsPlayed,
+          photoUrl,
           uid: currentUser?.uid || null,
           createdAt: new Date()
         });
+
         Swal.fire({
           icon: 'success',
           title: 'সফল',
