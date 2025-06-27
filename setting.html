@@ -24,10 +24,10 @@
     <p id="currentLimitDisplay" class="text-center text-sm text-gray-600 mt-4">Current Limit: Loading...</p>
   </div>
 
-  <!-- Firebase and Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -41,27 +41,29 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     const limitDocRef = doc(db, "settings", "limits");
     const playerLimitInput = document.getElementById("playerLimitInput");
     const updateLimitBtn = document.getElementById("updateLimitBtn");
     const currentLimitDisplay = document.getElementById("currentLimitDisplay");
 
-    async function loadPlayerLimit() {
-      try {
-        const docSnap = await getDoc(limitDocRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const currentLimit = data?.maxPlayers ?? "Not Set";
-          currentLimitDisplay.textContent = `Current Limit: ${currentLimit}`;
-          playerLimitInput.value = currentLimit;
-        } else {
-          currentLimitDisplay.textContent = "Current Limit: Not Set";
-        }
-      } catch (err) {
-        console.error("Failed to fetch player limit:", err);
-        currentLimitDisplay.textContent = "Error loading limit";
-      }
+    function loadPlayerLimit() {
+      getDoc(limitDocRef)
+        .then((docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const currentLimit = data?.maxPlayers ?? "Not Set";
+            currentLimitDisplay.textContent = `Current Limit: ${currentLimit}`;
+            playerLimitInput.value = currentLimit;
+          } else {
+            currentLimitDisplay.textContent = "Current Limit: Not Set";
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch player limit:", err);
+          currentLimitDisplay.textContent = "Error loading limit";
+        });
     }
 
     updateLimitBtn.addEventListener("click", async () => {
@@ -83,8 +85,15 @@
       }
     });
 
-    // Initial load
-    loadPlayerLimit();
+    // ✅ Auth Check before accessing Firestore
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        alert("You must be logged in.");
+        window.location.href = "login.html";
+      } else {
+        loadPlayerLimit();
+      }
+    });
   </script>
 </body>
 </html>
