@@ -127,23 +127,10 @@
       }
     }
 
-    function getNextDate(dateStr) {
-      const date = new Date(dateStr);
-      date.setDate(date.getDate() + 1);
-      return date.toISOString().split('T')[0];
-    }
-
-    async function isTeamBusyOnDate(team, date) {
-      const q1 = query(collection(db, "fixers"), where("team1", "==", team), where("date", "==", date));
-      const q2 = query(collection(db, "fixers"), where("team2", "==", team), where("date", "==", date));
-      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-      return !snap1.empty || !snap2.empty;
-    }
-
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       const selectedOptions = Array.from(document.getElementById("teamSelector").selectedOptions);
       const selectedTeams = selectedOptions.map(opt => opt.value);
-      let selectedDate = document.getElementById("fixerDate").value;
+      const selectedDate = document.getElementById("fixerDate").value;
 
       if (selectedTeams.length < 2) {
         alert("Please select at least two teams.");
@@ -158,21 +145,16 @@
       let added = 0;
       for (let i = 0; i < selectedTeams.length; i++) {
         for (let j = i + 1; j < selectedTeams.length; j++) {
-          let team1 = selectedTeams[i];
-          let team2 = selectedTeams[j];
-          let currentDate = selectedDate;
+          const team1 = selectedTeams[i];
+          const team2 = selectedTeams[j];
 
-          // Check if any team is already busy on that date
-          while (await isTeamBusyOnDate(team1, currentDate) || await isTeamBusyOnDate(team2, currentDate)) {
-            currentDate = getNextDate(currentDate);
-          }
+          const q1 = query(collection(db, "fixers"), where("team1", "==", team1), where("team2", "==", team2), where("date", "==", selectedDate));
+          const q2 = query(collection(db, "fixers"), where("team1", "==", team2), where("team2", "==", team1), where("date", "==", selectedDate));
 
-          const q1 = query(collection(db, "fixers"), where("team1", "==", team1), where("team2", "==", team2), where("date", "==", currentDate));
-          const q2 = query(collection(db, "fixers"), where("team1", "==", team2), where("team2", "==", team1), where("date", "==", currentDate));
           const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
           if (!snap1.empty || !snap2.empty) continue;
 
-          await addDoc(collection(db, "fixers"), { team1, team2, date: currentDate });
+          await addDoc(collection(db, "fixers"), { team1, team2, date: selectedDate });
           added++;
         }
       }
@@ -181,7 +163,7 @@
         alert(`${added} fixer(s) added successfully.`);
         loadFixers();
       } else {
-        alert("All selected matchups already exist.");
+        alert("All selected matchups already exist for the selected date.");
       }
     });
 
