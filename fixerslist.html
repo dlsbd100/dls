@@ -154,11 +154,11 @@
 
         if (dateSnapshot.empty) {
           // Means fixers exist but for different date - disallow adding new date
-          alert("Fixers already added for another date. Adding new dates is disabled.");
+          alert("Fixers already added");
           return;
         }
         // else selectedDate has fixers - alert and do not add duplicate pairs
-        alert("Fixers are already added for the selected date.");
+        alert("Fixers already added");
         return;
       }
 
