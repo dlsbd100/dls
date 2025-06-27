@@ -47,13 +47,20 @@
     <div class="bg-white shadow rounded p-4">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
         <div class="text-xl font-semibold text-green-700">Fixers List</div>
-        <div class="flex items-center gap-2">
-          <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-26 h-10 overflow-y-auto">
-            <!-- Options dynamically inserted -->
-          </select>
-          <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700">
-            <i class="fas fa-plus mr-1"></i> Add Fixers
-          </button>
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-40 h-20 overflow-y-auto">
+              <!-- Options dynamically inserted -->
+            </select>
+            <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700">
+              <i class="fas fa-plus mr-1"></i> Add Fixers
+            </button>
+          </div>
+          <!-- All Select checkbox -->
+          <label class="text-sm text-gray-600 flex items-center gap-2 pl-1">
+            <input type="checkbox" id="selectAllTeams" class="accent-green-600">
+            Select All Teams
+          </label>
         </div>
       </div>
       <div id="fixersContainer" class="space-y-4 max-h-[600px] overflow-y-auto">
@@ -195,6 +202,15 @@
         loadFixers();
       } else {
         alert("All selected teams already have fixers.");
+      }
+    });
+
+    // All Select Checkbox Function
+    document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+      const allSelected = e.target.checked;
+      const selector = document.getElementById("teamSelector");
+      for (let option of selector.options) {
+        option.selected = allSelected;
       }
     });
   </script>
