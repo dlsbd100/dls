@@ -120,7 +120,7 @@
         if (docSnap.exists()) {
           const data = docSnap.data();
           currentLimit = data?.maxPlayers ?? null;
-          currentLimitDisplay.textContent = currentLimit !== null ? `বর্তমান প্লেয়ার সীমা: ${currentLimit}` : "বর্তমান প্লেয়ার সীমা: নির্ধারিত নেই";
+          currentLimitDisplay.textContent = currentLimit !== null ? `বর্তমান নিবন্ধন সীমা: ${currentLimit}` : "বর্তমান প্লেয়ার সীমা: নির্ধারিত নেই";
         } else {
           currentLimit = null;
           currentLimitDisplay.textContent = "বর্তমান নিবন্ধন সীমা: নির্ধারিত নেই";
