@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fixers তালিকা</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+</head>
+<body class="bg-black text-white min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-black via-gray-900 to-black w-full max-w-md shadow-md py-2 px-3 mb-3 mx-auto border-b border-gray-700 flex items-center justify-between rounded-b-xl">
+    <div class="flex items-center gap-2">
+      <div class="bg-red-600 bg-opacity-50 border border-red-500 text-red-300 w-9 h-9 flex items-center justify-center font-bold rounded-full shadow">FX</div>
+      <h2 class="text-2xl font-bold bg-gradient-to-r from-red-400 via-yellow-300 to-red-400 bg-clip-text text-transparent">Fixers</h2>
+    </div>
+    <div style="height: 29px;" class="flex items-center gap-1 bg-gradient-to-br from-red-500 via-yellow-700 to-red-500 text-black px-2 py-1 rounded-full shadow-lg border border-yellow-200">
+      <i class="fa-solid fa-users text-white text-sm"></i>
+      <span id="fixerCount" class="text-white font-semibold text-sm">0</span>
+    </div>
+  </header>
+
+  <!-- Fixers List -->
+  <main class="max-w-3xl mx-auto px-4 mt-6 mb-20">
+    <div id="fixers-list" class="space-y-4">
+      <p class="text-center text-gray-400">লোড হচ্ছে...</p>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-700 flex justify-around items-center py-2 rounded-t-2xl shadow-inner text-white h-16 z-10">
+    <a href="dashboard.html" class="flex flex-col items-center text-xs font-semibold no-underline">
+      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
+        <i class="fa-solid fa-gamepad text-lg text-gray-300 hover:text-yellow-400"></i>
+      </div>
+      Home
+    </a>
+    <a href="result.html" class="flex flex-col items-center text-xs font-semibold no-underline">
+      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
+        <i class="fa-solid fa-ranking-star text-lg text-gray-300 hover:text-yellow-400"></i>
+      </div>
+      Result
+    </a>
+    <a href="league.html" class="flex flex-col items-center text-xs font-semibold no-underline">
+      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
+        <i class="fa-solid fa-trophy text-lg text-gray-300 hover:text-yellow-400"></i>
+      </div>
+      League
+    </a>
+    <a href="fixers.html" class="flex flex-col items-center text-xs font-semibold no-underline">
+      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-yellow-400">
+        <i class="fa-solid fa-clock-rotate-left text-lg text-yellow-300"></i>
+      </div>
+      Fixers
+    </a>
+    <a href="profile.html" class="flex flex-col items-center text-xs font-semibold no-underline">
+      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-400">
+        <i class="fa-solid fa-user text-lg text-gray-400 hover:text-yellow-400"></i>
+      </div> 
+      Profile
+    </a>
+  </nav>
+
+  <!-- Firebase & Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
+      authDomain: "dlstournament-31ac1.firebaseapp.com",
+      projectId: "dlstournament-31ac1",
+      storageBucket: "dlstournament-31ac1.appspot.com",
+      messagingSenderId: "874377019055",
+      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const fixerList = document.getElementById("fixers-list");
+    const fixerCount = document.getElementById("fixerCount");
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      const q = query(collection(db, "fixers"), orderBy("createdAt", "desc"));
+      onSnapshot(q, (snapshot) => {
+        fixerList.innerHTML = "";
+
+        if (snapshot.empty) {
+          fixerList.innerHTML = `<p class="text-center text-gray-400">কোনো ফিক্সার এখনো যোগ হয়নি।</p>`;
+          fixerCount.textContent = "0";
+          return;
+        }
+
+        let count = 0;
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          count++;
+
+          const fixerCard = `
+            <div class="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg hover:scale-[1.02] transition-transform duration-300">
+              <h2 class="text-xl font-bold text-red-300">${data.matchTitle || "নাম নেই"}</h2>
+              <p class="text-gray-300">ফিক্সড বাই: <span class="text-white">${data.fixedBy || "N/A"}</span></p>
+              <p class="text-gray-300">সময়: <span class="text-white">${data.time || "N/A"}</span></p>
+              <p class="text-gray-300">নোট: <span class="text-yellow-400">${data.note || "কোনো মন্তব্য নেই"}</span></p>
+            </div>
+          `;
+
+          fixerList.insertAdjacentHTML("beforeend", fixerCard);
+        });
+
+        fixerCount.textContent = count;
+      });
+    });
+  </script>
+</body>
+</html>
