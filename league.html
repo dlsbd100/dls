@@ -160,7 +160,8 @@
               } else {
                 // No draw option: option1 and option2 take full width split
                 betsHTML += `
-                  <div class="bg-gray-900 bg-opacity-30 py-1.5 mt-4 rounded-b-md">
+                 <div class="bg-gray-900 bg-opacity-30">
+                  <div class="py-1.5 mt-4 rounded-b-md">
                     <div class="text-white text-md mb-1.5 font-bold ml-2">${bet.betTitle || "To win the match…?"}</div>
                     <div class="flex border border-blue-400 overflow-hidden rounded-md divide-x divide-blue-400">
                       <div class="w-1/2 flex justify-between items-center p-1.5">
@@ -172,6 +173,7 @@
                         <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.odds2 || '-'}</span>
                       </div>
                     </div>
+                  </div>
                   </div>
                 `;
               }
