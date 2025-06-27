@@ -47,25 +47,13 @@
     <div class="bg-white shadow rounded p-4">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
         <div class="text-xl font-semibold text-green-700">Fixers List</div>
-        <div class="flex flex-col md:flex-row items-start md:items-center gap-2 flex-wrap">
-
-          <!-- Select input -->
-          <div class="flex flex-col">
-            <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-40 h-10 overflow-y-auto">
-              <!-- Options dynamically inserted -->
-            </select>
-            <label class="mt-1 text-sm text-gray-600">
-              <input type="checkbox" id="selectAllCheckbox" class="mr-1"> Select All
-            </label>
-          </div>
-
-          <!-- Add Fixers button -->
-          <div class="flex items-end">
-            <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 flex items-center">
-              <i class="fas fa-plus mr-1"></i> Add Fixers
-            </button>
-          </div>
-
+        <div class="flex items-center gap-2">
+          <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-26 h-10 overflow-y-auto">
+            <!-- Options dynamically inserted -->
+          </select>
+          <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700">
+            <i class="fas fa-plus mr-1"></i> Add Fixers
+          </button>
         </div>
       </div>
       <div id="fixersContainer" class="space-y-4 max-h-[600px] overflow-y-auto">
@@ -136,6 +124,7 @@
 
         const selector = document.getElementById("teamSelector");
         selector.innerHTML = teamList.map(team => `<option value="${team}">${team}</option>`).join("");
+
       } catch (e) {
         console.error("Error loading players:", e);
         document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="5" class="text-center text-red-600">${e.message}</td></tr>`;
@@ -207,12 +196,6 @@
       } else {
         alert("All selected teams already have fixers.");
       }
-    });
-
-    document.getElementById("selectAllCheckbox").addEventListener("change", (e) => {
-      const select = document.getElementById("teamSelector");
-      const allOptions = Array.from(select.options);
-      allOptions.forEach(option => option.selected = e.target.checked);
     });
   </script>
 </body>
