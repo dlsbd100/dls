@@ -26,6 +26,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -36,33 +37,41 @@
       appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     const playersList = document.getElementById("players-list");
 
-    const q = query(collection(db, "playersform"), orderBy("createdAt", "desc"));
-    onSnapshot(q, (snapshot) => {
-      playersList.innerHTML = "";
-
-      if (snapshot.empty) {
-        playersList.innerHTML = `<p class="text-center text-gray-400">কোনো প্লেয়ার এখনো নিবন্ধন করেননি।</p>`;
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html"; // 🔒 redirect if not logged in
         return;
       }
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const card = `
-          <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-sm">
-            <h2 class="text-xl font-semibold text-yellow-300">${data.fullName || "নাম নেই"}</h2>
-            <p class="text-gray-300">দল: ${data.team || "N/A"}</p>
-            <p class="text-gray-300">DLS রেটিং: <span class="text-green-400">${data.dlsRating ?? "N/A"}</span></p>
-            <p class="text-gray-300">বয়স: ${data.age ?? "N/A"}</p>
-            <p class="text-gray-300">DLS অভিজ্ঞতা: ${data.yearsPlayed ?? "N/A"} বছর</p>
-          </div>
-        `;
-        playersList.insertAdjacentHTML("beforeend", card);
+      // ✅ Fetch players after user is logged in
+      const q = query(collection(db, "playersform"), orderBy("createdAt", "desc"));
+      onSnapshot(q, (snapshot) => {
+        playersList.innerHTML = "";
+
+        if (snapshot.empty) {
+          playersList.innerHTML = `<p class="text-center text-gray-400">কোনো প্লেয়ার এখনো নিবন্ধন করেননি।</p>`;
+          return;
+        }
+
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          const card = `
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-sm">
+              <h2 class="text-xl font-semibold text-yellow-300">${data.fullName || "নাম নেই"}</h2>
+              <p class="text-gray-300">দল: ${data.team || "N/A"}</p>
+              <p class="text-gray-300">DLS রেটিং: <span class="text-green-400">${data.dlsRating ?? "N/A"}</span></p>
+              <p class="text-gray-300">বয়স: ${data.age ?? "N/A"}</p>
+              <p class="text-gray-300">DLS অভিজ্ঞতা: ${data.yearsPlayed ?? "N/A"} বছর</p>
+            </div>
+          `;
+          playersList.insertAdjacentHTML("beforeend", card);
+        });
       });
     });
   </script>
