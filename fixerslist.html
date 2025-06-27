@@ -145,22 +145,30 @@
         return;
       }
 
+      // Check if ANY fixer exists in DB already (any date)
+      const allFixersSnapshot = await getDocs(collection(db, "fixers"));
+      if (!allFixersSnapshot.empty) {
+        // Check if selectedDate already has fixers
+        const dateQuery = query(collection(db, "fixers"), where("date", "==", selectedDate));
+        const dateSnapshot = await getDocs(dateQuery);
+
+        if (dateSnapshot.empty) {
+          // Means fixers exist but for different date - disallow adding new date
+          alert("Fixers already added for another date. Adding new dates is disabled.");
+          return;
+        }
+        // else selectedDate has fixers - alert and do not add duplicate pairs
+        alert("Fixers are already added for the selected date.");
+        return;
+      }
+
+      // If no fixer exists at all, add normally
       let added = 0;
-      let alreadyExists = 0;
 
       for (let i = 0; i < selectedTeams.length; i++) {
         for (let j = i + 1; j < selectedTeams.length; j++) {
           const team1 = selectedTeams[i];
           const team2 = selectedTeams[j];
-
-          const q1 = query(collection(db, "fixers"), where("team1", "==", team1), where("team2", "==", team2), where("date", "==", selectedDate));
-          const q2 = query(collection(db, "fixers"), where("team1", "==", team2), where("team2", "==", team1), where("date", "==", selectedDate));
-
-          const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-          if (!snap1.empty || !snap2.empty) {
-            alreadyExists++;
-            continue;
-          }
 
           await addDoc(collection(db, "fixers"), { team1, team2, date: selectedDate });
           added++;
@@ -170,10 +178,6 @@
       if (added > 0) {
         alert(`${added} fixer(s) added successfully.`);
         loadFixers();
-      }
-
-      if (alreadyExists > 0 && added === 0) {
-        alert("This fixer is already added for the selected date.");
       }
     });
 
@@ -199,6 +203,7 @@
         alert("Error deleting fixers: " + e.message);
       }
     });
+
   </script>
 
 </body>
