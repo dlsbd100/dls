@@ -48,9 +48,15 @@
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
         <div class="text-xl font-semibold text-green-700">Fixers List</div>
         <div class="flex items-center gap-2">
-          <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-26 h-10 overflow-y-auto">
-            <!-- Options dynamically inserted -->
-          </select>
+          <div class="flex flex-col gap-1">
+            <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-40 h-24 overflow-y-auto">
+              <!-- Options dynamically inserted -->
+            </select>
+            <div class="flex gap-2 text-xs text-blue-600 cursor-pointer">
+              <span onclick="selectAllTeams()">Select All</span>
+              <span onclick="deselectAllTeams()">/ Deselect All</span>
+            </div>
+          </div>
           <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700">
             <i class="fas fa-plus mr-1"></i> Add Fixers
           </button>
@@ -197,6 +203,20 @@
         alert("All selected teams already have fixers.");
       }
     });
+
+    window.selectAllTeams = function () {
+      const selector = document.getElementById("teamSelector");
+      for (let i = 0; i < selector.options.length; i++) {
+        selector.options[i].selected = true;
+      }
+    }
+
+    window.deselectAllTeams = function () {
+      const selector = document.getElementById("teamSelector");
+      for (let i = 0; i < selector.options.length; i++) {
+        selector.options[i].selected = false;
+      }
+    }
   </script>
 </body>
 </html>
