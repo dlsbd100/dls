@@ -1,168 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Players List - Admin Panel</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Players List - Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col lg:flex-row">
 
-  <!-- Header -->
-  <header class="bg-white shadow-md relative">
-    <div class="max-w-7xl mx-auto px-4 py-3 relative flex items-center justify-center">
-      <!-- Back Icon (left side) -->
-      <p onclick="window.location.href='/admin.html'" class="absolute left-4 text-gray-700 cursor-pointer">
-        <i class="fas fa-arrow-left text-2xl"></i>
-      </p>
+  <!-- Header -->
+  <header class="bg-white shadow-md relative">
+    <div class="max-w-7xl mx-auto px-4 py-3 relative flex items-center justify-center">
+      <!-- Back Icon (left side) -->
+      <p onclick="window.location.href='/admin.html'" class="absolute left-4 text-gray-700 cursor-pointer">
+        <i class="fas fa-arrow-left text-2xl"></i>
+      </p>
 
-      <!-- Centered Title -->
-      <h1 class="text-xl font-bold text-gray-800">Admin Panel</h1>
-    </div>
-  </header>
+      <!-- Centered Title -->
+      <h1 class="text-xl font-bold text-gray-800">Admin Panel</h1>
+    </div>
+  </header>
 
-  <main class="p-4 md:p-6 space-y-10 overflow-auto flex-grow max-w-7xl mx-auto w-full">
-    <!-- Players List Section -->
-    <section class="bg-white shadow rounded p-4">
-      <div class="text-xl font-semibold text-blue-700 mb-4">Players List</div>
-      <div class="overflow-x-auto max-h-[600px]">
-        <table class="w-full text-xs border border-gray-300 rounded overflow-hidden min-w-[600px]">
-          <thead class="bg-gray-100 sticky top-0 z-10">
-            <tr>
-              <th class="p-2 border border-gray-300 text-left">Full Name</th>
-              <th class="p-2 border border-gray-300 text-left">Team</th>
-              <th class="p-2 border border-gray-300 text-left">DLS Rating</th>
-              <th class="p-2 border border-gray-300 text-left">Age</th>
-              <th class="p-2 border border-gray-300 text-left">Years Played</th>
-            </tr>
-          </thead>
-          <tbody id="playersTableBody">
-            <tr><td colspan="5" class="p-3 text-center text-gray-500">Loading players...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+  <main class="p-4 md:p-6 space-y-6 overflow-auto flex-grow">
+    <div class="bg-white shadow rounded p-4">
+      <div class="text-xl font-semibold text-blue-700 mb-4">Players List</div>
+      <div class="overflow-x-auto max-h-[600px]">
+        <table class="w-full text-xs border border-gray-300 rounded overflow-hidden min-w-[600px]">
+          <thead class="bg-gray-100 sticky top-0 z-10">
+            <tr>
+              <th class="p-2 border border-gray-300 text-left">Full Name</th>
+              <th class="p-2 border border-gray-300 text-left">Team</th>
+              <th class="p-2 border border-gray-300 text-left">DLS Rating</th>
+              <th class="p-2 border border-gray-300 text-left">Age</th>
+              <th class="p-2 border border-gray-300 text-left">Years Played</th>
+            </tr>
+          </thead>
+          <tbody id="playersTableBody">
+            <tr><td colspan="5" class="p-3 text-center text-gray-500">Loading players...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
 
-    <!-- Fixers List Section -->
-    <section class="bg-white shadow rounded p-4">
-      <div class="text-xl font-semibold text-green-700 mb-4">Fixers List</div>
-      <div class="overflow-x-auto max-h-[600px]">
-        <table class="w-full text-xs border border-gray-300 rounded overflow-hidden min-w-[600px]">
-          <thead class="bg-gray-100 sticky top-0 z-10">
-            <tr>
-              <th class="p-2 border border-gray-300 text-left">Full Name</th>
-              <th class="p-2 border border-gray-300 text-left">Specialty</th>
-              <th class="p-2 border border-gray-300 text-left">Experience (Years)</th>
-              <th class="p-2 border border-gray-300 text-left">Rating</th>
-              <th class="p-2 border border-gray-300 text-left">Contact</th>
-            </tr>
-          </thead>
-          <tbody id="fixersTableBody">
-            <tr><td colspan="5" class="p-3 text-center text-gray-500">Loading fixers...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
+  <!-- Firebase and Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  <!-- Firebase and Logic -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
+      authDomain: "dlstournament-31ac1.firebaseapp.com",
+      projectId: "dlstournament-31ac1",
+      storageBucket: "dlstournament-31ac1.appspot.com",
+      messagingSenderId: "874377019055",
+      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
+      measurementId: "G-0DGFJEV6GL"
+    };
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
-      authDomain: "dlstournament-31ac1.firebaseapp.com",
-      projectId: "dlstournament-31ac1",
-      storageBucket: "dlstournament-31ac1.appspot.com",
-      messagingSenderId: "874377019055",
-      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
-      measurementId: "G-0DGFJEV6GL"
-    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        loadPlayers();
+      }
+    });
 
-    onAuthStateChanged(auth, user => {
-      if (!user) {
-        window.location.href = "login.html";
-      } else {
-        loadPlayers();
-        loadFixers();
-      }
-    });
+    async function loadPlayers() {
+      try {
+        const playersCol = collection(db, "playersform");
+        const playersSnapshot = await getDocs(playersCol);
 
-    async function loadPlayers() {
-      try {
-        const playersCol = collection(db, "playersform");
-        const playersSnapshot = await getDocs(playersCol);
+        const playersTableBody = document.getElementById("playersTableBody");
 
-        const playersTableBody = document.getElementById("playersTableBody");
+        if (playersSnapshot.empty) {
+          playersTableBody.innerHTML = `<tr><td colspan="5" class="p-3 text-center">No players found.</td></tr>`;
+          return;
+        }
 
-        if (playersSnapshot.empty) {
-          playersTableBody.innerHTML = `<tr><td colspan="5" class="p-3 text-center">No players found.</td></tr>`;
-          return;
-        }
+        let rowsHtml = "";
+        playersSnapshot.forEach(docSnap => {
+          const player = docSnap.data();
+          rowsHtml += `
+            <tr class="hover:bg-gray-50 border-t">
+              <td class="p-2 border border-gray-300">${player.fullName || "N/A"}</td>
+              <td class="p-2 border border-gray-300">${player.team || "N/A"}</td>
+              <td class="p-2 border border-gray-300">${player.dlsRating ?? "N/A"}</td>
+              <td class="p-2 border border-gray-300">${player.age ?? "N/A"}</td>
+              <td class="p-2 border border-gray-300">${player.yearsPlayed ?? "N/A"}</td>
+            </tr>
+          `;
+        });
 
-        let rowsHtml = "";
-        playersSnapshot.forEach(docSnap => {
-          const player = docSnap.data();
-          rowsHtml += `
-            <tr class="hover:bg-gray-50 border-t">
-              <td class="p-2 border border-gray-300">${player.fullName || "N/A"}</td>
-              <td class="p-2 border border-gray-300">${player.team || "N/A"}</td>
-              <td class="p-2 border border-gray-300">${player.dlsRating ?? "N/A"}</td>
-              <td class="p-2 border border-gray-300">${player.age ?? "N/A"}</td>
-              <td class="p-2 border border-gray-300">${player.yearsPlayed ?? "N/A"}</td>
-            </tr>
-          `;
-        });
+        playersTableBody.innerHTML = rowsHtml;
 
-        playersTableBody.innerHTML = rowsHtml;
-
-      } catch (error) {
-        document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="5" class="p-3 text-center text-red-600">Error loading players: ${error.message}</td></tr>`;
-        console.error("Error loading players:", error);
-      }
-    }
-
-    async function loadFixers() {
-      try {
-        const fixersCol = collection(db, "fixersform");
-        const fixersSnapshot = await getDocs(fixersCol);
-
-        const fixersTableBody = document.getElementById("fixersTableBody");
-
-        if (fixersSnapshot.empty) {
-          fixersTableBody.innerHTML = `<tr><td colspan="5" class="p-3 text-center">No fixers found.</td></tr>`;
-          return;
-        }
-
-        let rowsHtml = "";
-        fixersSnapshot.forEach(docSnap => {
-          const fixer = docSnap.data();
-          rowsHtml += `
-            <tr class="hover:bg-gray-50 border-t">
-              <td class="p-2 border border-gray-300">${fixer.fullName || "N/A"}</td>
-              <td class="p-2 border border-gray-300">${fixer.specialty || "N/A"}</td>
-              <td class="p-2 border border-gray-300">${fixer.experience ?? "N/A"}</td>
-              <td class="p-2 border border-gray-300">${fixer.rating ?? "N/A"}</td>
-              <td class="p-2 border border-gray-300">${fixer.contact || "N/A"}</td>
-            </tr>
-          `;
-        });
-
-        fixersTableBody.innerHTML = rowsHtml;
-
-      } catch (error) {
-        document.getElementById("fixersTableBody").innerHTML = `<tr><td colspan="5" class="p-3 text-center text-red-600">Error loading fixers: ${error.message}</td></tr>`;
-        console.error("Error loading fixers:", error);
-      }
-    }
-  </script>
+      } catch (error) {
+        document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="5" class="p-3 text-center text-red-600">Error loading players: ${error.message}</td></tr>`;
+        console.error("Error loading players:", error);
+      }
+    }
+  </script>
 </body>
 </html>
