@@ -47,6 +47,9 @@
     <div class="bg-white shadow rounded p-4">
       <div class="flex items-center justify-between mb-4">
         <div class="text-xl font-semibold text-green-700">Fixers List</div>
+        <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-4 py-2 rounded hover:bg-green-700">
+          <i class="fas fa-plus mr-1"></i> Add Fixers by Team
+        </button>
       </div>
       <div id="fixersContainer" class="space-y-4 max-h-[600px] overflow-y-auto">
         <p class="text-gray-500 text-center">Loading fixers...</p>
@@ -82,6 +85,7 @@
         window.location.href = "login.html";
       } else {
         loadPlayers();
+        loadFixers();
       }
     });
 
@@ -118,25 +122,9 @@
         teamList = Array.from(teamSet);
         playersTableBody.innerHTML = rowsHtml;
 
-        await autoAddFixersFromTeams();
-        loadFixers();
-
       } catch (error) {
         document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="5" class="p-3 text-center text-red-600">Error loading players: ${error.message}</td></tr>`;
         console.error("Error loading players:", error);
-      }
-    }
-
-    async function autoAddFixersFromTeams() {
-      if (teamList.length === 0) return;
-      const fixersRef = collection(db, "fixers");
-
-      for (const team of teamList) {
-        const q = query(fixersRef, where("name", "==", team));
-        const snap = await getDocs(q);
-        if (!snap.empty) continue;
-
-        await addDoc(fixersRef, { name: team });
       }
     }
 
@@ -191,6 +179,34 @@
         console.error("Error loading fixers:", error);
       }
     }
+
+    document.getElementById("addFixerBtn").addEventListener("click", async () => {
+      if (teamList.length === 0) {
+        alert("No teams found to add fixers.");
+        return;
+      }
+
+      let added = 0;
+      for (const team of teamList) {
+        const fixersRef = collection(db, "fixers");
+        const q = query(fixersRef, where("name", "==", team));
+        const snap = await getDocs(q);
+        if (!snap.empty) continue;
+
+        await addDoc(fixersRef, {
+          name: team
+        });
+        added++;
+      }
+
+      if (added > 0) {
+        alert(`${added} fixer(s) added.`);
+      } else {
+        alert("All teams already have fixers.");
+      }
+
+      loadFixers();
+    });
   </script>
 </body>
 </html>
