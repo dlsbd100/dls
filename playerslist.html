@@ -49,16 +49,20 @@
         <div class="text-xl font-semibold text-green-700">Fixers List</div>
         <div class="flex flex-col md:flex-row items-start md:items-center gap-2">
           <div class="flex flex-col">
-            <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-26 h-9 overflow-y-auto">
-              <!-- Options dynamically inserted -->
-            </select>
+            <div class="flex">
+              <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-26 h-9 overflow-y-auto flex">
+                <!-- Options dynamically inserted -->
+              </select>
+            </div>
             <label class="mt-1 text-sm text-gray-600">
               <input type="checkbox" id="selectAllCheckbox" class="mr-1"> Select All
             </label>
           </div>
-          <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700">
-            <i class="fas fa-plus mr-1"></i> Add Fixers
-          </button>
+          <div class="flex">
+            <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 flex items-center">
+              <i class="fas fa-plus mr-1"></i> Add Fixers
+            </button>
+          </div>
         </div>
       </div>
       <div id="fixersContainer" class="space-y-4 max-h-[600px] overflow-y-auto">
