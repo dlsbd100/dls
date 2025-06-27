@@ -75,7 +75,7 @@
 
     async function loadPlayers() {
       try {
-        const playersCol = collection(db, "players");
+        const playersCol = collection(db, "playersform");
         const playersSnapshot = await getDocs(playersCol);
 
         const playersTableBody = document.getElementById("playersTableBody");
