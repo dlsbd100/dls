@@ -34,6 +34,9 @@
             <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700">
               <i class="fas fa-plus mr-1"></i> Add Fixers
             </button>
+            <button id="deleteAllBtn" class="bg-red-600 text-white text-sm px-3 py-2 rounded hover:bg-red-700">
+              <i class="fas fa-trash mr-1"></i> Delete All Fixers
+            </button>
           </div>
           <label class="text-sm text-gray-600 flex items-center gap-2 pl-1">
             <input type="checkbox" id="selectAllTeams" class="accent-green-600">
@@ -52,7 +55,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -106,7 +109,7 @@
         }
 
         const fixers = [];
-        fixersSnapshot.forEach(doc => fixers.push(doc.data()));
+        fixersSnapshot.forEach(doc => fixers.push({ id: doc.id, ...doc.data() }));
         let html = "";
 
         for (let i = 0; i < fixers.length; i++) {
@@ -173,6 +176,24 @@
         option.selected = e.target.checked;
       }
     });
+
+    // Delete All Fixers Button
+    document.getElementById("deleteAllBtn").addEventListener("click", async () => {
+      if (!confirm("Are you sure you want to delete all fixers?")) return;
+
+      try {
+        const snapshot = await getDocs(collection(db, "fixers"));
+        const deletions = [];
+        snapshot.forEach(doc => deletions.push(deleteDoc(doc.ref)));
+
+        await Promise.all(deletions);
+        alert("All fixers deleted successfully.");
+        loadFixers();
+      } catch (e) {
+        alert("Error deleting fixers: " + e.message);
+      }
+    });
+
   </script>
 
 </body>
