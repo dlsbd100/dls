@@ -109,9 +109,11 @@
 
         snapshot.forEach((doc) => {
           const data = doc.data();
+          const photo = data.photoUrl && data.photoUrl.trim() !== "" ? data.photoUrl : "https://via.placeholder.com/100?text=No+Image";
+
           const card = `
             <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-sm flex items-center gap-4">
-              <img src="${data.photoUrl || 'https://via.placeholder.com/80'}" alt="Player Photo" class="w-20 h-20 rounded-full border-2 border-yellow-400 object-cover bg-gray-700" />
+              <img src="${photo}" alt="Player Photo" class="w-20 h-20 rounded-full border-2 border-yellow-400 object-cover bg-gray-700" onerror="this.onerror=null;this.src='https://via.placeholder.com/100?text=No+Image';" />
               <div>
                 <h2 class="text-xl font-semibold text-yellow-300">${data.fullName || "নাম নেই"}</h2>
                 <p class="text-gray-300">দল: ${data.team || "N/A"}</p>
