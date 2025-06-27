@@ -27,18 +27,18 @@
     <div class="bg-white shadow rounded p-4">
       <div class="text-xl font-semibold text-blue-700 mb-4">Players List</div>
       <div class="overflow-x-auto max-h-[600px]">
-        <table class="w-full text-sm border border-gray-300 rounded overflow-hidden min-w-[800px]">
+        <table class="w-full text-xs border border-gray-300 rounded overflow-hidden min-w-[600px]">
           <thead class="bg-gray-100 sticky top-0 z-10">
             <tr>
-              <th class="p-3 border border-gray-300 text-left">Full Name</th>
-              <th class="p-3 border border-gray-300 text-left">Team</th>
-              <th class="p-3 border border-gray-300 text-left">DLS Rating</th>
-              <th class="p-3 border border-gray-300 text-left">Age</th>
-              <th class="p-3 border border-gray-300 text-left">Years Played</th>
+              <th class="p-2 border border-gray-300 text-left">Full Name</th>
+              <th class="p-2 border border-gray-300 text-left">Team</th>
+              <th class="p-2 border border-gray-300 text-left">DLS Rating</th>
+              <th class="p-2 border border-gray-300 text-left">Age</th>
+              <th class="p-2 border border-gray-300 text-left">Years Played</th>
             </tr>
           </thead>
           <tbody id="playersTableBody">
-            <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading players...</td></tr>
+            <tr><td colspan="5" class="p-3 text-center text-gray-500">Loading players...</td></tr>
           </tbody>
         </table>
       </div>
@@ -81,7 +81,7 @@
         const playersTableBody = document.getElementById("playersTableBody");
 
         if (playersSnapshot.empty) {
-          playersTableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center">No players found.</td></tr>`;
+          playersTableBody.innerHTML = `<tr><td colspan="5" class="p-3 text-center">No players found.</td></tr>`;
           return;
         }
 
@@ -90,11 +90,11 @@
           const player = docSnap.data();
           rowsHtml += `
             <tr class="hover:bg-gray-50 border-t">
-              <td class="p-3 border border-gray-300">${player.fullName || "N/A"}</td>
-              <td class="p-3 border border-gray-300">${player.team || "N/A"}</td>
-              <td class="p-3 border border-gray-300">${player.dlsRating ?? "N/A"}</td>
-              <td class="p-3 border border-gray-300">${player.age ?? "N/A"}</td>
-              <td class="p-3 border border-gray-300">${player.yearsPlayed ?? "N/A"}</td>
+              <td class="p-2 border border-gray-300">${player.fullName || "N/A"}</td>
+              <td class="p-2 border border-gray-300">${player.team || "N/A"}</td>
+              <td class="p-2 border border-gray-300">${player.dlsRating ?? "N/A"}</td>
+              <td class="p-2 border border-gray-300">${player.age ?? "N/A"}</td>
+              <td class="p-2 border border-gray-300">${player.yearsPlayed ?? "N/A"}</td>
             </tr>
           `;
         });
@@ -102,7 +102,7 @@
         playersTableBody.innerHTML = rowsHtml;
 
       } catch (error) {
-        document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-600">Error loading players: ${error.message}</td></tr>`;
+        document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="5" class="p-3 text-center text-red-600">Error loading players: ${error.message}</td></tr>`;
         console.error("Error loading players:", error);
       }
     }
