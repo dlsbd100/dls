@@ -146,6 +146,8 @@
       }
 
       let added = 0;
+      let alreadyExists = 0;
+
       for (let i = 0; i < selectedTeams.length; i++) {
         for (let j = i + 1; j < selectedTeams.length; j++) {
           const team1 = selectedTeams[i];
@@ -155,7 +157,10 @@
           const q2 = query(collection(db, "fixers"), where("team1", "==", team2), where("team2", "==", team1), where("date", "==", selectedDate));
 
           const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-          if (!snap1.empty || !snap2.empty) continue;
+          if (!snap1.empty || !snap2.empty) {
+            alreadyExists++;
+            continue;
+          }
 
           await addDoc(collection(db, "fixers"), { team1, team2, date: selectedDate });
           added++;
@@ -165,8 +170,10 @@
       if (added > 0) {
         alert(`${added} fixer(s) added successfully.`);
         loadFixers();
-      } else {
-        alert("All selected matchups already exist for the selected date.");
+      }
+
+      if (alreadyExists > 0 && added === 0) {
+        alert("This fixer is already added for the selected date.");
       }
     });
 
@@ -177,7 +184,6 @@
       }
     });
 
-    // Delete All Fixers Button
     document.getElementById("deleteAllBtn").addEventListener("click", async () => {
       if (!confirm("Are you sure you want to delete all fixers?")) return;
 
@@ -193,7 +199,6 @@
         alert("Error deleting fixers: " + e.message);
       }
     });
-
   </script>
 
 </body>
