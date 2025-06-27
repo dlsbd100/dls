@@ -28,12 +28,8 @@
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
         <div class="text-xl font-semibold text-green-700">Fixers List</div>
         <div class="flex flex-col gap-1">
-          <div class="flex items-center gap-2 flex-wrap">
+          <div class="flex items-center gap-2">
             <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-28 h-9 overflow-y-auto"></select>
-            <select id="tournamentType" class="border border-gray-300 rounded p-2 text-sm w-44 h-9">
-              <option value="single">Single Tournament</option>
-              <option value="auction">Auction Tournament</option>
-            </select>
             <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700">
               <i class="fas fa-plus mr-1"></i> Add Fixers
             </button>
@@ -141,7 +137,6 @@
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       const selectedOptions = Array.from(document.getElementById("teamSelector").selectedOptions);
       const selectedTeams = selectedOptions.map(opt => opt.value);
-      const tournamentType = document.getElementById("tournamentType").value;
 
       if (selectedTeams.length === 0) {
         alert("Please select at least one team.");
@@ -149,29 +144,19 @@
       }
 
       let added = 0;
-
       for (const team of selectedTeams) {
         const q = query(collection(db, "fixers"), where("name", "==", team));
         const snap = await getDocs(q);
-
-        const count = snap.size;
-
-        if (tournamentType === "single") {
-          if (count >= 2) continue; // Already added twice
-          await addDoc(collection(db, "fixers"), { name: team });
-          added++;
-        } else {
-          if (count >= 1) continue; // Already added once
-          await addDoc(collection(db, "fixers"), { name: team });
-          added++;
-        }
+        if (!snap.empty) continue;
+        await addDoc(collection(db, "fixers"), { name: team });
+        added++;
       }
 
       if (added > 0) {
         alert(`${added} fixer(s) added successfully.`);
         loadFixers();
       } else {
-        alert("All selected teams already added based on tournament type.");
+        alert("All selected teams already have fixers.");
       }
     });
 
