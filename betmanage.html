@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bet Match</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -126,60 +125,66 @@
           const month = date.toLocaleString('default', { month: 'short' });
           const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-          let betsHTML = '';
+          let betsHTML = "";
           if (Array.isArray(task.bets) && task.bets.length > 0) {
             task.bets.forEach(bet => {
               betsHTML += `
-              <div class="w-full max-w-md rounded-t-md text-sm shadow-lg relative overflow-hidden mt-5"
-                style="background: linear-gradient(to right, rgba(0, 114, 255, 0.5), rgba(0, 114, 255, 0.5));">
-                <div class="ribbon"><i class="fa-solid fa-circle animate-pulse mr-1 text-white"></i><span class="animate-pulse">LIVE</span></div>
-
-                <div class="px-2 py-2">
-                  <div class="flex items-center text-xs text-white mb-2 gap-2">
-                    <div class="flex items-center gap-1">
-                      <i class="fa-solid fa-paperclip"></i>
-                      <span>${task.name}</span>
-                    </div>
-                    <span class="text-gray-100">${time}</span>
+              <div class="bg-gray-800 bg-opacity-40 rounded-md mt-3 px-3 py-2">
+                <p class="text-sm font-semibold text-yellow-300 mb-1">${bet.betTitle || "To win the match...?"}</p>
+                <div class="flex gap-2">
+                  <div class="flex-1 border border-blue-500 rounded p-1 flex justify-between">
+                    <span>${bet.option1 || '-'}</span>
+                    <span class="bg-blue-600 text-white px-2 rounded">${bet.odds1 || '-'}</span>
                   </div>
-
-                  <div class="flex justify-between items-center bg-[#3e2d94] rounded-md py-3 px-2">
-                    <div class="text-center pr-3 border-r border-gray-400">
-                      <div class="text-2xl font-bold text-white leading-none">${day}</div>
-                      <div class="text-sm font-semibold text-white">${month}</div>
-                    </div>
-                    <div class="flex flex-col items-center">
-                      <img src="https://flagcdn.com/w40/au.png" class="w-8 h-8 mb-1 rounded-full object-cover" />
-                      <div class="text-white font-medium text-sm text-center">${task.reward || "Team 1"}</div>
-                    </div>
-                    <div class="text-yellow-300 font-bold text-xl italic">VS</div>
-                    <div class="flex flex-col items-center">
-                      <img src="https://flagcdn.com/w40/pk.png" class="w-8 h-8 mb-1 rounded-full object-cover" />
-                      <div class="text-white font-medium text-sm text-center">${task.view || "Team 2"}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="bg-gray-900 bg-opacity-30 py-1.5">
-                  <div class="text-white text-md mb-1.5 font-bold ml-2">${bet.betTitle || "To win the match...?"}</div>
-                  <div class="flex divide-x divide-blue-400 border border-blue-400 overflow-hidden">
-                    <div class="w-1/2 flex justify-between items-center p-1.5">
-                      <span class="text-white text-sm font-semibold">${bet.option1 || '-'}</span>
-                      <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.odds1 || '-'}</span>
-                    </div>
-                    <div class="w-1/2 flex justify-between items-center p-1.5">
-                      <span class="text-white text-sm font-semibold">${bet.option2 || '-'}</span>
-                      <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.odds2 || '-'}</span>
-                    </div>
+                  ${bet.drawOption && bet.drawOdds ? `
+                  <div class="flex-1 border border-blue-500 rounded p-1 flex justify-between">
+                    <span>${bet.drawOption}</span>
+                    <span class="bg-blue-600 text-white px-2 rounded">${bet.drawOdds}</span>
+                  </div>` : ''}
+                  <div class="flex-1 border border-blue-500 rounded p-1 flex justify-between">
+                    <span>${bet.option2 || '-'}</span>
+                    <span class="bg-blue-600 text-white px-2 rounded">${bet.odds2 || '-'}</span>
                   </div>
                 </div>
               </div>`;
             });
-          } else {
-            betsHTML = `<p class="mt-3 text-gray-400 text-center italic">No bets available</p>`;
           }
 
-          tasksList.innerHTML += betsHTML;
+          const matchHTML = `
+            <div class="w-full max-w-md rounded-md text-sm shadow-lg relative overflow-hidden mb-6" style="background: linear-gradient(to right, rgba(0, 114, 255, 0.5), rgba(0, 114, 255, 0.5));">
+              <div class="ribbon"><i class="fa-solid fa-circle animate-pulse mr-1 text-white"></i>LIVE</div>
+
+              <div class="px-3 py-3">
+                <div class="flex items-center text-xs text-white mb-2 gap-2">
+                  <div class="flex items-center gap-1">
+                    <i class="fa-solid fa-paperclip"></i>
+                    <span>${task.name}</span>
+                  </div>
+                  <span class="text-gray-100">${time}</span>
+                </div>
+
+                <div class="flex justify-between items-center bg-[#3e2d94] rounded-md py-3 px-2">
+                  <div class="text-center pr-3 border-r border-gray-400">
+                    <div class="text-2xl font-bold text-white leading-none">${day}</div>
+                    <div class="text-sm font-semibold text-white">${month}</div>
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <img src="https://flagcdn.com/w40/au.png" class="w-8 h-8 mb-1 rounded-full object-cover" />
+                    <div class="text-white font-medium text-sm text-center">${task.reward || "Team 1"}</div>
+                  </div>
+                  <div class="text-yellow-300 font-bold text-xl italic">VS</div>
+                  <div class="flex flex-col items-center">
+                    <img src="https://flagcdn.com/w40/pk.png" class="w-8 h-8 mb-1 rounded-full object-cover" />
+                    <div class="text-white font-medium text-sm text-center">${task.view || "Team 2"}</div>
+                  </div>
+                </div>
+
+                ${betsHTML || `<p class="text-gray-300 italic mt-3 text-center">No bets available</p>`}
+              </div>
+            </div>
+          `;
+
+          tasksList.innerHTML += matchHTML;
         });
 
         hideLoader();
