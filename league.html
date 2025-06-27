@@ -92,7 +92,7 @@
   <!-- Firebase Scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, doc, getDoc, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, doc, getDoc, getDocs, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -113,7 +113,6 @@
 
     const currentLimitDisplay = document.getElementById('currentLimitDisplay');
 
-    // Load current limit from Firestore and show it
     async function loadPlayerLimit() {
       const limitDocRef = doc(db, "settings", "limits");
       try {
@@ -132,7 +131,6 @@
       }
     }
 
-    // Count current registered players
     async function countRegisteredPlayers() {
       try {
         const playersCol = collection(db, "playersform");
@@ -157,7 +155,6 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // Check if limit is loaded
       if (currentLimit === null) {
         Swal.fire({
           icon: 'error',
@@ -168,7 +165,6 @@
         return;
       }
 
-      // Count current players
       const registeredCount = await countRegisteredPlayers();
 
       if (registeredCount >= currentLimit) {
@@ -181,7 +177,6 @@
         return;
       }
 
-      // Proceed with registration
       const fullName = form['full-name'].value.trim();
       const team = form['team'].value.trim();
       const dlsRating = parseFloat(form['dls-rating'].value);
@@ -190,15 +185,44 @@
       const photoUrl = form['photo-url'].value.trim();
 
       try {
-        await addDoc(collection(db, 'playersform'), {
-          fullName,
-          team,
-          dlsRating,
-          age,
-          yearsPlayed,
-          photoUrl,
-          uid: currentUser?.uid || null,
-          createdAt: new Date()
+        // Run transaction to add player and decrement limit atomically
+        await runTransaction(db, async (transaction) => {
+          const limitDocRef = doc(db, "settings", "limits");
+          const limitDoc = await transaction.get(limitDocRef);
+
+          if (!limitDoc.exists()) {
+            throw "Limit document does not exist!";
+          }
+
+          const limitData = limitDoc.data();
+          const maxPlayers = limitData.maxPlayers ?? 0;
+
+          if (maxPlayers <= 0) {
+            throw "Player limit exceeded!";
+          }
+
+          // Add new player doc
+          const playersCol = collection(db, "playersform");
+          const newPlayerRef = doc(playersCol); // create new doc ref
+          transaction.set(newPlayerRef, {
+            fullName,
+            team,
+            dlsRating,
+            age,
+            yearsPlayed,
+            photoUrl,
+            uid: currentUser?.uid || null,
+            createdAt: new Date()
+          });
+
+          // Decrement maxPlayers by 1
+          transaction.update(limitDocRef, {
+            maxPlayers: maxPlayers - 1
+          });
+
+          // Update local currentLimit to reflect new value
+          currentLimit = maxPlayers - 1;
+          currentLimitDisplay.textContent = `বর্তমান প্লেয়ার সীমা: ${currentLimit}`;
         });
 
         Swal.fire({
@@ -209,13 +233,22 @@
         });
         form.reset();
       } catch (error) {
+        let msg = "";
+        if (typeof error === "string") {
+          msg = error;
+        } else if (error instanceof Error) {
+          msg = error.message;
+        } else {
+          msg = "নিবন্ধন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।";
+        }
+
         Swal.fire({
           icon: 'error',
           title: 'ত্রুটি',
-          text: 'নিবন্ধন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।',
+          text: msg,
           confirmButtonColor: '#EF4444'
         });
-        console.error("Error adding document: ", error);
+        console.error("Transaction error:", error);
       }
     });
   </script>
