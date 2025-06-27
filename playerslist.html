@@ -155,12 +155,10 @@
               <div class="flex items-center justify-center gap-6 border border-gray-300 rounded p-4 shadow-sm">
                 <div class="flex-1 text-right">
                   <h3 class="text-base font-semibold text-gray-800">${left.name}</h3>
-                  <p class="text-sm text-gray-600">${left.expertise}</p>
                 </div>
                 <div class="text-center text-2xl font-bold text-red-500">VS</div>
                 <div class="flex-1 text-left">
                   <h3 class="text-base font-semibold text-gray-800">${right.name}</h3>
-                  <p class="text-sm text-gray-600">${right.expertise}</p>
                 </div>
               </div>
             `;
@@ -168,7 +166,6 @@
             vsHtml += `
               <div class="border border-gray-300 rounded p-4 shadow-sm text-center">
                 <h3 class="text-base font-semibold text-gray-800">${left.name}</h3>
-                <p class="text-sm text-gray-600">${left.expertise}</p>
                 <p class="text-sm italic text-gray-400 mt-1">Waiting for opponent</p>
               </div>
             `;
@@ -192,14 +189,12 @@
       let added = 0;
       for (const team of teamList) {
         const fixersRef = collection(db, "fixers");
-        const q = query(fixersRef, where("expertise", "==", "Team: " + team));
+        const q = query(fixersRef, where("name", "==", team + " Fixer"));
         const snap = await getDocs(q);
         if (!snap.empty) continue;
 
         await addDoc(fixersRef, {
-          name: team + " Fixer",
-          expertise: "Team: " + team,
-          contact: "N/A"
+          name: team + " Fixer"
         });
         added++;
       }
