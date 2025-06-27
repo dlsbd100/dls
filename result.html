@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registered Players</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-black text-white">
+
+  <!-- Header -->
+  <header class="bg-black w-full max-w-3xl mx-auto py-4 px-4 border-b border-gray-800 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-yellow-400">প্লেয়ার তালিকা</h1>
+    <a href="index.html" class="text-yellow-300 hover:underline text-sm">← ফিরে যান</a>
+  </header>
+
+  <!-- Players List -->
+  <main class="max-w-3xl mx-auto px-4 mt-6">
+    <div id="players-list" class="space-y-4">
+      <!-- Players will appear here -->
+    </div>
+  </main>
+
+  <!-- Firebase Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
+      authDomain: "dlstournament-31ac1.firebaseapp.com",
+      projectId: "dlstournament-31ac1",
+      storageBucket: "dlstournament-31ac1.appspot.com",
+      messagingSenderId: "874377019055",
+      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const playersList = document.getElementById("players-list");
+
+    // Listen to playersform collection
+    const q = query(collection(db, "playersform"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+      playersList.innerHTML = "";
+
+      if (snapshot.empty) {
+        playersList.innerHTML = `<p class="text-center text-gray-400">কোনো প্লেয়ার এখনো নিবন্ধন করেননি।</p>`;
+        return;
+      }
+
+      snapshot.forEach((doc) => {
+        const player = doc.data();
+        const playerCard = `
+          <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-md">
+            <h2 class="text-xl font-semibold text-yellow-300">${player.fullName}</h2>
+            <p class="text-gray-300">দল: ${player.team}</p>
+            <p class="text-gray-300">DLS রেটিং: <span class="text-green-400">${player.dlsRating}</span></p>
+            <p class="text-gray-300">বয়স: ${player.age}</p>
+            <p class="text-gray-300">DLS অভিজ্ঞতা: ${player.yearsPlayed} বছর</p>
+          </div>
+        `;
+        playersList.insertAdjacentHTML("beforeend", playerCard);
+      });
+    });
+  </script>
+</body>
+</html>
