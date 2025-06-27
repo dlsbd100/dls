@@ -1,4 +1,3 @@
-<!-- ✅ Paste this in full -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -101,6 +100,7 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     const tasksList = document.getElementById("matchcardList");
+
     const hideLoader = () => document.getElementById("loadingOverlay").style.display = "none";
 
     onAuthStateChanged(auth, async (user) => {
@@ -132,30 +132,42 @@
           const month = date.toLocaleString('default', { month: 'short' });
           const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+          // Single betsHTML container
           let betsHTML = "";
 
           if (Array.isArray(task.bets) && task.bets.length > 0) {
             betsHTML += `<div class="">`;
-            task.bets.forEach((bet, betIndex) => {
+            task.bets.forEach(bet => {
               const hasDraw = bet.drawOption && bet.drawOdds;
-
-              const createBetDiv = (label, odd, side) => `
-                <div class="w-${hasDraw ? '1/3' : '1/2'} flex justify-between items-center p-1.5 bg-gray-900 bg-opacity-40 cursor-pointer hover:bg-blue-600 transition"
-                  onclick="placeBet('${task.id}', '${bet.betTitle}', '${label}', '${odd}')">
-                  <span class="text-white text-sm font-semibold">${label}</span>
-                  <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${odd}</span>
-                </div>`;
-
               const betRow = hasDraw
-                ? `<div class="flex border border-blue-400 overflow-hidden divide-x divide-blue-400">
-                    ${createBetDiv(bet.option1, bet.odds1, 'left')}
-                    ${createBetDiv(bet.drawOption, bet.drawOdds, 'draw')}
-                    ${createBetDiv(bet.option2, bet.odds2, 'right')}
-                   </div>`
-                : `<div class="flex border border-blue-400 overflow-hidden divide-x divide-blue-400">
-                    ${createBetDiv(bet.option1, bet.odds1, 'left')}
-                    ${createBetDiv(bet.option2, bet.odds2, 'right')}
-                   </div>`;
+                ? `
+                <div class="flex border border-blue-400 overflow-hidden divide-x divide-blue-400">
+                  <div class="w-1/3 flex justify-between items-center p-1.5 bg-gray-900 bg-opacity-40">
+                    <span class="text-white text-sm font-semibold">${bet.option1 || '-'}</span>
+                    <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.odds1 || '-'}</span>
+                  </div>
+                  <div class="w-1/3 flex justify-between items-center p-1.5 bg-gray-900 bg-opacity-40">
+                    <span class="text-white text-sm font-semibold">${bet.drawOption}</span>
+                    <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.drawOdds}</span>
+                  </div>
+                  <div class="w-1/3 flex justify-between items-center p-1.5 bg-gray-900 bg-opacity-40">
+                    <span class="text-white text-sm font-semibold">${bet.option2 || '-'}</span>
+                    <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.odds2 || '-'}</span>
+                  </div>
+                </div>
+              `
+                : `
+                <div class="flex border border-blue-400 overflow-hidden divide-x divide-blue-400">
+                  <div class="w-1/2 flex justify-between items-center p-1.5 bg-gray-900 bg-opacity-40">
+                    <span class="text-white text-sm font-semibold">${bet.option1 || '-'}</span>
+                    <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.odds1 || '-'}</span>
+                  </div>
+                  <div class="w-1/2 flex justify-between items-center p-1.5 bg-gray-900 bg-opacity-40">
+                    <span class="text-white text-sm font-semibold">${bet.option2 || '-'}</span>
+                    <span class="bg-blue-500 text-white text-sm px-1.5 rounded-sm font-semibold">${bet.odds2 || '-'}</span>
+                  </div>
+                </div>
+              `;
 
               betsHTML += `
                 <div class="bg-gray-900 bg-opacity-30 py-1">
@@ -174,6 +186,7 @@
               <div class="ribbon">
                 <i class="fa-solid fa-circle animate-pulse"></i><span class="animate-pulse">LIVE</span>
               </div>
+
               <div class="px-2 py-2">
                 <div class="flex items-center text-xs text-white mb-2 gap-2">
                   <div class="flex items-center gap-1">
@@ -182,63 +195,34 @@
                   </div>
                   <span class="text-gray-100">${time}</span>
                 </div>
+
                 <div class="flex justify-between items-center py-3 px-2">
                   <div class="text-center pr-3 border-r border-gray-400">
                     <div class="text-2xl font-bold text-white leading-none">${day}</div>
                     <div class="text-sm font-semibold text-white">${month}</div>
                   </div>
                   <div class="flex flex-col items-center">
-                    <img src="https://flagcdn.com/w40/au.png" class="w-8 h-8 mb-1 rounded-full object-cover" />
+                    <img src="https://flagcdn.com/w40/au.png" class="w-8 h-8 mb-1 rounded-full object-cover" alt="Australia Flag" />
                     <div class="text-white font-medium text-sm text-center">${task.reward || "Team 1"}</div>
                   </div>
                   <div class="text-yellow-300 font-bold text-xl italic">VS</div>
                   <div class="flex flex-col items-center">
-                    <img src="https://flagcdn.com/w40/pk.png" class="w-8 h-8 mb-1 rounded-full object-cover" />
+                    <img src="https://flagcdn.com/w40/pk.png" class="w-8 h-8 mb-1 rounded-full object-cover" alt="Pakistan Flag" />
                     <div class="text-white font-medium text-sm text-center">${task.view || "Team 2"}</div>
                   </div>
                 </div>
               </div>
+
               ${betsHTML}
             </div>
           `;
+
           tasksList.innerHTML += matchHTML;
         });
 
         hideLoader();
       });
     }
-
-    // Global bet placement function
-    window.placeBet = function (matchId, betTitle, option, odds) {
-      Swal.fire({
-        title: 'Place Bet',
-        html: `
-          <div class="text-sm">
-            <p><strong>Match ID:</strong> ${matchId}</p>
-            <p><strong>Title:</strong> ${betTitle}</p>
-            <p><strong>Option:</strong> ${option}</p>
-            <p><strong>Odds:</strong> ${odds}</p>
-            <input type="number" id="betAmount" class="swal2-input" placeholder="Enter amount" min="1" />
-          </div>
-        `,
-        confirmButtonText: 'Confirm Bet',
-        focusConfirm: false,
-        preConfirm: () => {
-          const amount = document.getElementById('betAmount').value;
-          if (!amount || amount <= 0) {
-            Swal.showValidationMessage("Please enter a valid amount.");
-            return false;
-          }
-          // TODO: Save bet to Firebase
-          return { matchId, betTitle, option, odds, amount };
-        }
-      }).then(result => {
-        if (result.isConfirmed) {
-          console.log("Bet placed:", result.value);
-          Swal.fire({ icon: 'success', title: 'Bet placed!', timer: 1500, showConfirmButton: false });
-        }
-      });
-    };
   </script>
 </body>
 </html>
