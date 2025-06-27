@@ -47,15 +47,14 @@
     <div class="bg-white shadow rounded p-4">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
         <div class="text-xl font-semibold text-green-700">Fixers List</div>
-        <div class="flex items-center gap-2">
-          <div class="flex flex-col gap-1">
+        <div class="flex flex-col md:flex-row items-start md:items-center gap-2">
+          <div class="flex flex-col">
             <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-40 h-24 overflow-y-auto">
               <!-- Options dynamically inserted -->
             </select>
-            <div class="flex gap-2 text-xs text-blue-600 cursor-pointer">
-              <span onclick="selectAllTeams()">Select All</span>
-              <span onclick="deselectAllTeams()">/ Deselect All</span>
-            </div>
+            <label class="mt-1 text-sm text-gray-600">
+              <input type="checkbox" id="selectAllCheckbox" class="mr-1"> Select All
+            </label>
           </div>
           <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700">
             <i class="fas fa-plus mr-1"></i> Add Fixers
@@ -130,7 +129,6 @@
 
         const selector = document.getElementById("teamSelector");
         selector.innerHTML = teamList.map(team => `<option value="${team}">${team}</option>`).join("");
-
       } catch (e) {
         console.error("Error loading players:", e);
         document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="5" class="text-center text-red-600">${e.message}</td></tr>`;
@@ -204,19 +202,11 @@
       }
     });
 
-    window.selectAllTeams = function () {
-      const selector = document.getElementById("teamSelector");
-      for (let i = 0; i < selector.options.length; i++) {
-        selector.options[i].selected = true;
-      }
-    }
-
-    window.deselectAllTeams = function () {
-      const selector = document.getElementById("teamSelector");
-      for (let i = 0; i < selector.options.length; i++) {
-        selector.options[i].selected = false;
-      }
-    }
+    document.getElementById("selectAllCheckbox").addEventListener("change", (e) => {
+      const select = document.getElementById("teamSelector");
+      const allOptions = Array.from(select.options);
+      allOptions.forEach(option => option.selected = e.target.checked);
+    });
   </script>
 </body>
 </html>
