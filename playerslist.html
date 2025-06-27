@@ -189,12 +189,12 @@
       let added = 0;
       for (const team of teamList) {
         const fixersRef = collection(db, "fixers");
-        const q = query(fixersRef, where("name", "==", team + " Fixer"));
+        const q = query(fixersRef, where("name", "==", team));
         const snap = await getDocs(q);
         if (!snap.empty) continue;
 
         await addDoc(fixersRef, {
-          name: team + " Fixer"
+          name: team
         });
         added++;
       }
