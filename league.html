@@ -136,7 +136,7 @@
           let betsHTML = "";
 
           if (Array.isArray(task.bets) && task.bets.length > 0) {
-            betsHTML += `<div class="p-2">`;
+            betsHTML += `<div class="bg-gray-900 bg-opacity-30">`;
             task.bets.forEach(bet => {
               const hasDraw = bet.drawOption && bet.drawOdds;
               const betRow = hasDraw
@@ -170,8 +170,8 @@
               `;
 
               betsHTML += `
-                <div class="bg-gray-900 bg-opacity-30 py-1.5 mt-4 rounded-b-md">
-                  <div class="text-white text-md mb-1.5 font-bold ml-2">${bet.betTitle || "To win the match…?"}</div>
+                <div class="py-1.5 mt-4 rounded-b-md">
+                  <div class="text-white text-md mb-1.5 font-bold ml-2">${bet.betTitle || "-"}</div>
                   ${betRow}
                 </div>
               `;
