@@ -33,7 +33,8 @@
 
         <input type="text" id="team" name="team" required placeholder="আপনার দলের নাম লিখুন" class="w-full px-4 py-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
 
-        <input type="number" id="dls-rating" name="dls-rating" required placeholder="আপনার DLS রেটিং লিখুন" class="w-full px-4 py-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <!-- Updated DLS Rating input: allows decimal -->
+        <input type="number" step="any" id="dls-rating" name="dls-rating" required placeholder="আপনার DLS রেটিং লিখুন" class="w-full px-4 py-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
 
         <input type="number" id="age" name="age" required placeholder="আপনার বয়স লিখুন" class="w-full px-4 py-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
 
@@ -65,23 +66,23 @@
 
     let currentUser = null;
 
-    // Check if user is logged in
+    // Check user login
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        window.location.href = "login.html"; // Redirect to login if not signed in
+        window.location.href = "login.html";
       } else {
         currentUser = user;
       }
     });
 
-    // Handle form submission
+    // Form submission
     const form = document.getElementById('registration-form');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const fullName = form['full-name'].value.trim();
       const team = form['team'].value.trim();
-      const dlsRating = Number(form['dls-rating'].value);
+      const dlsRating = parseFloat(form['dls-rating'].value);
       const age = Number(form['age'].value);
       const yearsPlayed = Number(form['years-played'].value);
 
