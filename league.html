@@ -136,7 +136,7 @@
           let betsHTML = "";
 
           if (Array.isArray(task.bets) && task.bets.length > 0) {
-            betsHTML += `<div class="p-2">`;
+            betsHTML += `<div class="">`;
             task.bets.forEach(bet => {
               const hasDraw = bet.drawOption && bet.drawOdds;
               const betRow = hasDraw
