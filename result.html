@@ -1,25 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registered Players</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>প্লেয়ার তালিকা</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="bg-black text-white">
+<body class="bg-black text-white min-h-screen">
 
   <!-- Header -->
-  <header class="bg-black w-full max-w-3xl mx-auto py-4 px-4 border-b border-gray-800 flex justify-between items-center">
+  <header class="bg-gray-900 w-full max-w-3xl mx-auto py-4 px-4 border-b border-gray-800 flex justify-between items-center">
     <h1 class="text-2xl font-bold text-yellow-400">প্লেয়ার তালিকা</h1>
     <a href="index.html" class="text-yellow-300 hover:underline text-sm">← ফিরে যান</a>
   </header>
 
   <!-- Players List -->
-  <main class="max-w-3xl mx-auto px-4 mt-6">
+  <main class="max-w-3xl mx-auto px-4 mt-6 mb-10">
     <div id="players-list" class="space-y-4">
-      <!-- Players will appear here -->
+      <p class="text-center text-gray-400">লোড হচ্ছে...</p>
     </div>
   </main>
 
@@ -37,12 +36,12 @@
       appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     const playersList = document.getElementById("players-list");
 
-    // Listen to playersform collection
     const q = query(collection(db, "playersform"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snapshot) => {
       playersList.innerHTML = "";
@@ -53,19 +52,20 @@
       }
 
       snapshot.forEach((doc) => {
-        const player = doc.data();
-        const playerCard = `
-          <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-md">
-            <h2 class="text-xl font-semibold text-yellow-300">${player.fullName}</h2>
-            <p class="text-gray-300">দল: ${player.team}</p>
-            <p class="text-gray-300">DLS রেটিং: <span class="text-green-400">${player.dlsRating}</span></p>
-            <p class="text-gray-300">বয়স: ${player.age}</p>
-            <p class="text-gray-300">DLS অভিজ্ঞতা: ${player.yearsPlayed} বছর</p>
+        const data = doc.data();
+        const card = `
+          <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-sm">
+            <h2 class="text-xl font-semibold text-yellow-300">${data.fullName || "নাম নেই"}</h2>
+            <p class="text-gray-300">দল: ${data.team || "N/A"}</p>
+            <p class="text-gray-300">DLS রেটিং: <span class="text-green-400">${data.dlsRating ?? "N/A"}</span></p>
+            <p class="text-gray-300">বয়স: ${data.age ?? "N/A"}</p>
+            <p class="text-gray-300">DLS অভিজ্ঞতা: ${data.yearsPlayed ?? "N/A"} বছর</p>
           </div>
         `;
-        playersList.insertAdjacentHTML("beforeend", playerCard);
+        playersList.insertAdjacentHTML("beforeend", card);
       });
     });
   </script>
+
 </body>
 </html>
