@@ -9,7 +9,7 @@
 </head>
 <body class="bg-black text-white min-h-screen">
 
-  <!-- Header Section -->
+  <!-- Header -->
   <header class="bg-gradient-to-r from-black via-gray-900 to-black w-full max-w-md shadow-md py-2 px-3 mb-3 mx-auto border-b border-gray-700 flex items-center justify-between header-glow rounded-b-xl">
     <div class="flex items-center gap-2">
       <div class="bg-yellow-600 bg-opacity-50 border border-yellow-500 text-yellow-300 w-9 h-9 flex items-center justify-center font-bold rounded-full shadow" style="font-family: 'Audiowide', cursive;">KD</div>
@@ -27,13 +27,13 @@
   </header>
 
   <!-- Players List -->
-  <main class="max-w-3xl mx-auto px-4 mt-6 mb-10">
+  <main class="max-w-3xl mx-auto px-4 mt-6 mb-20">
     <div id="players-list" class="space-y-4">
       <p class="text-center text-gray-400">লোড হচ্ছে...</p>
     </div>
   </main>
 
-  <!-- Bottom Navigation Bar -->
+  <!-- Bottom Navigation -->
   <nav class="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-700 flex justify-around items-center py-2 rounded-t-2xl shadow-inner text-white h-16 z-10">
     <a href="dashboard.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
       <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
@@ -67,7 +67,7 @@
     </a>
   </nav>
 
-  <!-- Firebase Scripts -->
+  <!-- Firebase & Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -103,25 +103,28 @@
           return;
         }
 
-        let serial = 1;
+        let count = 1;
         snapshot.forEach((doc) => {
           const data = doc.data();
           const photo = data.photoUrl && data.photoUrl.trim() !== "" ? data.photoUrl : "https://via.placeholder.com/100?text=No+Image";
 
           const card = `
-            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-sm flex items-center gap-4">
-              <div class="text-2xl font-bold text-yellow-400">${serial++}.</div>
-              <img src="${photo}" alt="Player Photo" class="w-20 h-20 rounded-full border-2 border-yellow-400 object-cover bg-gray-700" onerror="this.onerror=null;this.src='https://via.placeholder.com/100?text=No+Image';" />
+            <div class="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg flex items-center gap-4 hover:scale-[1.02] transition-transform duration-300">
+              <div class="relative">
+                <img src="${photo}" alt="Player Photo" class="w-20 h-20 rounded-full border-2 border-yellow-400 object-cover bg-gray-700" onerror="this.onerror=null;this.src='https://via.placeholder.com/100?text=No+Image';" />
+                <span class="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold px-2 py-0.5 rounded-full shadow">${count}</span>
+              </div>
               <div>
-                <h2 class="text-xl font-semibold text-yellow-300">${data.fullName || "নাম নেই"}</h2>
-                <p class="text-gray-300">দল: ${data.team || "N/A"}</p>
+                <h2 class="text-xl font-bold text-yellow-300">${data.fullName || "নাম নেই"}</h2>
+                <p class="text-gray-300">দল: <span class="text-white">${data.team || "N/A"}</span></p>
                 <p class="text-gray-300">DLS রেটিং: <span class="text-green-400">${data.dlsRating ?? "N/A"}</span></p>
-                <p class="text-gray-300">বয়স: ${data.age ?? "N/A"}</p>
-                <p class="text-gray-300">DLS অভিজ্ঞতা: ${data.yearsPlayed ?? "N/A"} বছর</p>
+                <p class="text-gray-300">বয়স: <span class="text-white">${data.age ?? "N/A"}</span></p>
+                <p class="text-gray-300">DLS অভিজ্ঞতা: <span class="text-white">${data.yearsPlayed ?? "N/A"} বছর</span></p>
               </div>
             </div>
           `;
           playersList.insertAdjacentHTML("beforeend", card);
+          count++;
         });
       });
     });
