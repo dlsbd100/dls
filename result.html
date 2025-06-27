@@ -41,28 +41,24 @@
       </div>
       Home
     </a>
-
     <a href="result.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
       <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
         <i class="fa-solid fa-ranking-star text-lg text-gray-300 hover:text-yellow-400"></i>
       </div>
       Result
     </a>
-
     <a href="league.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
       <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
         <i class="fa-solid fa-trophy text-lg text-gray-300 hover:text-yellow-400"></i>
       </div>
       League
     </a>
-
     <a href="match-history.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
       <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
         <i class="fa-solid fa-clock-rotate-left text-lg text-gray-300 hover:text-yellow-400"></i>
       </div>
       History
     </a>
-
     <a href="profile.html" class="nav-item flex flex-col items-center text-xs font-semibold no-underline">
       <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-400">
         <i class="fa-solid fa-user text-lg text-gray-400 hover:text-yellow-400"></i>
@@ -107,12 +103,14 @@
           return;
         }
 
+        let serial = 1;
         snapshot.forEach((doc) => {
           const data = doc.data();
           const photo = data.photoUrl && data.photoUrl.trim() !== "" ? data.photoUrl : "https://via.placeholder.com/100?text=No+Image";
 
           const card = `
             <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-sm flex items-center gap-4">
+              <div class="text-2xl font-bold text-yellow-400">${serial++}.</div>
               <img src="${photo}" alt="Player Photo" class="w-20 h-20 rounded-full border-2 border-yellow-400 object-cover bg-gray-700" onerror="this.onerror=null;this.src='https://via.placeholder.com/100?text=No+Image';" />
               <div>
                 <h2 class="text-xl font-semibold text-yellow-300">${data.fullName || "নাম নেই"}</h2>
