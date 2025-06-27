@@ -48,7 +48,7 @@
       <div class="flex items-center justify-between mb-4">
         <div class="text-xl font-semibold text-green-700">Fixers List</div>
         <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-4 py-2 rounded hover:bg-green-700">
-          <i class="fas fa-plus mr-1"></i> Add Fixer by Team
+          <i class="fas fa-plus mr-1"></i> Add Fixers by Team
         </button>
       </div>
       <div id="fixersContainer" class="space-y-4 max-h-[600px] overflow-y-auto">
@@ -62,7 +62,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -166,33 +166,37 @@
       }
     }
 
-    // Add Fixer Logic
+    // Add Fixers Automatically by Team
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       if (teamList.length === 0) {
-        alert("No team found to assign fixer.");
+        alert("No teams found to add fixers.");
         return;
       }
 
-      const selectedTeam = prompt("Enter team name to assign a fixer:\n" + teamList.join(", "));
-      if (!selectedTeam || !teamList.includes(selectedTeam)) {
-        alert("Invalid team name.");
-        return;
-      }
+      let added = 0;
 
-      const fixerName = prompt("Enter fixer's name:");
-      if (!fixerName) return;
+      for (const team of teamList) {
+        // check if fixer already exists for this team
+        const fixersRef = collection(db, "fixers");
+        const q = query(fixersRef, where("expertise", "==", "Team: " + team));
+        const snap = await getDocs(q);
+        if (!snap.empty) continue; // already exists
 
-      try {
-        await addDoc(collection(db, "fixers"), {
-          name: fixerName,
-          expertise: "Assigned to " + selectedTeam,
+        await addDoc(fixersRef, {
+          name: team + " Fixer",
+          expertise: "Team: " + team,
           contact: "N/A"
         });
-        alert("Fixer added successfully.");
-        loadFixers(); // reload the list
-      } catch (err) {
-        alert("Failed to add fixer: " + err.message);
+        added++;
       }
+
+      if (added > 0) {
+        alert(`${added} fixer(s) added successfully.`);
+      } else {
+        alert("All teams already have fixers.");
+      }
+
+      loadFixers();
     });
   </script>
 </body>
