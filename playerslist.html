@@ -43,10 +43,10 @@
       </div>
     </div>
 
-    <!-- Fixers Card Section -->
+    <!-- Fixers VS Card Section -->
     <div class="bg-white shadow rounded p-4">
       <div class="flex items-center justify-between mb-4">
-        <div class="text-xl font-semibold text-green-700">Fixers List</div>
+        <div class="text-xl font-semibold text-green-700">Fixers List (VS Style)</div>
         <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-4 py-2 rounded hover:bg-green-700">
           <i class="fas fa-plus mr-1"></i> Add Fixers by Team
         </button>
@@ -139,26 +139,43 @@
           return;
         }
 
-        let fixersHtml = "";
+        let fixers = [];
         fixersSnapshot.forEach(docSnap => {
-          const fixer = docSnap.data();
-          fixersHtml += `
-            <div class="border border-gray-300 rounded p-4 shadow-sm hover:shadow-md transition-shadow">
-              <div class="flex items-center space-x-4">
-                <div class="flex-shrink-0">
-                  <i class="fas fa-user-tie text-3xl text-green-600"></i>
-                </div>
-                <div>
-                  <h3 class="text-lg font-semibold text-gray-800">${fixer.name || "Unnamed Fixer"}</h3>
-                  <p class="text-sm text-gray-600">Expertise: ${fixer.expertise || "N/A"}</p>
-                  <p class="text-sm text-gray-600">Contact: ${fixer.contact || "N/A"}</p>
-                </div>
-              </div>
-            </div>
-          `;
+          const data = docSnap.data();
+          fixers.push(data);
         });
 
-        fixersContainer.innerHTML = fixersHtml;
+        let vsHtml = "";
+        for (let i = 0; i < fixers.length; i += 2) {
+          const left = fixers[i];
+          const right = fixers[i + 1];
+
+          if (right) {
+            vsHtml += `
+              <div class="flex items-center justify-center gap-6 border border-gray-300 rounded p-4 shadow-sm">
+                <div class="flex-1 text-right">
+                  <h3 class="text-base font-semibold text-gray-800">${left.name}</h3>
+                  <p class="text-sm text-gray-600">${left.expertise}</p>
+                </div>
+                <div class="text-center text-2xl font-bold text-red-500">VS</div>
+                <div class="flex-1 text-left">
+                  <h3 class="text-base font-semibold text-gray-800">${right.name}</h3>
+                  <p class="text-sm text-gray-600">${right.expertise}</p>
+                </div>
+              </div>
+            `;
+          } else {
+            vsHtml += `
+              <div class="border border-gray-300 rounded p-4 shadow-sm text-center">
+                <h3 class="text-base font-semibold text-gray-800">${left.name}</h3>
+                <p class="text-sm text-gray-600">${left.expertise}</p>
+                <p class="text-sm italic text-gray-400 mt-1">Waiting for opponent</p>
+              </div>
+            `;
+          }
+        }
+
+        fixersContainer.innerHTML = vsHtml;
 
       } catch (error) {
         document.getElementById("fixersContainer").innerHTML = `<p class="p-3 text-center text-red-600">Error loading fixers: ${error.message}</p>`;
@@ -166,7 +183,6 @@
       }
     }
 
-    // Add Fixers Automatically by Team
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       if (teamList.length === 0) {
         alert("No teams found to add fixers.");
@@ -174,13 +190,11 @@
       }
 
       let added = 0;
-
       for (const team of teamList) {
-        // check if fixer already exists for this team
         const fixersRef = collection(db, "fixers");
         const q = query(fixersRef, where("expertise", "==", "Team: " + team));
         const snap = await getDocs(q);
-        if (!snap.empty) continue; // already exists
+        if (!snap.empty) continue;
 
         await addDoc(fixersRef, {
           name: team + " Fixer",
@@ -191,7 +205,7 @@
       }
 
       if (added > 0) {
-        alert(`${added} fixer(s) added successfully.`);
+        alert(`${added} fixer(s) added.`);
       } else {
         alert("All teams already have fixers.");
       }
