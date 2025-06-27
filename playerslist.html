@@ -142,7 +142,14 @@
         let fixers = [];
         fixersSnapshot.forEach(docSnap => {
           const data = docSnap.data();
-          fixers.push(data);
+
+          // Filter out Kings Fc and HR FC CLUB
+          if (
+            data.expertise !== "Team: Kings Fc" &&
+            data.expertise !== "Team: HR FC CLUB"
+          ) {
+            fixers.push(data);
+          }
         });
 
         let vsHtml = "";
@@ -191,6 +198,8 @@
 
       let added = 0;
       for (const team of teamList) {
+        if (team === "Kings Fc" || team === "HR FC CLUB") continue;
+
         const fixersRef = collection(db, "fixers");
         const q = query(fixersRef, where("expertise", "==", "Team: " + team));
         const snap = await getDocs(q);
@@ -207,7 +216,7 @@
       if (added > 0) {
         alert(`${added} fixer(s) added.`);
       } else {
-        alert("All teams already have fixers.");
+        alert("All valid teams already have fixers.");
       }
 
       loadFixers();
