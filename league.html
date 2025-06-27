@@ -92,7 +92,7 @@
   <!-- Firebase Scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, doc, getDoc, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -109,6 +109,7 @@
     const auth = getAuth(app);
 
     let currentUser = null;
+    let currentLimit = null;
 
     const currentLimitDisplay = document.getElementById('currentLimitDisplay');
 
@@ -119,14 +120,27 @@
         const docSnap = await getDoc(limitDocRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const currentLimit = data?.maxPlayers ?? "Not Set";
-          currentLimitDisplay.textContent = `বর্তমান প্লেয়ার সীমা: ${currentLimit}`;
+          currentLimit = data?.maxPlayers ?? null;
+          currentLimitDisplay.textContent = currentLimit !== null ? `বর্তমান প্লেয়ার সীমা: ${currentLimit}` : "বর্তমান প্লেয়ার সীমা: নির্ধারিত নেই";
         } else {
+          currentLimit = null;
           currentLimitDisplay.textContent = "বর্তমান প্লেয়ার সীমা: নির্ধারিত নেই";
         }
       } catch (error) {
         console.error("Error fetching player limit:", error);
         currentLimitDisplay.textContent = "সীমা লোড করতে সমস্যা হয়েছে";
+      }
+    }
+
+    // Count current registered players
+    async function countRegisteredPlayers() {
+      try {
+        const playersCol = collection(db, "playersform");
+        const snapshot = await getDocs(playersCol);
+        return snapshot.size;
+      } catch (error) {
+        console.error("Error counting players:", error);
+        return 0;
       }
     }
 
@@ -143,6 +157,31 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      // Check if limit is loaded
+      if (currentLimit === null) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ত্রুটি',
+          text: 'প্লেয়ার সীমা লোড হয়নি, অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।',
+          confirmButtonColor: '#EF4444'
+        });
+        return;
+      }
+
+      // Count current players
+      const registeredCount = await countRegisteredPlayers();
+
+      if (registeredCount >= currentLimit) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'সীমা পূর্ণ',
+          text: `দুঃখিত, প্লেয়ার নিবন্ধনের সর্বোচ্চ সীমা (${currentLimit}) পূর্ণ হয়েছে।`,
+          confirmButtonColor: '#F59E0B'
+        });
+        return;
+      }
+
+      // Proceed with registration
       const fullName = form['full-name'].value.trim();
       const team = form['team'].value.trim();
       const dlsRating = parseFloat(form['dls-rating'].value);
