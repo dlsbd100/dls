@@ -1,135 +1,111 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Match Fixers</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Match Fixers</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
 </head>
 <body class="bg-black text-white min-h-screen">
 
-  <!-- Header -->
-  <header class="bg-gradient-to-r from-black via-gray-900 to-black w-full max-w-md shadow-md py-2 px-3 mb-3 mx-auto border-b border-gray-700 flex items-center justify-between rounded-b-xl">
-    <div class="flex items-center gap-2">
-      <div class="bg-red-600 bg-opacity-50 border border-red-500 text-red-300 w-9 h-9 flex items-center justify-center font-bold rounded-full shadow">FX</div>
-      <h2 class="text-2xl font-bold bg-gradient-to-r from-red-400 via-yellow-300 to-red-400 bg-clip-text text-transparent">Fixers</h2>
-    </div>
-    <div class="flex items-center gap-1 bg-gradient-to-br from-red-500 via-yellow-700 to-red-500 text-black px-2 py-1 rounded-full shadow-lg border border-yellow-200 h-[29px]">
-      <i class="fa-solid fa-users text-white text-sm"></i>
-    </div>
-  </header>
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-black via-gray-900 to-black w-full max-w-md shadow-md py-2 px-3 mb-3 mx-auto border-b border-gray-700 flex items-center justify-between rounded-b-xl">
+    <div class="flex items-center gap-2">
+      <div class="bg-red-600 bg-opacity-50 border border-red-500 text-red-300 w-9 h-9 flex items-center justify-center font-bold rounded-full shadow">FX</div>
+      <h2 class="text-2xl font-bold bg-gradient-to-r from-red-400 via-yellow-300 to-red-400 bg-clip-text text-transparent">Fixers</h2>
+    </div>
+    <div class="flex items-center gap-1 bg-gradient-to-br from-red-500 via-yellow-700 to-red-500 text-black px-2 py-1 rounded-full shadow-lg border border-yellow-200 h-[29px]">
+      <i class="fa-solid fa-users text-white text-sm"></i>
+    </div>
+  </header>
 
-  <!-- Fixers List -->
-  <main class="max-w-3xl mx-auto px-4 mt-6 mb-20">
-    <div id="fixers-list" class="space-y-6">
-      <p class="text-center text-gray-400">লোড হচ্ছে...</p>
-    </div>
-  </main>
+  <!-- Fixers List -->
+  <main class="max-w-3xl mx-auto px-4 mt-6 mb-20">
+    <div id="fixers-list" class="space-y-6">
+      <p class="text-center text-gray-400">লোড হচ্ছে...</p>
+    </div>
+  </main>
 
-  <!-- Firebase & Logic -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  <!-- Firebase & Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
-      authDomain: "dlstournament-31ac1.firebaseapp.com",
-      projectId: "dlstournament-31ac1",
-      storageBucket: "dlstournament-31ac1.appspot.com",
-      messagingSenderId: "874377019055",
-      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
-    };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
+      authDomain: "dlstournament-31ac1.firebaseapp.com",
+      projectId: "dlstournament-31ac1",
+      storageBucket: "dlstournament-31ac1.appspot.com",
+      messagingSenderId: "874377019055",
+      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
+    };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    function addDays(dateStr, days) {
-      const d = new Date(dateStr);
-      d.setDate(d.getDate() + days);
-      return d.toISOString().split("T")[0];
-    }
+    function addDays(dateStr, days) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split("T")[0];
+    }
 
-    let teamPhotos = {};
+    onAuthStateChanged(auth, (user) => {
+      if (user) loadFixers();
+    });
 
-    async function loadTeamPhotos() {
-      const snap = await getDocs(collection(db, "playersform"));
-      snap.forEach(doc => {
-        const data = doc.data();
-        if (data.team && data.photoUrl) {
-          teamPhotos[data.team.trim().toLowerCase()] = data.photoUrl;
-        }
-      });
-    }
+    function loadFixers() {
+      const fixersRef = collection(db, "fixers");
+      onSnapshot(query(fixersRef), (snapshot) => {
+        const fixersContainer = document.getElementById("fixers-list");
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        await loadTeamPhotos();
-        loadFixers();
-      }
-    });
+        if (snapshot.empty) {
+          fixersContainer.innerHTML = `<p class="text-center text-gray-400">কোনো ফিক্সার নেই।</p>`;
+          return;
+        }
 
-    function loadFixers() {
-      const fixersRef = collection(db, "fixers");
-      onSnapshot(query(fixersRef), (snapshot) => {
-        const fixersContainer = document.getElementById("fixers-list");
+        const fixers = [];
+        snapshot.forEach(doc => fixers.push(doc.data()));
 
-        if (snapshot.empty) {
-          fixersContainer.innerHTML = `<p class="text-center text-gray-400">কোনো ফিক্সার নেই।</p>`;
-          return;
-        }
+        // Group by date
+        const fixersByDate = {};
+        fixers.forEach(fix => {
+          const key = fix.date;
+          if (!fixersByDate[key]) fixersByDate[key] = [];
+          fixersByDate[key].push(fix);
+        });
 
-        const fixers = [];
-        snapshot.forEach(doc => fixers.push(doc.data()));
+        const sortedDates = Object.keys(fixersByDate).sort();
+        const baseDate = sortedDates[0];
+        let html = "";
 
-        // Group by date
-        const fixersByDate = {};
-        fixers.forEach(fix => {
-          const key = fix.date;
-          if (!fixersByDate[key]) fixersByDate[key] = [];
-          fixersByDate[key].push(fix);
-        });
+        sortedDates.forEach((date, groupIndex) => {
+          const groupName = String.fromCharCode(65 + groupIndex); // A, B, C ...
+          html += `<div class="text-lg font-semibold text-yellow-400">Group ${groupName}</div>`;
 
-        const sortedDates = Object.keys(fixersByDate).sort();
-        const baseDate = sortedDates[0];
-        let html = "";
+          const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
-        sortedDates.forEach((date, groupIndex) => {
-          const groupName = String.fromCharCode(65 + groupIndex); // A, B, C ...
-          html += `<div class="text-lg font-semibold text-yellow-400">Group ${groupName}</div>`;
+          matches.forEach((match, idx) => {
+            const matchDate = addDays(baseDate, idx);
+            html += `
+              <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow">
+                <div class="text-center text-gray-400 mb-1">${matchDate}</div>
+                <div class="flex justify-center items-center gap-3 font-semibold text-white">
+                  <div class="text-gray-400">${idx + 1}.</div>
+                  <div class="text-right flex-1">${match.team1}</div>
+                  <div class="text-red-500 font-bold">VS</div>
+                  <div class="text-left flex-1">${match.team2}</div>
+                </div>
+              </div>
+            `;
+          });
+        });
 
-          const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
-
-          matches.forEach((match, idx) => {
-            const matchDate = addDays(baseDate, groupIndex); // per group, not per match
-            const team1Img = teamPhotos[match.team1?.toLowerCase()] || "";
-            const team2Img = teamPhotos[match.team2?.toLowerCase()] || "";
-
-            html += `
-              <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow">
-                <div class="text-center text-gray-400 mb-1">${matchDate}</div>
-                <div class="flex justify-center items-center gap-3 font-semibold text-white">
-                  <div class="text-gray-400">${idx + 1}.</div>
-                  <div class="flex items-center gap-2 flex-1 justify-end">
-                    ${team1Img ? `<img src="${team1Img}" class="w-6 h-6 rounded-full" />` : ""}
-                    <span>${match.team1}</span>
-                  </div>
-                  <div class="text-red-500 font-bold">VS</div>
-                  <div class="flex items-center gap-2 flex-1 justify-start">
-                    <span>${match.team2}</span>
-                    ${team2Img ? `<img src="${team2Img}" class="w-6 h-6 rounded-full" />` : ""}
-                  </div>
-                </div>
-              </div>
-            `;
-          });
-        });
-
-        fixersContainer.innerHTML = html;
-      });
-    }
-  </script>
+        fixersContainer.innerHTML = html;
+      });
+    }
+  </script>
 </body>
 </html>
