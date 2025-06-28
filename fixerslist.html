@@ -7,8 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
-  <!-- html2canvas CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -59,12 +57,6 @@
             >
               <i class="fas fa-trash mr-1"></i> Delete All Fixers
             </button>
-            <button
-              id="downloadImageBtn"
-              class="bg-blue-600 text-white text-sm px-3 py-2 rounded hover:bg-blue-700 whitespace-nowrap"
-            >
-              <i class="fas fa-download mr-1"></i> Download Image
-            </button>
           </div>
           <label class="text-sm text-gray-600 flex items-center gap-2 pl-1">
             <input type="checkbox" id="selectAllTeams" class="accent-green-600" />
@@ -72,11 +64,7 @@
           </label>
         </div>
       </div>
-      <div
-        id="fixersContainer"
-        class="space-y-4 max-h-[600px] overflow-y-auto bg-white p-4 rounded border border-gray-300"
-        style="min-height: 150px;"
-      >
+      <div id="fixersContainer" class="space-y-4 max-h-[600px] overflow-y-auto">
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
     </div>
@@ -160,6 +148,7 @@
         const fixers = [];
         fixersSnapshot.forEach((doc) => fixers.push({ id: doc.id, ...doc.data() }));
 
+        // Group fixers by date
         const fixersByDate = fixers.reduce((acc, fix) => {
           acc[fix.date] = acc[fix.date] || [];
           acc[fix.date].push(fix);
@@ -171,7 +160,7 @@
         for (const date in fixersByDate) {
           const matches = fixersByDate[date];
 
-          // unique teams
+          // get unique teams for the date
           const teamsSet = new Set();
           matches.forEach((m) => {
             teamsSet.add(m.team1);
@@ -179,6 +168,7 @@
           });
           const teams = Array.from(teamsSet).sort();
 
+          // calculate groups
           const groupCount = Math.floor(teams.length / 4);
           const groupNames = getGroupNames(groupCount);
 
@@ -188,10 +178,13 @@
             const groupTeams = teams.slice(g * 4, (g + 1) * 4);
             html += `<div class="text-left font-bold text-lg mt-3">Group ${groupNames[g]}</div>`;
 
+            // Now for this group, show all pairs (each team with every other)
+            // We create all pairs ourselves here for display (not from fixers),
+            // so the UI is consistent with your requested logic
             for (let i = 0; i < groupTeams.length; i++) {
               for (let j = i + 1; j < groupTeams.length; j++) {
                 html += `
-                  <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm bg-white">
+                  <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
                     <div class="flex-1 text-right font-semibold">${groupTeams[i]}</div>
                     <div class="text-2xl font-bold text-red-500">VS</div>
                     <div class="flex-1 text-left font-semibold">${groupTeams[j]}</div>
@@ -201,6 +194,7 @@
             }
           }
 
+          // Show leftover teams if any
           const leftoverStart = groupCount * 4;
           if (teams.length > leftoverStart) {
             const leftoverTeams = teams.slice(leftoverStart);
@@ -208,7 +202,7 @@
             for (let i = 0; i < leftoverTeams.length; i++) {
               for (let j = i + 1; j < leftoverTeams.length; j++) {
                 html += `
-                  <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm bg-white">
+                  <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
                     <div class="flex-1 text-right font-semibold">${leftoverTeams[i]}</div>
                     <div class="text-2xl font-bold text-red-500">VS</div>
                     <div class="flex-1 text-left font-semibold">${leftoverTeams[j]}</div>
@@ -240,15 +234,16 @@
         alert("Please select a date.");
         return;
       }
+
       if (selectedTeams.length !== groupCount * 4) {
         alert(`You must select exactly ${groupCount * 4} teams for ${groupCount} group(s) (4 teams per group).`);
         return;
       }
 
-      // Check if any fixers exist
+      // Check if any fixers exist at all (any date)
       const existingFixers = await getDocs(collection(db, "fixers"));
       if (!existingFixers.empty) {
-        // Check if fixers for this date
+        // Check if fixers exist for this date
         const dateQuery = query(collection(db, "fixers"), where("date", "==", selectedDate));
         const dateSnapshot = await getDocs(dateQuery);
         if (!dateSnapshot.empty) {
@@ -260,10 +255,13 @@
         }
       }
 
+      const groupNames = getGroupNames(groupCount);
       let added = 0;
 
+      // Add fixers: for each group, add all pairs (each team vs every other team in group)
       for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
+
         for (let i = 0; i < groupTeams.length; i++) {
           for (let j = i + 1; j < groupTeams.length; j++) {
             const team1 = groupTeams[i];
@@ -305,28 +303,6 @@
       } catch (e) {
         alert("Error deleting fixers: " + e.message);
       }
-    });
-
-    // Download Image button logic
-    document.getElementById("downloadImageBtn").addEventListener("click", () => {
-      const container = document.getElementById("fixersContainer");
-      if (!container || container.innerHTML.trim() === "" || container.innerText.includes("No fixers found")) {
-        alert("No fixers to download.");
-        return;
-      }
-
-      html2canvas(container, { scale: 2 }).then((canvas) => {
-        canvas.toBlob((blob) => {
-          if (!blob) return;
-          const link = document.createElement("a");
-          link.download = "fixers_list.png";
-          link.href = URL.createObjectURL(blob);
-          link.click();
-          URL.revokeObjectURL(link.href);
-        }, "image/png");
-      }).catch((e) => {
-        alert("Failed to generate image: " + e.message);
-      });
     });
   </script>
 </body>
