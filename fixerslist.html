@@ -22,7 +22,6 @@
 
   <!-- Main -->
   <main class="max-w-4xl mx-auto p-4 space-y-6">
-    <!-- Fixers Section -->
     <div class="bg-white shadow rounded p-4">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
         <div class="text-xl font-semibold text-green-700">Football Match Fixers</div>
@@ -60,7 +59,6 @@
     </div>
   </main>
 
-  <!-- Firebase + Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -119,30 +117,22 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
-      const grouped = {};
-      fixers.forEach(fix => {
-        if (!grouped[fix.date]) grouped[fix.date] = [];
-        grouped[fix.date].push(fix);
-      });
+      fixers.sort((a, b) => new Date(a.date) - new Date(b.date));
 
       let html = "";
-      const dates = Object.keys(grouped).sort();
-
-      dates.forEach((date, idx) => {
-        const groupName = String.fromCharCode(65 + idx);
-        html += `<div class="bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
-        grouped[date].forEach(match => {
-          html += `
-            <div class="border p-2 rounded shadow-sm text-xs space-y-1">
-              <div class="text-center text-[10px] text-gray-500 font-semibold">${match.date}</div>
-              <div class="flex justify-center items-center gap-3">
-                <div class="flex-1 text-right font-medium">${match.team1}</div>
-                <div class="text-base font-bold text-red-500">VS</div>
-                <div class="flex-1 text-left font-medium">${match.team2}</div>
-              </div>
+      fixers.forEach(match => {
+        const date = new Date(match.date);
+        const day = date.getDate();
+        html += `
+          <div class="border p-2 rounded shadow-sm text-xs space-y-1">
+            <div class="flex justify-center items-center gap-3 font-semibold">
+              <div class="flex-1 text-right">${match.team1}</div>
+              <div class="text-base font-bold text-red-500">VS</div>
+              <div class="flex-1 text-left">${match.team2}</div>
             </div>
-          `;
-        });
+            <div class="text-center text-[11px] text-gray-600 font-semibold">Date ${day} tarik</div>
+          </div>
+        `;
       });
 
       container.innerHTML = html;
@@ -168,7 +158,6 @@
       }
 
       const start = new Date(baseDate);
-      const groupNames = getGroupNames(groupCount);
       let added = 0;
 
       for (let g = 0; g < groupCount; g++) {
