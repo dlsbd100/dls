@@ -107,8 +107,11 @@
       selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
-    function getGroupNames(count) {
-      return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
+    // Function to add days to a date and return ISO date string
+    function addDays(dateStr, days) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split("T")[0];
     }
 
     async function loadFixers() {
@@ -123,6 +126,7 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
+      // Group fixers by date (unique dates)
       const fixersByDate = {};
       fixers.forEach(fix => {
         const key = fix.date;
@@ -130,17 +134,31 @@
         fixersByDate[key].push(fix);
       });
 
+      // Sort the dates ascending
       const sortedDates = Object.keys(fixersByDate).sort();
+
+      // Here, we will generate each group by index, but for each match serial number (idx), date = fixerDate + idx
+      // So we need the base date = the smallest date in the data (or from UI - safer to pick min date in fixers)
+      const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
+
       let html = "";
-      sortedDates.forEach((date, index) => {
-        const groupName = String.fromCharCode(65 + index); // A, B, C...
+      sortedDates.forEach((date, groupIndex) => {
+        // Group name from A, B, C...
+        const groupName = String.fromCharCode(65 + groupIndex);
         html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
-        const matches = fixersByDate[date];
-        matches.sort((a, b) => a.team1.localeCompare(b.team1)); // optional sorting
+
+        // sort matches by team1 for neatness
+        const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+
         matches.forEach((match, idx) => {
+          // Calculate date for this match based on baseDate + idx (serial number - 1)
+          // So serial number 1 -> baseDate + 0 days
+          // serial number 2 -> baseDate + 1 day, etc.
+          let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
+
           html += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1">
-              <div class="text-center text-[10px] text-gray-500 font-semibold">${match.date}</div>
+              <div class="text-center text-[10px] text-gray-500 font-semibold">${displayDate}</div>
               <div class="flex justify-center items-center gap-3">
                 <div class="text-sm font-semibold text-gray-600">${idx + 1}.</div>
                 <div class="flex-1 text-right font-medium">${match.team1}</div>
