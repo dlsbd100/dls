@@ -119,37 +119,22 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
-      // গ্রুপিং: এখন গ্রুপ হিসেবে date নিয়ে না, বরং date + গ্রুপ এ ভাগ করতে হবে
-      // তাই আগে গ্রুপ গুলো বের করতে হবে (groupCount ধরে ধরে)
-      // কিন্তু এখানে ডাটাবেজে শুধু date + team1, team2 আছে,
-      // এখন আমরা ধরে নেব প্রতিটি গ্রুপের ম্যাচগুলো একই তারিখ থেকে শুরু, 
-      // তাই প্রতিটি তারিখকে আলাদা গ্রুপ ধরবো (এই ক্ষেত্রে ডাটাবেজে আলাদা আলাদা date দিয়ে রাখা আছে)
-      // কিন্তু তোমার আগের কোড অনুযায়ী date দিয়ে grouped ছিল
-      // এখন আমরা গেমসকে তারিখ অনুযায়ী আলাদা গ্রুপের মতো ধরব, তাই এখানে মূলত date গুলোই গ্রুপ নাম হবে
-
-      // date অনুযায়ী গ্রুপিং
       const grouped = {};
       fixers.forEach(fix => {
         if (!grouped[fix.date]) grouped[fix.date] = [];
         grouped[fix.date].push(fix);
       });
 
-      // এখন date গুলো sorted করে আনা
+      let html = "";
       const dates = Object.keys(grouped).sort();
 
-      let html = "";
       dates.forEach((date, idx) => {
-        // গ্রুপ নাম A,B,C ... কিন্তু এখানে date দেখানো দরকার
         const groupName = String.fromCharCode(65 + idx);
-        // group header এ গ্রুপ নাম ও তারিখ দেখাবো
-        html += `<div class="bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700 flex justify-between items-center">
-          <div>Group ${groupName}</div>
-          <div class="text-xs font-mono text-gray-500">${date}</div>
-        </div>`;
-
+        html += `<div class="bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
         grouped[date].forEach(match => {
           html += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1">
+              <div class="text-center text-[10px] text-gray-500 font-semibold">${match.date}</div>
               <div class="flex justify-center items-center gap-3">
                 <div class="flex-1 text-right font-medium">${match.team1}</div>
                 <div class="text-base font-bold text-red-500">VS</div>
@@ -190,14 +175,10 @@
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
         let matchOffset = 0;
 
-      
-        const groupStartDate = new Date(start);
-        groupStartDate.setDate(start.getDate() + g);
-
         for (let i = 0; i < groupTeams.length; i++) {
           for (let j = i + 1; j < groupTeams.length; j++) {
-            const matchDate = new Date(groupStartDate);
-            matchDate.setDate(groupStartDate.getDate() + matchOffset);
+            const matchDate = new Date(start);
+            matchDate.setDate(start.getDate() + matchOffset);
             const dateStr = matchDate.toISOString().split("T")[0];
             matchOffset++;
 
