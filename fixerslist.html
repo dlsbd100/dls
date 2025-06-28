@@ -127,7 +127,7 @@
     function getGroupNames(count) {
       const groups = [];
       for (let i = 0; i < count; i++) {
-        groups.push(String.fromCharCode(65 + i)); // A, B, C ...
+        groups.push(String.fromCharCode(65 + i));
       }
       return groups;
     }
@@ -245,12 +245,10 @@
 
       for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
-
         for (let i = 0; i < groupTeams.length; i++) {
           for (let j = i + 1; j < groupTeams.length; j++) {
             const team1 = groupTeams[i];
             const team2 = groupTeams[j];
-
             await addDoc(collection(db, "fixers"), { team1, team2, date: selectedDate });
             added++;
           }
@@ -258,6 +256,15 @@
       }
 
       Swal.fire({ icon: 'success', title: `${added} fixers added successfully.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      
+      // Reset selections
+      document.getElementById("selectAllTeams").checked = false;
+      const selector = document.getElementById("teamSelector");
+      for (let option of selector.options) {
+        option.selected = false;
+      }
+      document.getElementById("groupCount").value = "1";
+
       loadFixers();
     });
 
