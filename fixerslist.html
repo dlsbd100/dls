@@ -107,6 +107,10 @@
       selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
+    function getGroupNames(count) {
+      return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
+    }
+
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const container = document.getElementById("fixersContainer");
@@ -119,37 +123,29 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
-      const grouped = {};
+      const fixersByDate = {};
       fixers.forEach(fix => {
-        if (!grouped[fix.date]) grouped[fix.date] = [];
-        grouped[fix.date].push(fix);
+        const key = fix.date;
+        if (!fixersByDate[key]) fixersByDate[key] = [];
+        fixersByDate[key].push(fix);
       });
 
       let html = "";
-      const dates = Object.keys(grouped).sort();
-
-      dates.forEach((date, idx) => {
-        const groupName = String.fromCharCode(65 + idx);
-        html += `<div class="bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
-        grouped[date].forEach(match => {
+      Object.keys(fixersByDate).sort().forEach(date => {
+        html += `<div class="bg-gray-200 rounded p-2 text-center font-medium text-sm text-gray-700">${date}</div>`;
+        const matches = fixersByDate[date];
+        matches.forEach(match => {
           html += `
-            <div class="border p-2 rounded shadow-sm text-xs space-y-1">
-              <div class="text-center text-[10px] text-gray-500 font-semibold">${match.date}</div>
-              <div class="flex justify-center items-center gap-3">
-                <div class="flex-1 text-right font-medium">${match.team1}</div>
-                <div class="text-base font-bold text-red-500">VS</div>
-                <div class="flex-1 text-left font-medium">${match.team2}</div>
-              </div>
+            <div class="flex justify-center items-center gap-3 border p-2 rounded shadow-sm text-xs bg-white">
+              <div class="flex-1 text-right font-medium">${match.team1}</div>
+              <div class="text-base font-bold text-red-500">VS</div>
+              <div class="flex-1 text-left font-medium">${match.team2}</div>
             </div>
           `;
         });
       });
 
       container.innerHTML = html;
-    }
-
-    function getGroupNames(count) {
-      return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
@@ -168,26 +164,22 @@
       }
 
       const start = new Date(baseDate);
+      const groupNames = getGroupNames(groupCount);
       let added = 0;
 
-      const actualGroupCount = Math.min(groupCount, Math.floor(selectedTeams.length / 4));
-      for (let g = 0; g < actualGroupCount; g++) {
+      for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
-        let matchOffset = 0;
+        const matchDate = new Date(start);
+        matchDate.setDate(start.getDate() + g);
+        const dateStr = matchDate.toISOString().split("T")[0];
 
         for (let i = 0; i < groupTeams.length; i++) {
           for (let j = i + 1; j < groupTeams.length; j++) {
-            const matchDate = new Date(start);
-            matchDate.setDate(start.getDate() + matchOffset);
-            const dateStr = matchDate.toISOString().split("T")[0];
-            matchOffset++;
-
             await addDoc(collection(db, "fixers"), {
               team1: groupTeams[i],
               team2: groupTeams[j],
               date: dateStr
             });
-
             added++;
           }
         }
