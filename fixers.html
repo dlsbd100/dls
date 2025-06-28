@@ -90,7 +90,7 @@
         return;
       }
 
-      const q = query(collection(db, "fixers"), orderBy("date", "asc"));
+      const q = query(collection(db, "playersform"), orderBy("date", "asc"));
       onSnapshot(q, (snapshot) => {
         fixerList.innerHTML = "";
 
