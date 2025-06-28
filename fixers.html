@@ -17,7 +17,6 @@
     </div>
     <div class="flex items-center gap-1 bg-gradient-to-br from-red-500 via-yellow-700 to-red-500 text-black px-2 py-1 rounded-full shadow-lg border border-yellow-200 h-[29px]">
       <i class="fa-solid fa-users text-white text-sm"></i>
-      <span id="fixerCount" class="text-white font-semibold text-sm">0</span>
     </div>
   </header>
 
@@ -31,7 +30,7 @@
   <!-- Firebase & Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -47,67 +46,66 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    const fixerList = document.getElementById("fixers-list");
-    const fixerCount = document.getElementById("fixerCount");
+    function addDays(dateStr, days) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split("T")[0];
+    }
 
     onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
+      if (user) loadFixers();
+    });
 
-      const q = query(collection(db, "fixers"), orderBy("date", "asc"));
-      onSnapshot(q, (snapshot) => {
-        fixerList.innerHTML = "";
+    function loadFixers() {
+      const fixersRef = collection(db, "fixers");
+      onSnapshot(query(fixersRef), (snapshot) => {
+        const fixersContainer = document.getElementById("fixers-list");
 
         if (snapshot.empty) {
-          fixerList.innerHTML = `<p class="text-center text-gray-400">কোনো ফিক্সার এখনো যোগ হয়নি।</p>`;
-          fixerCount.textContent = "0";
+          fixersContainer.innerHTML = `<p class="text-center text-gray-400">কোনো ফিক্সার নেই।</p>`;
           return;
         }
 
+        const fixers = [];
+        snapshot.forEach(doc => fixers.push(doc.data()));
+
+        // Group by date
         const fixersByDate = {};
-        let count = 0;
-
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          if (data.team1 && data.team2 && data.date) {
-            if (!fixersByDate[data.date]) fixersByDate[data.date] = [];
-            fixersByDate[data.date].push(data);
-            count++;
-          }
+        fixers.forEach(fix => {
+          const key = fix.date;
+          if (!fixersByDate[key]) fixersByDate[key] = [];
+          fixersByDate[key].push(fix);
         });
 
-        fixerCount.textContent = count;
         const sortedDates = Object.keys(fixersByDate).sort();
-        const groupNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const baseDate = sortedDates[0];
+        let html = "";
 
-        sortedDates.forEach((date, index) => {
-          const group = groupNames[index] || `X`;
-          const matches = fixersByDate[date];
+        sortedDates.forEach((date, groupIndex) => {
+          const groupName = String.fromCharCode(65 + groupIndex); // A, B, C ...
+          html += `<div class="text-lg font-semibold text-yellow-400">গ্রুপ ${groupName}</div>`;
 
-          fixerList.insertAdjacentHTML("beforeend", `
-            <div class="mb-1">
-              <div class="text-lg font-bold text-yellow-300 mb-2 bg-gray-800 px-3 py-1 inline-block rounded-full shadow">
-                Group ${group}
+          const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+
+          matches.forEach((match, idx) => {
+            const matchDate = addDays(baseDate, idx);
+            html += `
+              <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow">
+                <div class="text-center text-gray-400 mb-1">${matchDate}</div>
+                <div class="flex justify-center items-center gap-3 font-semibold text-white">
+                  <div class="text-gray-400">${idx + 1}.</div>
+                  <div class="text-right flex-1">${match.team1}</div>
+                  <div class="text-red-500 font-bold">VS</div>
+                  <div class="text-left flex-1">${match.team2}</div>
+                </div>
               </div>
-              <div class="space-y-3">
-                ${matches.map(fix => `
-                  <div class="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg hover:scale-[1.02] transition-transform duration-300">
-                    <div class="text-center text-sm text-gray-400 font-semibold mb-2">${fix.date}</div>
-                    <div class="flex items-center justify-center gap-3 text-xl font-semibold">
-                      <span class="text-blue-300">${fix.team1}</span>
-                      <span class="text-red-500 font-bold">VS</span>
-                      <span class="text-blue-300">${fix.team2}</span>
-                    </div>
-                  </div>
-                `).join("")}
-              </div>
-            </div>
-          `);
+            `;
+          });
         });
+
+        fixersContainer.innerHTML = html;
       });
-    });
+    }
   </script>
 </body>
 </html>
