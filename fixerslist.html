@@ -130,14 +130,15 @@
         fixersByDate[key].push(fix);
       });
 
+      const sortedDates = Object.keys(fixersByDate).sort();
       let html = "";
-      Object.keys(fixersByDate).sort().forEach(date => {
-        html += `<div class="bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
+      sortedDates.forEach((date, index) => {
+        const groupName = String.fromCharCode(65 + index); // A, B, C...
+        html += `<div class="bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">Group ${groupName} - Date: ${date}</div>`;
         const matches = fixersByDate[date];
         matches.forEach(match => {
           html += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1">
-              <div class="text-center text-[10px] text-gray-500 font-semibold">${match.date}</div>
               <div class="flex justify-center items-center gap-3">
                 <div class="flex-1 text-right font-medium">${match.team1}</div>
                 <div class="text-base font-bold text-red-500">VS</div>
