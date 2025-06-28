@@ -102,23 +102,24 @@
 
           const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
-          matches.forEach((match) => {
-            const matchDate = addDays(baseDate, groupIndex); // group-wise date
+          matches.forEach((match, idx) => {
+            const matchDate = addDays(baseDate, groupIndex); // per group, not per match
             const team1Img = teamPhotos[match.team1?.toLowerCase()] || "";
             const team2Img = teamPhotos[match.team2?.toLowerCase()] || "";
 
             html += `
               <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow">
-                <div class="text-center text-gray-400 mb-2">${matchDate}</div>
+                <div class="text-center text-gray-400 mb-1">${matchDate}</div>
                 <div class="flex justify-center items-center gap-3 font-semibold text-white">
-                  <div class="flex flex-col items-end flex-1">
-                    <div>${match.team1}</div>
-                    ${team1Img ? `<img src="${team1Img}" class="w-8 h-8 rounded-full mt-1" />` : ""}
+                  <div class="text-gray-400">${idx + 1}.</div>
+                  <div class="flex items-center gap-2 flex-1 justify-end">
+                    ${team1Img ? `<img src="${team1Img}" class="w-6 h-6 rounded-full" />` : ""}
+                    <span>${match.team1}</span>
                   </div>
-                  <div class="text-red-500 font-bold px-2">VS</div>
-                  <div class="flex flex-col items-start flex-1">
-                    <div>${match.team2}</div>
-                    ${team2Img ? `<img src="${team2Img}" class="w-8 h-8 rounded-full mt-1" />` : ""}
+                  <div class="text-red-500 font-bold">VS</div>
+                  <div class="flex items-center gap-2 flex-1 justify-start">
+                    <span>${match.team2}</span>
+                    ${team2Img ? `<img src="${team2Img}" class="w-6 h-6 rounded-full" />` : ""}
                   </div>
                 </div>
               </div>
