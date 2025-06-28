@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Football Match Fixers</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -30,7 +30,7 @@
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2 flex-wrap">
             <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-28 h-36 overflow-y-auto" size="8"></select>
-            <input type="date" id="fixerDate" class="border border-gray-300 rounded p-2 text-sm h-9">
+            <input type="date" id="fixerDate" class="border border-gray-300 rounded p-2 text-sm h-9" />
             <select id="matchCount" class="border border-gray-300 rounded p-2 text-sm h-9">
               <option value="1">1 Match</option>
               <option value="2">2 Matches</option>
@@ -45,15 +45,21 @@
               <option value="7">7 Groups</option>
               <option value="8">8 Groups</option>
             </select>
-            <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 whitespace-nowrap">
+            <button
+              id="addFixerBtn"
+              class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 whitespace-nowrap"
+            >
               <i class="fas fa-plus mr-1"></i> Add Fixers
             </button>
-            <button id="deleteAllBtn" class="bg-red-600 text-white text-sm px-3 py-2 rounded hover:bg-red-700 whitespace-nowrap">
+            <button
+              id="deleteAllBtn"
+              class="bg-red-600 text-white text-sm px-3 py-2 rounded hover:bg-red-700 whitespace-nowrap"
+            >
               <i class="fas fa-trash mr-1"></i> Delete All Fixers
             </button>
           </div>
           <label class="text-sm text-gray-600 flex items-center gap-2 pl-1">
-            <input type="checkbox" id="selectAllTeams" class="accent-green-600">
+            <input type="checkbox" id="selectAllTeams" class="accent-green-600" />
             Select All Teams
           </label>
         </div>
@@ -69,7 +75,15 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      addDoc,
+      deleteDoc,
+      query,
+      where,
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -77,7 +91,7 @@
       projectId: "dlstournament-31ac1",
       storageBucket: "dlstournament-31ac1.appspot.com",
       messagingSenderId: "874377019055",
-      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
+      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
     };
 
     const app = initializeApp(firebaseConfig);
@@ -86,7 +100,7 @@
 
     let teamList = [];
 
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "login.html";
       } else {
@@ -99,28 +113,28 @@
       try {
         const snapshot = await getDocs(collection(db, "playersform"));
         const teams = new Set();
-        snapshot.forEach(doc => {
+        snapshot.forEach((doc) => {
           const data = doc.data();
           if (data.team) teams.add(data.team);
         });
         teamList = Array.from(teams);
         const selector = document.getElementById("teamSelector");
-        selector.innerHTML = teamList.map(team => `<option value="${team}">${team}</option>`).join("");
+        selector.innerHTML = teamList
+          .map((team) => `<option value="${team}">${team}</option>`)
+          .join("");
       } catch (e) {
         console.error("Failed to load teams:", e);
       }
     }
 
-    // Helper to get group names A,B,C...
     function getGroupNames(count) {
       const groups = [];
-      for(let i = 0; i < count; i++) {
-        groups.push(String.fromCharCode(65 + i));
+      for (let i = 0; i < count; i++) {
+        groups.push(String.fromCharCode(65 + i)); // A, B, C ...
       }
       return groups;
     }
 
-    // Load fixers and show grouped by date & group name
     async function loadFixers() {
       try {
         const fixersSnapshot = await getDocs(collection(db, "fixers"));
@@ -132,83 +146,74 @@
         }
 
         const fixers = [];
-        fixersSnapshot.forEach(doc => fixers.push({ id: doc.id, ...doc.data() }));
+        fixersSnapshot.forEach((doc) => fixers.push({ id: doc.id, ...doc.data() }));
 
-        // Group fixers by date and group
-        // Assuming each fixer doc has optional 'group' field,
-        // but since you didn't store group in DB, let's try to infer groups by grouping teams in batches of 4 by date
-
-        // So: Group by date first
+        // Group fixers by date
         const fixersByDate = fixers.reduce((acc, fix) => {
           acc[fix.date] = acc[fix.date] || [];
           acc[fix.date].push(fix);
           return acc;
         }, {});
 
-        // Now for each date, split fixers into groups by teams in groups of 4
-        // We'll get unique teams per date, sort them, split to groups of 4, then show matches accordingly with group name
-
         let html = "";
 
         for (const date in fixersByDate) {
           const matches = fixersByDate[date];
 
-          // get unique teams
+          // get unique teams for the date
           const teamsSet = new Set();
-          matches.forEach(m => {
+          matches.forEach((m) => {
             teamsSet.add(m.team1);
             teamsSet.add(m.team2);
           });
           const teams = Array.from(teamsSet).sort();
 
-          // group count = total teams / 4 (round down)
+          // calculate groups
           const groupCount = Math.floor(teams.length / 4);
           const groupNames = getGroupNames(groupCount);
 
           html += `<div class="text-center text-sm text-gray-500 font-medium mt-4">${date}</div>`;
 
-          for(let g = 0; g < groupCount; g++) {
-            const groupTeams = teams.slice(g*4, (g+1)*4);
+          for (let g = 0; g < groupCount; g++) {
+            const groupTeams = teams.slice(g * 4, (g + 1) * 4);
             html += `<div class="text-left font-bold text-lg mt-3">Group ${groupNames[g]}</div>`;
 
-            // filter matches with teams in this group only
-            const groupMatches = matches.filter(m =>
-              groupTeams.includes(m.team1) && groupTeams.includes(m.team2)
-            );
-
-            groupMatches.forEach(match => {
-              html += `
-                <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
-                  <div class="flex-1 text-right font-semibold">${match.team1}</div>
-                  <div class="text-2xl font-bold text-red-500">VS</div>
-                  <div class="flex-1 text-left font-semibold">${match.team2}</div>
-                </div>`;
-            });
+            // Now for this group, show all pairs (each team with every other)
+            // We create all pairs ourselves here for display (not from fixers),
+            // so the UI is consistent with your requested logic
+            for (let i = 0; i < groupTeams.length; i++) {
+              for (let j = i + 1; j < groupTeams.length; j++) {
+                html += `
+                  <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
+                    <div class="flex-1 text-right font-semibold">${groupTeams[i]}</div>
+                    <div class="text-2xl font-bold text-red-500">VS</div>
+                    <div class="flex-1 text-left font-semibold">${groupTeams[j]}</div>
+                  </div>
+                `;
+              }
+            }
           }
 
-          // If any leftover teams (<4) without a full group, show separately (optional)
-          const leftoverStart = groupCount*4;
-          if(teams.length > leftoverStart) {
+          // Show leftover teams if any
+          const leftoverStart = groupCount * 4;
+          if (teams.length > leftoverStart) {
             const leftoverTeams = teams.slice(leftoverStart);
             html += `<div class="text-left font-bold text-lg mt-3">Group (Leftover Teams)</div>`;
-
-            const leftoverMatches = matches.filter(m =>
-              leftoverTeams.includes(m.team1) && leftoverTeams.includes(m.team2)
-            );
-
-            leftoverMatches.forEach(match => {
-              html += `
-                <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
-                  <div class="flex-1 text-right font-semibold">${match.team1}</div>
-                  <div class="text-2xl font-bold text-red-500">VS</div>
-                  <div class="flex-1 text-left font-semibold">${match.team2}</div>
-                </div>`;
-            });
+            for (let i = 0; i < leftoverTeams.length; i++) {
+              for (let j = i + 1; j < leftoverTeams.length; j++) {
+                html += `
+                  <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
+                    <div class="flex-1 text-right font-semibold">${leftoverTeams[i]}</div>
+                    <div class="text-2xl font-bold text-red-500">VS</div>
+                    <div class="flex-1 text-left font-semibold">${leftoverTeams[j]}</div>
+                  </div>
+                `;
+              }
+            }
           }
         }
 
         fixersContainer.innerHTML = html;
-
       } catch (e) {
         document.getElementById("fixersContainer").innerHTML = `<p class="text-red-600 text-center">${e.message}</p>`;
       }
@@ -216,7 +221,7 @@
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       const selectedOptions = Array.from(document.getElementById("teamSelector").selectedOptions);
-      const selectedTeams = selectedOptions.map(opt => opt.value);
+      const selectedTeams = selectedOptions.map((opt) => opt.value);
       const selectedDate = document.getElementById("fixerDate").value;
       const matchCount = parseInt(document.getElementById("matchCount").value);
       const groupCount = parseInt(document.getElementById("groupCount").value);
@@ -230,7 +235,6 @@
         return;
       }
 
-      // Total teams must be exactly groupCount * 4
       if (selectedTeams.length !== groupCount * 4) {
         alert(`You must select exactly ${groupCount * 4} teams for ${groupCount} group(s) (4 teams per group).`);
         return;
@@ -251,14 +255,13 @@
         }
       }
 
-      // Split teams into groups of 4
       const groupNames = getGroupNames(groupCount);
       let added = 0;
 
+      // Add fixers: for each group, add all pairs (each team vs every other team in group)
       for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
 
-        // For all pairs in groupTeams, add fixers
         for (let i = 0; i < groupTeams.length; i++) {
           for (let j = i + 1; j < groupTeams.length; j++) {
             const team1 = groupTeams[i];
@@ -292,7 +295,7 @@
       try {
         const snapshot = await getDocs(collection(db, "fixers"));
         const deletions = [];
-        snapshot.forEach(doc => deletions.push(deleteDoc(doc.ref)));
+        snapshot.forEach((doc) => deletions.push(deleteDoc(doc.ref)));
 
         await Promise.all(deletions);
         alert("All fixers deleted successfully.");
@@ -301,8 +304,6 @@
         alert("Error deleting fixers: " + e.message);
       }
     });
-
   </script>
-
 </body>
 </html>
