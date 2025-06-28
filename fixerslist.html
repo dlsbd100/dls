@@ -172,7 +172,8 @@
       for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
         const matchDate = new Date(start);
-        matchDate.setDate(start.getDate() + g); // increment day per group
+        // সব গ্রুপের জন্য fixerDate + 1 দিন, ইনডেক্স যোগ করব না
+        matchDate.setDate(start.getDate() + 1);
         const dateStr = matchDate.toISOString().split("T")[0];
 
         for (let i = 0; i < groupTeams.length; i++) {
