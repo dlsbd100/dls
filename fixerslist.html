@@ -31,14 +31,10 @@
           <div class="flex items-center gap-2 flex-wrap">
             <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-26 h-9 overflow-y-auto" size="8"></select>
             <label class="text-sm text-gray-600 flex items-center gap-2 pl-1">
-            <input type="checkbox" id="selectAllTeams" class="accent-green-600" />
-            Select All Teams
+              <input type="checkbox" id="selectAllTeams" class="accent-green-600" />
+              Select All Teams
             </label>
             <input type="date" id="fixerDate" class="border border-gray-300 rounded p-2 text-sm h-9" />
-            <select id="matchCount" class="border border-gray-300 rounded p-2 text-sm h-9">
-              <option value="1">1 Match</option>
-              <option value="2">2 Matches</option>
-            </select>
             <select id="groupCount" class="border border-gray-300 rounded p-2 text-sm h-9">
               <option value="1">1 Group</option>
               <option value="2">2 Groups</option>
@@ -148,7 +144,6 @@
         const fixers = [];
         fixersSnapshot.forEach((doc) => fixers.push({ id: doc.id, ...doc.data() }));
 
-        // Group fixers by date
         const fixersByDate = fixers.reduce((acc, fix) => {
           acc[fix.date] = acc[fix.date] || [];
           acc[fix.date].push(fix);
@@ -159,8 +154,6 @@
 
         for (const date in fixersByDate) {
           const matches = fixersByDate[date];
-
-          // get unique teams for the date
           const teamsSet = new Set();
           matches.forEach((m) => {
             teamsSet.add(m.team1);
@@ -168,7 +161,6 @@
           });
           const teams = Array.from(teamsSet).sort();
 
-          // calculate groups
           const groupCount = Math.floor(teams.length / 4);
           const groupNames = getGroupNames(groupCount);
 
@@ -177,10 +169,6 @@
           for (let g = 0; g < groupCount; g++) {
             const groupTeams = teams.slice(g * 4, (g + 1) * 4);
             html += `<div class="text-left font-bold text-lg mt-3">Group ${groupNames[g]}</div>`;
-
-            // Now for this group, show all pairs (each team with every other)
-            // We create all pairs ourselves here for display (not from fixers),
-            // so the UI is consistent with your requested logic
             for (let i = 0; i < groupTeams.length; i++) {
               for (let j = i + 1; j < groupTeams.length; j++) {
                 html += `
@@ -194,7 +182,6 @@
             }
           }
 
-          // Show leftover teams if any
           const leftoverStart = groupCount * 4;
           if (teams.length > leftoverStart) {
             const leftoverTeams = teams.slice(leftoverStart);
@@ -223,7 +210,6 @@
       const selectedOptions = Array.from(document.getElementById("teamSelector").selectedOptions);
       const selectedTeams = selectedOptions.map((opt) => opt.value);
       const selectedDate = document.getElementById("fixerDate").value;
-      const matchCount = parseInt(document.getElementById("matchCount").value);
       const groupCount = parseInt(document.getElementById("groupCount").value);
 
       if (selectedTeams.length < 2) {
@@ -240,10 +226,8 @@
         return;
       }
 
-      // Check if any fixers exist at all (any date)
       const existingFixers = await getDocs(collection(db, "fixers"));
       if (!existingFixers.empty) {
-        // Check if fixers exist for this date
         const dateQuery = query(collection(db, "fixers"), where("date", "==", selectedDate));
         const dateSnapshot = await getDocs(dateQuery);
         if (!dateSnapshot.empty) {
@@ -258,7 +242,6 @@
       const groupNames = getGroupNames(groupCount);
       let added = 0;
 
-      // Add fixers: for each group, add all pairs (each team vs every other team in group)
       for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
 
@@ -269,11 +252,6 @@
 
             await addDoc(collection(db, "fixers"), { team1, team2, date: selectedDate });
             added++;
-
-            if (matchCount === 2) {
-              await addDoc(collection(db, "fixers"), { team1: team2, team2: team1, date: selectedDate });
-              added++;
-            }
           }
         }
       }
