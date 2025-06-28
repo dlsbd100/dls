@@ -168,10 +168,10 @@
       }
 
       const start = new Date(baseDate);
-      const groupNames = getGroupNames(groupCount);
       let added = 0;
 
-      for (let g = 0; g < groupCount; g++) {
+      const actualGroupCount = Math.min(groupCount, Math.floor(selectedTeams.length / 4));
+      for (let g = 0; g < actualGroupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
         let matchOffset = 0;
 
