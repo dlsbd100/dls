@@ -69,7 +69,6 @@
         const fixers = [];
         snapshot.forEach(doc => fixers.push(doc.data()));
 
-        // Group by date
         const fixersByDate = {};
         fixers.forEach(fix => {
           const key = fix.date;
@@ -82,20 +81,19 @@
         let html = "";
 
         sortedDates.forEach((date, groupIndex) => {
-          const groupName = String.fromCharCode(65 + groupIndex); // A, B, C ...
-          html += `<div class="text-lg font-semibold text-yellow-400">Group ${groupName}</div>`;
+          const groupName = String.fromCharCode(65 + groupIndex);
+          html += `<div class="text-lg font-semibold text-yellow-400 mb-2">Group ${groupName}</div>`;
 
           const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
           matches.forEach((match, idx) => {
             const matchDate = addDays(baseDate, idx);
             html += `
-              <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow">
-                <div class="text-center text-gray-400 mb-1">${matchDate}</div>
-                <div class="flex justify-center items-center gap-3 font-semibold text-white">
-                  <div class="text-gray-400">${idx + 1}.</div>
+              <div class="relative border border-gray-700 rounded-xl p-4 bg-gradient-to-tr from-gray-900 via-gray-800 to-gray-900 shadow-lg hover:shadow-xl transition duration-300 backdrop-blur-sm">
+                <div class="absolute -top-3 right-3 text-xs px-2 py-1 bg-yellow-500 text-black rounded-full font-semibold shadow">${matchDate}</div>
+                <div class="flex items-center justify-center gap-4 font-bold text-white text-base mt-3">
                   <div class="text-right flex-1">${match.team1}</div>
-                  <div class="text-red-500 font-bold">VS</div>
+                  <div class="text-red-500 text-xl font-extrabold">VS</div>
                   <div class="text-left flex-1">${match.team2}</div>
                 </div>
               </div>
