@@ -10,7 +10,6 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
-
   <!-- Header -->
   <header class="bg-white shadow-md relative">
     <div class="max-w-4xl mx-auto px-4 py-3 relative flex items-center justify-center">
@@ -23,7 +22,6 @@
 
   <!-- Main -->
   <main class="max-w-4xl mx-auto p-4 space-y-6">
-
     <!-- Fixers Section -->
     <div class="bg-white shadow rounded p-4">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
@@ -37,27 +35,20 @@
             </label>
             <input type="date" id="fixerDate" class="border border-gray-300 rounded p-2 text-sm h-9" />
             <select id="groupCount" class="border border-gray-300 rounded p-2 text-sm h-9">
-                <option disabled selected>Select Group</option>
-                <option value="1">1 Group</option>
-                <option value="2">2 Groups</option>
-                <option value="3">3 Groups</option>
-                <option value="4">4 Groups</option>
-                <option value="5">5 Groups</option>
-                <option value="6">6 Groups</option>
-                <option value="7">7 Groups</option>
-                <option value="8">8 Groups</option>
-              </select>
-
-            <button
-              id="addFixerBtn"
-              class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 whitespace-nowrap"
-            >
+              <option disabled selected>Select Group</option>
+              <option value="1">1 Group</option>
+              <option value="2">2 Groups</option>
+              <option value="3">3 Groups</option>
+              <option value="4">4 Groups</option>
+              <option value="5">5 Groups</option>
+              <option value="6">6 Groups</option>
+              <option value="7">7 Groups</option>
+              <option value="8">8 Groups</option>
+            </select>
+            <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 whitespace-nowrap">
               <i class="fas fa-plus mr-1"></i> Add Fixers
             </button>
-            <button
-              id="deleteAllBtn"
-              class="bg-red-600 text-white text-sm px-3 py-2 rounded hover:bg-red-700 whitespace-nowrap"
-            >
+            <button id="deleteAllBtn" class="bg-red-600 text-white text-sm px-3 py-2 rounded hover:bg-red-700 whitespace-nowrap">
               <i class="fas fa-trash mr-1"></i> Delete All Fixers
             </button>
           </div>
@@ -67,7 +58,6 @@
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
     </div>
-
   </main>
 
   <!-- Firebase + Logic -->
@@ -212,15 +202,11 @@
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       const selectedOptions = Array.from(document.getElementById("teamSelector").selectedOptions);
       const selectedTeams = selectedOptions.map((opt) => opt.value);
-      const selectedDate = document.getElementById("fixerDate").value;
+      const baseDate = document.getElementById("fixerDate").value;
       const groupCount = parseInt(document.getElementById("groupCount").value);
 
-      if (selectedTeams.length < 2) {
-        Swal.fire({ icon: 'warning', title: 'Please select at least two teams.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-        return;
-      }
-      if (!selectedDate) {
-        Swal.fire({ icon: 'warning', title: 'Please select a date.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
+        Swal.fire({ icon: 'warning', title: 'Please fill out all fields properly.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
         return;
       }
 
@@ -229,41 +215,32 @@
         return;
       }
 
-      const existingFixers = await getDocs(collection(db, "fixers"));
-      if (!existingFixers.empty) {
-        const dateQuery = query(collection(db, "fixers"), where("date", "==", selectedDate));
-        const dateSnapshot = await getDocs(dateQuery);
-        if (!dateSnapshot.empty) {
-          Swal.fire({ icon: 'error', title: 'Fixers already added for this date.', position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
-          return;
-        } else {
-          Swal.fire({ icon: 'error', title: 'Fixers already added for other dates. Cannot add new date.', position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
-          return;
-        }
-      }
-
-      const groupNames = getGroupNames(groupCount);
       let added = 0;
+      const groupNames = getGroupNames(groupCount);
+      const startDate = new Date(baseDate);
 
       for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
+        const groupDate = new Date(startDate);
+        groupDate.setDate(groupDate.getDate() + g);
+        const formattedDate = groupDate.toISOString().split("T")[0];
+
         for (let i = 0; i < groupTeams.length; i++) {
           for (let j = i + 1; j < groupTeams.length; j++) {
-            const team1 = groupTeams[i];
-            const team2 = groupTeams[j];
-            await addDoc(collection(db, "fixers"), { team1, team2, date: selectedDate });
+            await addDoc(collection(db, "fixers"), {
+              team1: groupTeams[i],
+              team2: groupTeams[j],
+              date: formattedDate,
+            });
             added++;
           }
         }
       }
 
-      Swal.fire({ icon: 'success', title: `${added} fixers added successfully.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: `${added} fixers added on ${groupCount} different dates.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
 
       document.getElementById("selectAllTeams").checked = false;
-      const selector = document.getElementById("teamSelector");
-      for (let option of selector.options) {
-        option.selected = false;
-      }
+      document.getElementById("teamSelector").selectedIndex = -1;
       document.getElementById("groupCount").value = "1";
       document.getElementById("fixerDate").value = "";
 
