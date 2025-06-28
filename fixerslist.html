@@ -256,14 +256,15 @@
       }
 
       Swal.fire({ icon: 'success', title: `${added} fixers added successfully.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-      
-      // Reset selections
+
+      // Reset inputs
       document.getElementById("selectAllTeams").checked = false;
       const selector = document.getElementById("teamSelector");
       for (let option of selector.options) {
         option.selected = false;
       }
       document.getElementById("groupCount").value = "1";
+      document.getElementById("fixerDate").value = "";
 
       loadFixers();
     });
