@@ -70,8 +70,6 @@
       getDocs,
       addDoc,
       deleteDoc,
-      query,
-      where,
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -90,192 +88,137 @@
     let teamList = [];
 
     onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-      } else {
+      if (!user) window.location.href = "login.html";
+      else {
         loadTeams();
         loadFixers();
       }
     });
 
     async function loadTeams() {
-      try {
-        const snapshot = await getDocs(collection(db, "playersform"));
-        const teams = new Set();
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.team) teams.add(data.team);
-        });
-        teamList = Array.from(teams);
-        const selector = document.getElementById("teamSelector");
-        selector.innerHTML = teamList
-          .map((team) => `<option value="${team}">${team}</option>`)
-          .join("");
-      } catch (e) {
-        console.error("Failed to load teams:", e);
-      }
+      const snapshot = await getDocs(collection(db, "playersform"));
+      const teams = new Set();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.team) teams.add(data.team);
+      });
+      teamList = Array.from(teams);
+      const selector = document.getElementById("teamSelector");
+      selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
     function getGroupNames(count) {
-      const groups = [];
-      for (let i = 0; i < count; i++) {
-        groups.push(String.fromCharCode(65 + i));
-      }
-      return groups;
+      return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
     }
 
     async function loadFixers() {
-      try {
-        const fixersSnapshot = await getDocs(collection(db, "fixers"));
-        const fixersContainer = document.getElementById("fixersContainer");
+      const snapshot = await getDocs(collection(db, "fixers"));
+      const container = document.getElementById("fixersContainer");
 
-        if (fixersSnapshot.empty) {
-          fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
-          return;
-        }
-
-        const fixers = [];
-        fixersSnapshot.forEach((doc) => fixers.push({ id: doc.id, ...doc.data() }));
-
-        const fixersByDate = fixers.reduce((acc, fix) => {
-          acc[fix.date] = acc[fix.date] || [];
-          acc[fix.date].push(fix);
-          return acc;
-        }, {});
-
-        let html = "";
-
-        for (const date in fixersByDate) {
-          const matches = fixersByDate[date];
-          const teamsSet = new Set();
-          matches.forEach((m) => {
-            teamsSet.add(m.team1);
-            teamsSet.add(m.team2);
-          });
-          const teams = Array.from(teamsSet).sort();
-
-          const groupCount = Math.floor(teams.length / 4);
-          const groupNames = getGroupNames(groupCount);
-
-          html += `<div class="text-center text-xs text-gray-500 font-medium mt-2">${date}</div>`;
-
-          for (let g = 0; g < groupCount; g++) {
-            const groupTeams = teams.slice(g * 4, (g + 1) * 4);
-            html += `<div class="text-left font-semibold text-sm mt-2">Group ${groupNames[g]}</div>`;
-            for (let i = 0; i < groupTeams.length; i++) {
-              for (let j = i + 1; j < groupTeams.length; j++) {
-                html += `
-                  <div class="flex justify-center items-center gap-3 border p-2 rounded shadow-sm text-xs">
-                    <div class="flex-1 text-right font-medium">${groupTeams[i]}</div>
-                    <div class="text-base font-bold text-red-500">VS</div>
-                    <div class="flex-1 text-left font-medium">${groupTeams[j]}</div>
-                  </div>
-                `;
-              }
-            }
-          }
-
-          const leftoverStart = groupCount * 4;
-          if (teams.length > leftoverStart) {
-            const leftoverTeams = teams.slice(leftoverStart);
-            html += `<div class="text-left font-semibold text-sm mt-2">Group (Leftover Teams)</div>`;
-            for (let i = 0; i < leftoverTeams.length; i++) {
-              for (let j = i + 1; j < leftoverTeams.length; j++) {
-                html += `
-                  <div class="flex justify-center items-center gap-3 border p-2 rounded shadow-sm text-xs">
-                    <div class="flex-1 text-right font-medium">${leftoverTeams[i]}</div>
-                    <div class="text-base font-bold text-red-500">VS</div>
-                    <div class="flex-1 text-left font-medium">${leftoverTeams[j]}</div>
-                  </div>
-                `;
-              }
-            }
-          }
-        }
-
-        fixersContainer.innerHTML = html;
-      } catch (e) {
-        document.getElementById("fixersContainer").innerHTML = `<p class="text-red-600 text-center">${e.message}</p>`;
+      if (snapshot.empty) {
+        container.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
+        return;
       }
+
+      const fixers = [];
+      snapshot.forEach(doc => fixers.push(doc.data()));
+
+      const fixersByDate = {};
+      fixers.forEach(fix => {
+        const key = fix.date;
+        if (!fixersByDate[key]) fixersByDate[key] = [];
+        fixersByDate[key].push(fix);
+      });
+
+      let html = "";
+      Object.keys(fixersByDate).sort().forEach(date => {
+        const matches = fixersByDate[date];
+        html += `<div class="text-center text-xs text-gray-500 font-medium mt-4">${date}</div>`;
+        matches.forEach(match => {
+          html += `
+            <div class="flex justify-center items-center gap-3 border p-2 rounded shadow-sm text-xs">
+              <div class="flex-1 text-right font-medium">${match.team1}</div>
+              <div class="text-base font-bold text-red-500">VS</div>
+              <div class="flex-1 text-left font-medium">${match.team2}</div>
+              <div class="text-gray-400 text-[10px]">${match.date}</div>
+            </div>
+          `;
+        });
+      });
+
+      container.innerHTML = html;
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
-      const selectedOptions = Array.from(document.getElementById("teamSelector").selectedOptions);
-      const selectedTeams = selectedOptions.map((opt) => opt.value);
+      const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
       const baseDate = document.getElementById("fixerDate").value;
       const groupCount = parseInt(document.getElementById("groupCount").value);
 
       if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
-        Swal.fire({ icon: 'warning', title: 'Please fill out all fields properly.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+        Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
         return;
       }
 
       if (selectedTeams.length !== groupCount * 4) {
-        Swal.fire({ icon: 'error', title: `Select exactly ${groupCount * 4} teams for ${groupCount} group(s).`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
+        Swal.fire({ icon: 'error', title: `Select ${groupCount * 4} teams.`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
         return;
       }
 
-      let added = 0;
+      const start = new Date(baseDate);
       const groupNames = getGroupNames(groupCount);
-      const startDate = new Date(baseDate);
+      let added = 0;
 
       for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
-        const groupDate = new Date(startDate);
-        groupDate.setDate(groupDate.getDate() + g);
-        const formattedDate = groupDate.toISOString().split("T")[0];
+        const matchDate = new Date(start);
+        matchDate.setDate(start.getDate() + g);
+        const dateStr = matchDate.toISOString().split("T")[0];
 
         for (let i = 0; i < groupTeams.length; i++) {
           for (let j = i + 1; j < groupTeams.length; j++) {
             await addDoc(collection(db, "fixers"), {
               team1: groupTeams[i],
               team2: groupTeams[j],
-              date: formattedDate,
+              date: dateStr
             });
             added++;
           }
         }
       }
 
-      Swal.fire({ icon: 'success', title: `${added} fixers added on ${groupCount} different dates.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
 
-      document.getElementById("selectAllTeams").checked = false;
       document.getElementById("teamSelector").selectedIndex = -1;
       document.getElementById("groupCount").value = "1";
       document.getElementById("fixerDate").value = "";
+      document.getElementById("selectAllTeams").checked = false;
 
       loadFixers();
     });
 
     document.getElementById("selectAllTeams").addEventListener("change", (e) => {
-      const selector = document.getElementById("teamSelector");
-      for (let option of selector.options) {
-        option.selected = e.target.checked;
-      }
+      const all = document.getElementById("teamSelector").options;
+      for (let o of all) o.selected = e.target.checked;
     });
 
     document.getElementById("deleteAllBtn").addEventListener("click", async () => {
-      const confirmResult = await Swal.fire({
+      const confirm = await Swal.fire({
         title: 'Are you sure?',
-        text: "This will delete all fixers!",
+        text: "All matches will be deleted!",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Yes, delete all!',
       });
 
-      if (!confirmResult.isConfirmed) return;
+      if (!confirm.isConfirmed) return;
 
-      try {
-        const snapshot = await getDocs(collection(db, "fixers"));
-        const deletions = [];
-        snapshot.forEach((doc) => deletions.push(deleteDoc(doc.ref)));
+      const snapshot = await getDocs(collection(db, "fixers"));
+      const deletions = [];
+      snapshot.forEach(doc => deletions.push(deleteDoc(doc.ref)));
+      await Promise.all(deletions);
 
-        await Promise.all(deletions);
-        Swal.fire({ icon: 'success', title: 'All fixers deleted successfully.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-        loadFixers();
-      } catch (e) {
-        Swal.fire({ icon: 'error', title: `Error deleting fixers: ${e.message}`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
-      }
+      Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      loadFixers();
     });
   </script>
 </body>
