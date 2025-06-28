@@ -136,11 +136,13 @@
         const groupName = String.fromCharCode(65 + index); // A, B, C...
         html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
         const matches = fixersByDate[date];
-        matches.forEach(match => {
+        matches.sort((a, b) => a.team1.localeCompare(b.team1)); // optional sorting
+        matches.forEach((match, idx) => {
           html += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1">
               <div class="text-center text-[10px] text-gray-500 font-semibold">${match.date}</div>
               <div class="flex justify-center items-center gap-3">
+                <div class="text-sm font-semibold text-gray-600">${idx + 1}.</div>
                 <div class="flex-1 text-right font-medium">${match.team1}</div>
                 <div class="text-base font-bold text-red-500">VS</div>
                 <div class="flex-1 text-left font-medium">${match.team2}</div>
@@ -169,7 +171,6 @@
       }
 
       const start = new Date(baseDate);
-      const groupNames = getGroupNames(groupCount);
       let added = 0;
 
       for (let g = 0; g < groupCount; g++) {
