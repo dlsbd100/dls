@@ -132,14 +132,17 @@
 
       let html = "";
       Object.keys(fixersByDate).sort().forEach(date => {
-        html += `<div class="bg-gray-200 rounded p-2 text-center font-medium text-sm text-gray-700">${date}</div>`;
+        html += `<div class="bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
         const matches = fixersByDate[date];
         matches.forEach(match => {
           html += `
-            <div class="flex justify-center items-center gap-3 border p-2 rounded shadow-sm text-xs bg-white">
-              <div class="flex-1 text-right font-medium">${match.team1}</div>
-              <div class="text-base font-bold text-red-500">VS</div>
-              <div class="flex-1 text-left font-medium">${match.team2}</div>
+            <div class="border p-2 rounded shadow-sm text-xs space-y-1">
+              <div class="text-center text-[10px] text-gray-500 font-semibold">${match.date}</div>
+              <div class="flex justify-center items-center gap-3">
+                <div class="flex-1 text-right font-medium">${match.team1}</div>
+                <div class="text-base font-bold text-red-500">VS</div>
+                <div class="flex-1 text-left font-medium">${match.team2}</div>
+              </div>
             </div>
           `;
         });
