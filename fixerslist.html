@@ -107,10 +107,6 @@
       selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
-    function getGroupNames(count) {
-      return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
-    }
-
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const container = document.getElementById("fixersContainer");
@@ -133,10 +129,10 @@
       const sortedDates = Object.keys(fixersByDate).sort();
       let html = "";
       sortedDates.forEach((date, index) => {
-        const groupName = String.fromCharCode(65 + index); // A, B, C...
+        const groupName = String.fromCharCode(65 + index);
         html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
         const matches = fixersByDate[date];
-        matches.sort((a, b) => a.team1.localeCompare(b.team1)); // optional sorting
+        matches.sort((a, b) => a.team1.localeCompare(b.team1));
         matches.forEach((match, idx) => {
           html += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1">
@@ -157,10 +153,10 @@
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
-      const baseDate = document.getElementById("fixerDate").value;
+      const inputDate = document.getElementById("fixerDate").value;
       const groupCount = parseInt(document.getElementById("groupCount").value);
 
-      if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
+      if (selectedTeams.length < 2 || isNaN(groupCount)) {
         Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
         return;
       }
@@ -170,7 +166,7 @@
         return;
       }
 
-      const start = new Date(baseDate);
+      const start = inputDate ? new Date(inputDate) : new Date(); // ⬅️ Default to today if no input
       let added = 0;
 
       for (let g = 0; g < groupCount; g++) {
