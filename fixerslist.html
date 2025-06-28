@@ -119,7 +119,6 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
-      // Group by date
       const grouped = {};
       fixers.forEach(fix => {
         if (!grouped[fix.date]) grouped[fix.date] = [];
@@ -130,7 +129,7 @@
       const dates = Object.keys(grouped).sort();
 
       dates.forEach((date, idx) => {
-        const groupName = String.fromCharCode(65 + idx); // A, B, C, ...
+        const groupName = String.fromCharCode(65 + idx);
         html += `<div class="bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
         grouped[date].forEach(match => {
           html += `
@@ -174,17 +173,21 @@
 
       for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
-        const matchDate = new Date(start);
-        matchDate.setDate(start.getDate() + g);
-        const dateStr = matchDate.toISOString().split("T")[0];
+        let matchOffset = 0;
 
         for (let i = 0; i < groupTeams.length; i++) {
           for (let j = i + 1; j < groupTeams.length; j++) {
+            const matchDate = new Date(start);
+            matchDate.setDate(start.getDate() + matchOffset);
+            const dateStr = matchDate.toISOString().split("T")[0];
+            matchOffset++;
+
             await addDoc(collection(db, "fixers"), {
               team1: groupTeams[i],
               team2: groupTeams[j],
               date: dateStr
             });
+
             added++;
           }
         }
