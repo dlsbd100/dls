@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fixers তালিকা</title>
+  <title>Match Fixers</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
 </head>
@@ -31,38 +31,38 @@
   <!-- Bottom Navigation -->
   <nav class="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-700 flex justify-around items-center py-2 rounded-t-2xl shadow-inner text-white h-16 z-10">
     <a href="dashboard.html" class="flex flex-col items-center text-xs font-semibold no-underline">
-      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
+      <div class="bg-gray-900 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
         <i class="fa-solid fa-gamepad text-lg text-gray-300 hover:text-yellow-400"></i>
       </div>
       Home
     </a>
     <a href="result.html" class="flex flex-col items-center text-xs font-semibold no-underline">
-      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
+      <div class="bg-gray-900 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
         <i class="fa-solid fa-ranking-star text-lg text-gray-300 hover:text-yellow-400"></i>
       </div>
       Result
     </a>
     <a href="league.html" class="flex flex-col items-center text-xs font-semibold no-underline">
-      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
+      <div class="bg-gray-900 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
         <i class="fa-solid fa-trophy text-lg text-gray-300 hover:text-yellow-400"></i>
       </div>
       League
     </a>
     <a href="fixers.html" class="flex flex-col items-center text-xs font-semibold no-underline">
-      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-yellow-400">
+      <div class="bg-gray-900 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-yellow-400">
         <i class="fa-solid fa-clock-rotate-left text-lg text-yellow-300"></i>
       </div>
       Fixers
     </a>
     <a href="profile.html" class="flex flex-col items-center text-xs font-semibold no-underline">
-      <div class="bg-gray-900 bg-opacity-70 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-400">
+      <div class="bg-gray-900 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-400">
         <i class="fa-solid fa-user text-lg text-gray-400 hover:text-yellow-400"></i>
       </div> 
       Profile
     </a>
   </nav>
 
-  <!-- Firebase & Script -->
+  <!-- Firebase & Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -100,33 +100,33 @@
           return;
         }
 
-        const fixerMap = {};
+        const fixersByDate = {};
         let count = 0;
 
-        snapshot.forEach((doc) => {
+        snapshot.forEach(doc => {
           const data = doc.data();
-          const date = data.date || "তারিখ নেই";
-          if (!fixerMap[date]) fixerMap[date] = [];
-          fixerMap[date].push(data);
+          if (!fixersByDate[data.date]) fixersByDate[data.date] = [];
+          fixersByDate[data.date].push(data);
           count++;
         });
 
         fixerCount.textContent = count;
-
-        const sortedDates = Object.keys(fixerMap).sort();
+        const sortedDates = Object.keys(fixersByDate).sort();
         const groupNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         sortedDates.forEach((date, index) => {
           const group = groupNames[index] || `X`;
+          const matches = fixersByDate[date];
+
           fixerList.insertAdjacentHTML("beforeend", `
             <div class="mb-1">
               <div class="text-lg font-bold text-yellow-300 mb-2 bg-gray-800 px-3 py-1 inline-block rounded-full shadow">
                 Group ${group}
               </div>
               <div class="space-y-3">
-                ${fixerMap[date].map(fix => `
+                ${matches.map(fix => `
                   <div class="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg hover:scale-[1.02] transition-transform duration-300">
-                    <div class="text-center text-sm text-gray-400 font-semibold mb-2">${fix.date || "তারিখ নেই"}</div>
+                    <div class="text-center text-sm text-gray-400 font-semibold mb-2">${fix.date}</div>
                     <div class="flex items-center justify-center gap-3 text-xl font-semibold">
                       <span class="text-blue-300">${fix.team1}</span>
                       <span class="text-red-500 font-bold">VS</span>
