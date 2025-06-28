@@ -90,7 +90,9 @@
         return;
       }
 
+      // ✅ playersform থেকে ফিক্সার লোড হবে
       const q = query(collection(db, "playersform"), orderBy("date", "asc"));
+
       onSnapshot(q, (snapshot) => {
         fixerList.innerHTML = "";
 
@@ -105,9 +107,11 @@
 
         snapshot.forEach(doc => {
           const data = doc.data();
-          if (!fixersByDate[data.date]) fixersByDate[data.date] = [];
-          fixersByDate[data.date].push(data);
-          count++;
+          if (data.team1 && data.team2 && data.date) {
+            if (!fixersByDate[data.date]) fixersByDate[data.date] = [];
+            fixersByDate[data.date].push(data);
+            count++;
+          }
         });
 
         fixerCount.textContent = count;
