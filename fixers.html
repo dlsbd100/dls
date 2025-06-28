@@ -112,14 +112,17 @@
                 <div class="text-center text-gray-400 mb-1">${matchDate}</div>
                 <div class="flex justify-center items-center gap-3 font-semibold text-white">
                   <div class="text-gray-400">${idx + 1}.</div>
-                  <div class="flex items-center gap-2 flex-1 justify-end">
-                    ${team1Img ? `<img src="${team1Img}" class="w-6 h-6 rounded-full" />` : ""}
+
+                  <div class="flex flex-col items-center gap-1 flex-1 justify-end">
                     <span>${match.team1}</span>
+                    ${team1Img ? `<img src="${team1Img}" class="w-8 h-8 rounded-full" alt="${match.team1}"/>` : ""}
                   </div>
+
                   <div class="text-red-500 font-bold">VS</div>
-                  <div class="flex items-center gap-2 flex-1 justify-start">
+
+                  <div class="flex flex-col items-center gap-1 flex-1 justify-start">
                     <span>${match.team2}</span>
-                    ${team2Img ? `<img src="${team2Img}" class="w-6 h-6 rounded-full" />` : ""}
+                    ${team2Img ? `<img src="${team2Img}" class="w-8 h-8 rounded-full" alt="${match.team2}"/>` : ""}
                   </div>
                 </div>
               </div>
