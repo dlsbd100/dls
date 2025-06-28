@@ -107,10 +107,6 @@
       selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
-    function getGroupNames(count) {
-      return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
-    }
-
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const container = document.getElementById("fixersContainer");
@@ -123,17 +119,20 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
-      const fixersByDate = {};
+      // Group by date
+      const grouped = {};
       fixers.forEach(fix => {
-        const key = fix.date;
-        if (!fixersByDate[key]) fixersByDate[key] = [];
-        fixersByDate[key].push(fix);
+        if (!grouped[fix.date]) grouped[fix.date] = [];
+        grouped[fix.date].push(fix);
       });
 
       let html = "";
-      Object.keys(fixersByDate).sort().forEach(date => {
-        const matches = fixersByDate[date];
-        matches.forEach(match => {
+      const dates = Object.keys(grouped).sort();
+
+      dates.forEach((date, idx) => {
+        const groupName = String.fromCharCode(65 + idx); // A, B, C, ...
+        html += `<div class="bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
+        grouped[date].forEach(match => {
           html += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1">
               <div class="text-center text-[10px] text-gray-500 font-semibold">${match.date}</div>
@@ -148,6 +147,10 @@
       });
 
       container.innerHTML = html;
+    }
+
+    function getGroupNames(count) {
+      return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
