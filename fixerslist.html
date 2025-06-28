@@ -63,7 +63,7 @@
           </div>
         </div>
       </div>
-      <div id="fixersContainer" class="space-y-4 max-h-[600px] overflow-y-auto">
+      <div id="fixersContainer" class="space-y-3 max-h-[600px] overflow-y-auto">
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
     </div>
@@ -167,18 +167,18 @@
           const groupCount = Math.floor(teams.length / 4);
           const groupNames = getGroupNames(groupCount);
 
-          html += `<div class="text-center text-sm text-gray-500 font-medium mt-4">${date}</div>`;
+          html += `<div class="text-center text-xs text-gray-500 font-medium mt-2">${date}</div>`;
 
           for (let g = 0; g < groupCount; g++) {
             const groupTeams = teams.slice(g * 4, (g + 1) * 4);
-            html += `<div class="text-left font-bold text-lg mt-3">Group ${groupNames[g]}</div>`;
+            html += `<div class="text-left font-semibold text-sm mt-2">Group ${groupNames[g]}</div>`;
             for (let i = 0; i < groupTeams.length; i++) {
               for (let j = i + 1; j < groupTeams.length; j++) {
                 html += `
-                  <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
-                    <div class="flex-1 text-right font-semibold">${groupTeams[i]}</div>
-                    <div class="text-2xl font-bold text-red-500">VS</div>
-                    <div class="flex-1 text-left font-semibold">${groupTeams[j]}</div>
+                  <div class="flex justify-center items-center gap-3 border p-2 rounded shadow-sm text-xs">
+                    <div class="flex-1 text-right font-medium">${groupTeams[i]}</div>
+                    <div class="text-base font-bold text-red-500">VS</div>
+                    <div class="flex-1 text-left font-medium">${groupTeams[j]}</div>
                   </div>
                 `;
               }
@@ -188,14 +188,14 @@
           const leftoverStart = groupCount * 4;
           if (teams.length > leftoverStart) {
             const leftoverTeams = teams.slice(leftoverStart);
-            html += `<div class="text-left font-bold text-lg mt-3">Group (Leftover Teams)</div>`;
+            html += `<div class="text-left font-semibold text-sm mt-2">Group (Leftover Teams)</div>`;
             for (let i = 0; i < leftoverTeams.length; i++) {
               for (let j = i + 1; j < leftoverTeams.length; j++) {
                 html += `
-                  <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
-                    <div class="flex-1 text-right font-semibold">${leftoverTeams[i]}</div>
-                    <div class="text-2xl font-bold text-red-500">VS</div>
-                    <div class="flex-1 text-left font-semibold">${leftoverTeams[j]}</div>
+                  <div class="flex justify-center items-center gap-3 border p-2 rounded shadow-sm text-xs">
+                    <div class="flex-1 text-right font-medium">${leftoverTeams[i]}</div>
+                    <div class="text-base font-bold text-red-500">VS</div>
+                    <div class="flex-1 text-left font-medium">${leftoverTeams[j]}</div>
                   </div>
                 `;
               }
@@ -259,7 +259,6 @@
 
       Swal.fire({ icon: 'success', title: `${added} fixers added successfully.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
 
-      // Reset inputs
       document.getElementById("selectAllTeams").checked = false;
       const selector = document.getElementById("teamSelector");
       for (let option of selector.options) {
