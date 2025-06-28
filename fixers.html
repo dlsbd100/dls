@@ -121,11 +121,12 @@
           fixerList.insertAdjacentHTML("beforeend", `
             <div class="mb-1">
               <div class="text-lg font-bold text-yellow-300 mb-2 bg-gray-800 px-3 py-1 inline-block rounded-full shadow">
-                Group ${group})
+                Group ${group} (${date})
               </div>
               <div class="space-y-3">
                 ${fixerMap[date].map(fix => `
                   <div class="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg hover:scale-[1.02] transition-transform duration-300">
+                    <div class="text-center text-sm text-gray-400 font-semibold mb-2">${fix.date || "তারিখ নেই"}</div>
                     <div class="flex items-center justify-center gap-3 text-xl font-semibold">
                       <span class="text-blue-300">${fix.team1}</span>
                       <span class="text-red-500 font-bold">VS</span>
