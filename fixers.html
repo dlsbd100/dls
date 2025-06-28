@@ -30,7 +30,7 @@
   <!-- Firebase & Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -46,14 +46,29 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    let teamPhotos = {};
+
+    async function loadTeamPhotos() {
+      const snap = await getDocs(collection(db, "playersform"));
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (data.team && data.photoUrl) {
+          teamPhotos[data.team.trim().toLowerCase()] = data.photoUrl;
+        }
+      });
+    }
+
     function addDays(dateStr, days) {
       const d = new Date(dateStr);
       d.setDate(d.getDate() + days);
       return d.toISOString().split("T")[0];
     }
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) loadFixers();
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        await loadTeamPhotos();
+        loadFixers();
+      }
     });
 
     function loadFixers() {
@@ -69,7 +84,6 @@
         const fixers = [];
         snapshot.forEach(doc => fixers.push(doc.data()));
 
-        // Group by date
         const fixersByDate = {};
         fixers.forEach(fix => {
           const key = fix.date;
@@ -82,21 +96,33 @@
         let html = "";
 
         sortedDates.forEach((date, groupIndex) => {
-          const groupName = String.fromCharCode(65 + groupIndex); // A, B, C ...
+          const groupName = String.fromCharCode(65 + groupIndex);
           html += `<div class="text-lg font-semibold text-yellow-400">Group ${groupName}</div>`;
 
           const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
           matches.forEach((match, idx) => {
             const matchDate = addDays(baseDate, idx);
+            const team1Img = teamPhotos[match.team1.trim().toLowerCase()] || "";
+            const team2Img = teamPhotos[match.team2.trim().toLowerCase()] || "";
+
             html += `
               <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow">
-                <div class="text-center text-gray-400 mb-1">${matchDate}</div>
+                <div class="text-center text-gray-400 mb-1 text-md">${matchDate}</div>
                 <div class="flex justify-center items-center gap-3 font-semibold text-white">
-                  <div class="text-gray-400 hidden">${idx + 1}.</div>
-                  <div class="text-right flex-1">${match.team1}</div>
-                  <div class="text-red-500 font-bold">VS</div>
-                  <div class="text-left flex-1">${match.team2}</div>
+                  <div class="text-gray-400">${idx + 1}.</div>
+
+                  <div class="flex flex-col items-center gap-1 flex-1 justify-end">
+                    ${team1Img ? `<img src="${team1Img}" class="w-10 h-10 rounded-full" alt="${match.team1}" />` : ""}
+                    <span>${match.team1}</span>
+                  </div>
+
+                  <div class="text-yellow-400 font-bold text-2xl">VS</div>
+
+                  <div class="flex flex-col items-center gap-1 flex-1 justify-start">
+                    ${team2Img ? `<img src="${team2Img}" class="w-10 h-10 rounded-full" alt="${match.team2}" />` : ""}
+                    <span>${match.team2}</span>
+                  </div>
                 </div>
               </div>
             `;
