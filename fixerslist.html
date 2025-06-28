@@ -137,10 +137,10 @@
         matches.forEach(match => {
           html += `
             <div class="flex justify-center items-center gap-3 border p-2 rounded shadow-sm text-xs">
+              <div class="text-gray-400 text-[10px]">${match.date}</div>
               <div class="flex-1 text-right font-medium">${match.team1}</div>
               <div class="text-base font-bold text-red-500">VS</div>
               <div class="flex-1 text-left font-medium">${match.team2}</div>
-              <div class="text-gray-400 text-[10px]">${match.date}</div>
             </div>
           `;
         });
