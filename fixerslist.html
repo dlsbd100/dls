@@ -107,10 +107,6 @@
       selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
-    function getGroupNames(count) {
-      return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
-    }
-
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const container = document.getElementById("fixersContainer");
@@ -176,7 +172,7 @@
       for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
         const matchDate = new Date(start);
-        matchDate.setDate(start.getDate() + g);
+        matchDate.setDate(start.getDate() + g); // increment day per group
         const dateStr = matchDate.toISOString().split("T")[0];
 
         for (let i = 0; i < groupTeams.length; i++) {
