@@ -111,6 +111,16 @@
       }
     }
 
+    // Helper to get group names A,B,C...
+    function getGroupNames(count) {
+      const groups = [];
+      for(let i = 0; i < count; i++) {
+        groups.push(String.fromCharCode(65 + i));
+      }
+      return groups;
+    }
+
+    // Load fixers and show grouped by date & group name
     async function loadFixers() {
       try {
         const fixersSnapshot = await getDocs(collection(db, "fixers"));
@@ -124,24 +134,77 @@
         const fixers = [];
         fixersSnapshot.forEach(doc => fixers.push({ id: doc.id, ...doc.data() }));
 
-        // Group fixers by date to avoid repeating date header every match
-        const groupedByDate = fixers.reduce((acc, curr) => {
-          acc[curr.date] = acc[curr.date] || [];
-          acc[curr.date].push(curr);
+        // Group fixers by date and group
+        // Assuming each fixer doc has optional 'group' field,
+        // but since you didn't store group in DB, let's try to infer groups by grouping teams in batches of 4 by date
+
+        // So: Group by date first
+        const fixersByDate = fixers.reduce((acc, fix) => {
+          acc[fix.date] = acc[fix.date] || [];
+          acc[fix.date].push(fix);
           return acc;
         }, {});
 
+        // Now for each date, split fixers into groups by teams in groups of 4
+        // We'll get unique teams per date, sort them, split to groups of 4, then show matches accordingly with group name
+
         let html = "";
-        for (const date in groupedByDate) {
-          html += `<div class="text-center text-sm text-gray-500 font-medium mt-4">${date}</div>`;
-          groupedByDate[date].forEach(match => {
-            html += `
-              <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
-                <div class="flex-1 text-right font-semibold">${match.team1}</div>
-                <div class="text-2xl font-bold text-red-500">VS</div>
-                <div class="flex-1 text-left font-semibold">${match.team2}</div>
-              </div>`;
+
+        for (const date in fixersByDate) {
+          const matches = fixersByDate[date];
+
+          // get unique teams
+          const teamsSet = new Set();
+          matches.forEach(m => {
+            teamsSet.add(m.team1);
+            teamsSet.add(m.team2);
           });
+          const teams = Array.from(teamsSet).sort();
+
+          // group count = total teams / 4 (round down)
+          const groupCount = Math.floor(teams.length / 4);
+          const groupNames = getGroupNames(groupCount);
+
+          html += `<div class="text-center text-sm text-gray-500 font-medium mt-4">${date}</div>`;
+
+          for(let g = 0; g < groupCount; g++) {
+            const groupTeams = teams.slice(g*4, (g+1)*4);
+            html += `<div class="text-left font-bold text-lg mt-3">Group ${groupNames[g]}</div>`;
+
+            // filter matches with teams in this group only
+            const groupMatches = matches.filter(m =>
+              groupTeams.includes(m.team1) && groupTeams.includes(m.team2)
+            );
+
+            groupMatches.forEach(match => {
+              html += `
+                <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
+                  <div class="flex-1 text-right font-semibold">${match.team1}</div>
+                  <div class="text-2xl font-bold text-red-500">VS</div>
+                  <div class="flex-1 text-left font-semibold">${match.team2}</div>
+                </div>`;
+            });
+          }
+
+          // If any leftover teams (<4) without a full group, show separately (optional)
+          const leftoverStart = groupCount*4;
+          if(teams.length > leftoverStart) {
+            const leftoverTeams = teams.slice(leftoverStart);
+            html += `<div class="text-left font-bold text-lg mt-3">Group (Leftover Teams)</div>`;
+
+            const leftoverMatches = matches.filter(m =>
+              leftoverTeams.includes(m.team1) && leftoverTeams.includes(m.team2)
+            );
+
+            leftoverMatches.forEach(match => {
+              html += `
+                <div class="flex justify-center items-center gap-6 border p-4 rounded shadow-sm">
+                  <div class="flex-1 text-right font-semibold">${match.team1}</div>
+                  <div class="text-2xl font-bold text-red-500">VS</div>
+                  <div class="flex-1 text-left font-semibold">${match.team2}</div>
+                </div>`;
+            });
+          }
         }
 
         fixersContainer.innerHTML = html;
@@ -149,15 +212,6 @@
       } catch (e) {
         document.getElementById("fixersContainer").innerHTML = `<p class="text-red-600 text-center">${e.message}</p>`;
       }
-    }
-
-    // Helper: Generate group names like A, B, C, ...
-    function getGroupNames(count) {
-      const groups = [];
-      for(let i = 0; i < count; i++) {
-        groups.push(String.fromCharCode(65 + i)); // 65 = 'A'
-      }
-      return groups;
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
@@ -203,8 +257,6 @@
 
       for (let g = 0; g < groupCount; g++) {
         const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
-        // Optionally, you can save group name inside document, if needed.
-        // But here only fixers with team1, team2, date
 
         // For all pairs in groupTeams, add fixers
         for (let i = 0; i < groupTeams.length; i++) {
