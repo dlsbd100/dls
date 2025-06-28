@@ -15,7 +15,7 @@
       <div class="bg-red-600 bg-opacity-50 border border-red-500 text-red-300 w-9 h-9 flex items-center justify-center font-bold rounded-full shadow">FX</div>
       <h2 class="text-2xl font-bold bg-gradient-to-r from-red-400 via-yellow-300 to-red-400 bg-clip-text text-transparent">Fixers</h2>
     </div>
-    <div style="height: 29px;" class="flex items-center gap-1 bg-gradient-to-br from-red-500 via-yellow-700 to-red-500 text-black px-2 py-1 rounded-full shadow-lg border border-yellow-200">
+    <div class="flex items-center gap-1 bg-gradient-to-br from-red-500 via-yellow-700 to-red-500 text-black px-2 py-1 rounded-full shadow-lg border border-yellow-200 h-[29px]">
       <i class="fa-solid fa-users text-white text-sm"></i>
       <span id="fixerCount" class="text-white font-semibold text-sm">0</span>
     </div>
@@ -27,40 +27,6 @@
       <p class="text-center text-gray-400">লোড হচ্ছে...</p>
     </div>
   </main>
-
-  <!-- Bottom Navigation -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-700 flex justify-around items-center py-2 rounded-t-2xl shadow-inner text-white h-16 z-10">
-    <a href="dashboard.html" class="flex flex-col items-center text-xs font-semibold no-underline">
-      <div class="bg-gray-900 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
-        <i class="fa-solid fa-gamepad text-lg text-gray-300 hover:text-yellow-400"></i>
-      </div>
-      Home
-    </a>
-    <a href="result.html" class="flex flex-col items-center text-xs font-semibold no-underline">
-      <div class="bg-gray-900 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
-        <i class="fa-solid fa-ranking-star text-lg text-gray-300 hover:text-yellow-400"></i>
-      </div>
-      Result
-    </a>
-    <a href="league.html" class="flex flex-col items-center text-xs font-semibold no-underline">
-      <div class="bg-gray-900 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-500">
-        <i class="fa-solid fa-trophy text-lg text-gray-300 hover:text-yellow-400"></i>
-      </div>
-      League
-    </a>
-    <a href="fixers.html" class="flex flex-col items-center text-xs font-semibold no-underline">
-      <div class="bg-gray-900 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-yellow-400">
-        <i class="fa-solid fa-clock-rotate-left text-lg text-yellow-300"></i>
-      </div>
-      Fixers
-    </a>
-    <a href="profile.html" class="flex flex-col items-center text-xs font-semibold no-underline">
-      <div class="bg-gray-900 w-9 h-9 rounded-full mb-1 flex items-center justify-center border border-gray-400">
-        <i class="fa-solid fa-user text-lg text-gray-400 hover:text-yellow-400"></i>
-      </div> 
-      Profile
-    </a>
-  </nav>
 
   <!-- Firebase & Logic -->
   <script type="module">
@@ -90,9 +56,7 @@
         return;
       }
 
-      // ✅ playersform থেকে ফিক্সার লোড হবে
-      const q = query(collection(db, "playersform"), orderBy("date", "asc"));
-
+      const q = query(collection(db, "fixers"), orderBy("date", "asc"));
       onSnapshot(q, (snapshot) => {
         fixerList.innerHTML = "";
 
