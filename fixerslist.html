@@ -35,7 +35,7 @@
             </label>
             <input type="date" id="fixerDate" class="border border-gray-300 rounded p-2 text-sm h-9" />
             <select id="groupCount" class="border border-gray-300 rounded p-2 text-sm h-9">
-              <option disabled selected>Select Group</option>
+              <option value="0" disabled selected>Select Group</option>
               <option value="1">1 Group</option>
               <option value="2">2 Groups</option>
               <option value="3">3 Groups</option>
@@ -232,7 +232,7 @@
       Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
 
       document.getElementById("teamSelector").selectedIndex = -1;
-      document.getElementById("groupCount").value = "1";
+      document.getElementById("groupCount").value = "0";
       document.getElementById("fixerDate").value = "";
       document.getElementById("selectAllTeams").checked = false;
 
