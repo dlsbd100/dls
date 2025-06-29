@@ -120,6 +120,19 @@
       return d.toISOString().split("T")[0];
     }
 
+    // STATUS update function: updates status based on goals
+    async function updateStatus(docRef, team1Goal, team2Goal) {
+      let status = "None";
+      if (typeof team1Goal === "number" && typeof team2Goal === "number") {
+        status = "Finished";
+      } else if (team1Goal === null && team2Goal === null) {
+        status = "Pending";
+      } else {
+        status = "Pending";
+      }
+      await updateDoc(docRef, { status });
+    }
+
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const fixersContainer = document.getElementById("fixersContainer");
@@ -132,7 +145,11 @@
       }
 
       const fixers = [];
-      snapshot.forEach(doc => fixers.push({ id: doc.id, ...doc.data() }));
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        data.id = doc.id; // add id for update
+        fixers.push(data);
+      });
 
       // Group fixers by date (each date = group)
       const fixersByDate = {};
@@ -147,12 +164,10 @@
 
       let fixersHTML = "";
       let allPointsHTML = "";
-
       let groupIndex = 0;
-
       const allGroupsPoints = [];
 
-      sortedDates.forEach(date => {
+      for (const date of sortedDates) {
         const groupName = String.fromCharCode(65 + groupIndex);
         const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
@@ -161,10 +176,13 @@
         const points = {};
         const goals = {};
 
-        matches.forEach((match, idx) => {
-          let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
-          const g1 = match.team1Goal;
-          const g2 = match.team2Goal;
+        for (const match of matches) {
+          let g1 = match.team1Goal;
+          let g2 = match.team2Goal;
+
+          // Update status in Firestore if needed
+          const docRef = doc(db, "fixers", match.id);
+          updateStatus(docRef, g1, g2).catch(console.error);
 
           if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
           if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
@@ -191,30 +209,19 @@
             }
           }
 
-          // Add status dropdown for each match
           fixersHTML += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-              <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
+              <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date}</div>
               <div class="flex justify-between items-center px-2">
                 <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${g1 ?? "-"})</span></div>
                 <div class="text-base font-bold text-red-500">VS</div>
                 <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
               </div>
-              <div class="flex justify-between items-center px-2">
-                <div class="text-green-600 text-xs font-medium">Winner: ${winner}</div>
-                <div>
-                  <label for="status_${match.id}" class="text-gray-600 text-xs font-medium mr-1">Status:</label>
-                  <select id="status_${match.id}" data-id="${match.id}" class="border border-gray-300 rounded text-xs p-1">
-                    <option value="Pending" ${match.status === "Pending" ? "selected" : ""}>Pending</option>
-                    <option value="Completed" ${match.status === "Completed" ? "selected" : ""}>Completed</option>
-                    <option value="Cancelled" ${match.status === "Cancelled" ? "selected" : ""}>Cancelled</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          `;
-        });
+              <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
+            </div>`;
+        }
 
+        // Prepare point table
         const sortedTeams = Object.entries(points).map(([team, stat]) => ({
           team,
           ...stat,
@@ -229,7 +236,7 @@
         allGroupsPoints.push({ groupName, sortedTeams });
 
         groupIndex++;
-      });
+      }
 
       if (allGroupsPoints.length === 0) {
         allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
@@ -271,23 +278,6 @@
 
       fixersContainer.innerHTML = fixersHTML;
       pointTablesContainer.innerHTML = allPointsHTML;
-
-      // Add event listeners for all status selects after rendering
-      fixers.forEach(match => {
-        const select = document.getElementById(`status_${match.id}`);
-        if (select) {
-          select.addEventListener("change", async (e) => {
-            const newStatus = e.target.value;
-            const matchId = e.target.dataset.id;
-            try {
-              await updateDoc(doc(db, "fixers", matchId), { status: newStatus });
-              Swal.fire({ icon: "success", title: "Status updated.", position: "top-end", toast: true, timer: 2000, showConfirmButton: false });
-            } catch (err) {
-              Swal.fire({ icon: "error", title: "Failed to update status.", position: "top-end", toast: true, timer: 3000, showConfirmButton: false });
-            }
-          });
-        }
-      });
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
@@ -322,7 +312,7 @@
               date: dateStr,
               team1Goal: null,
               team2Goal: null,
-              status: "Pending" // Default status on add
+              status: "Pending" // default status
             });
             added++;
           }
