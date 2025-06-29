@@ -72,8 +72,6 @@
       getDocs,
       addDoc,
       deleteDoc,
-      doc,
-      updateDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -88,6 +86,8 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+
+    let teamList = [];
 
     onAuthStateChanged(auth, (user) => {
       if (!user) window.location.href = "login.html";
@@ -104,23 +104,15 @@
         const data = doc.data();
         if (data.team) teams.add(data.team);
       });
+      teamList = Array.from(teams);
       const selector = document.getElementById("teamSelector");
-      selector.innerHTML = Array.from(teams).map(t => `<option value="${t}">${t}</option>`).join("");
+      selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
     function addDays(dateStr, days) {
       const d = new Date(dateStr);
       d.setDate(d.getDate() + days);
       return d.toISOString().split("T")[0];
-    }
-
-    // NEW: Update status function
-    async function updateStatus(docRef, g1, g2) {
-      let status = "Pending";
-      if (typeof g1 === "number" && typeof g2 === "number") {
-        status = "Finished";
-      }
-      await updateDoc(docRef, { status });
     }
 
     async function loadFixers() {
@@ -133,11 +125,7 @@
       }
 
       const fixers = [];
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        data.id = docSnap.id; // save ID for update
-        fixers.push(data);
-      });
+      snapshot.forEach(doc => fixers.push(doc.data()));
 
       const fixersByDate = {};
       fixers.forEach(fix => {
@@ -158,14 +146,12 @@
 
         fixersHTML += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
 
-        matches.forEach(async (match, idx) => {
+        matches.forEach((match, idx) => {
           let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
-          const docRef = doc(db, "fixers", match.id);
-          await updateStatus(docRef, g1, g2); // ⬅️ Status update
-
           let winner = "None";
+
           if (typeof g1 === "number" && typeof g2 === "number") {
             if (g1 > g2) winner = match.team1;
             else if (g2 > g1) winner = match.team2;
@@ -221,8 +207,7 @@
               team2: groupTeams[j],
               date: dateStr,
               team1Goal: null,
-              team2Goal: null,
-              status: "Pending"
+              team2Goal: null
             });
             added++;
           }
@@ -265,4 +250,4 @@
     });
   </script>
 </body>
-  </html>
+</html>
