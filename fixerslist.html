@@ -152,6 +152,7 @@
           if (typeof goal1 === "number" && typeof goal2 === "number") {
             if (goal1 > goal2) winner = match.team1;
             else if (goal2 > goal1) winner = match.team2;
+            else winner = "Draw";
           }
 
           html += `
