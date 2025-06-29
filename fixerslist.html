@@ -165,6 +165,7 @@
           let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
+          const status = match.status || "Pending"; // Read status from Firestore, default to Pending
 
           // Initialize stats if not exists
           if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
@@ -202,6 +203,7 @@
                 <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
               </div>
               <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
+              <div class="text-center text-yellow-600 text-xs font-medium">Status: ${status}</div>
             </div>`;
         });
 
@@ -284,27 +286,34 @@
       const start = new Date(baseDate);
       let added = 0;
 
-      for (let g = 0; g < groupCount; g++) {
-        const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
-        const matchDate = new Date(start);
-        matchDate.setDate(start.getDate() + g);
-        const dateStr = matchDate.toISOString().split("T")[0];
+      try {
+        for (let g = 0; g < groupCount; g++) {
+          const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
+          const matchDate = new Date(start);
+          matchDate.setDate(start.getDate() + g);
+          const dateStr = matchDate.toISOString().split("T")[0];
 
-        for (let i = 0; i < groupTeams.length; i++) {
-          for (let j = i + 1; j < groupTeams.length; j++) {
-            await addDoc(collection(db, "fixers"), {
-              team1: groupTeams[i],
-              team2: groupTeams[j],
-              date: dateStr,
-              team1Goal: null,
-              team2Goal: null
-            });
-            added++;
+          for (let i = 0; i < groupTeams.length; i++) {
+            for (let j = i + 1; j < groupTeams.length; j++) {
+              const newMatchData = {
+                team1: groupTeams[i],
+                team2: groupTeams[j],
+                date: dateStr,
+                team1Goal: null,
+                team2Goal: null,
+                status: "Pending"
+              };
+              console.log("Adding fixer:", newMatchData);
+              await addDoc(collection(db, "fixers"), newMatchData);
+              added++;
+            }
           }
         }
+        Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      } catch (error) {
+        console.error("Error adding fixers:", error);
+        Swal.fire({ icon: 'error', title: 'Error adding fixers.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
       }
-
-      Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
 
       document.getElementById("teamSelector").selectedIndex = -1;
       document.getElementById("groupCount").value = "1";
