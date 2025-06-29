@@ -54,21 +54,13 @@
           </div>
         </div>
       </div>
-
-      <!-- Fixers Container (group-wise display) -->
       <div id="fixersContainer" class="space-y-6 max-h-[600px] overflow-y-auto">
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
 
-      <!-- All Fixers Container (all groups together) -->
-      <div id="allFixersContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[600px] overflow-y-auto">
-        <h2 class="text-lg font-semibold text-green-700 mb-3">All Fixers (Combined)</h2>
-        <!-- All fixers together will appear here -->
-      </div>
-
-      <!-- Point Tables Container -->
       <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
         <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
+        <!-- All point tables will appear here together -->
       </div>
     </div>
   </main>
@@ -120,23 +112,27 @@
       selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
+    function addDays(dateStr, days) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split("T")[0];
+    }
+
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const fixersContainer = document.getElementById("fixersContainer");
       const pointTablesContainer = document.getElementById("pointTablesContainer");
-      const allFixersContainer = document.getElementById("allFixersContainer");
 
       if (snapshot.empty) {
         fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
         pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-        allFixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers to show.</p>`;
         return;
       }
 
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
-      // Group fixers by date
+      // Group fixers by date (each date = group)
       const fixersByDate = {};
       fixers.forEach(fix => {
         const key = fix.date;
@@ -145,11 +141,15 @@
       });
 
       const sortedDates = Object.keys(fixersByDate).sort();
+      const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
+
+      // Clear HTML containers
       let fixersHTML = "";
-      let allFixersHTML = "";
       let allPointsHTML = "";
+
       let groupIndex = 0;
 
+      // For collecting point tables after processing all groups
       const allGroupsPoints = [];
 
       sortedDates.forEach(date => {
@@ -159,17 +159,20 @@
         fixersHTML += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
 
         const points = {};
-        const goals = {};
+        const goals = {}; // Track total goals per team
 
-        matches.forEach((match) => {
+        matches.forEach((match, idx) => {
+          let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
 
+          // Initialize stats if not exists
           if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
           if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
           if (!goals[match.team1]) goals[match.team1] = 0;
           if (!goals[match.team2]) goals[match.team2] = 0;
 
+          // Add goals (if number)
           if (typeof g1 === "number") goals[match.team1] += g1;
           if (typeof g2 === "number") goals[match.team2] += g2;
 
@@ -190,9 +193,9 @@
             }
           }
 
-          const matchHTML = `
+          fixersHTML += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-              <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date}</div>
+              <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
               <div class="flex justify-between items-center px-2">
                 <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${g1 ?? "-"})</span></div>
                 <div class="text-base font-bold text-red-500">VS</div>
@@ -200,11 +203,10 @@
               </div>
               <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
             </div>`;
-
-          fixersHTML += matchHTML;
-          allFixersHTML += matchHTML;
         });
 
+        // Prepare sorted point table for this group
+        // Now include goals and sort by points DESC, then goals DESC
         const sortedTeams = Object.entries(points).map(([team, stat]) => ({
           team,
           ...stat,
@@ -213,7 +215,7 @@
           goals: goals[team] || 0,
         })).sort((a, b) => {
           if (b.points !== a.points) return b.points - a.points;
-          return b.goals - a.goals;
+          return b.goals - a.goals; // if points equal, sort by goals desc
         });
 
         allGroupsPoints.push({ groupName, sortedTeams });
@@ -221,6 +223,7 @@
         groupIndex++;
       });
 
+      // Now build all point tables in one place
       if (allGroupsPoints.length === 0) {
         allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
       } else {
@@ -260,11 +263,9 @@
       }
 
       fixersContainer.innerHTML = fixersHTML;
-      allFixersContainer.innerHTML = allFixersHTML;
       pointTablesContainer.innerHTML = allPointsHTML;
     }
 
-    // Add/Select/Delete listeners remain unchanged (as before)
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
       const baseDate = document.getElementById("fixerDate").value;
