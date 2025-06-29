@@ -159,14 +159,22 @@
         fixersHTML += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
 
         const points = {};
+        const goals = {}; // Track total goals per team
 
         matches.forEach((match, idx) => {
           let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
 
+          // Initialize stats if not exists
           if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
           if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
+          if (!goals[match.team1]) goals[match.team1] = 0;
+          if (!goals[match.team2]) goals[match.team2] = 0;
+
+          // Add goals (if number)
+          if (typeof g1 === "number") goals[match.team1] += g1;
+          if (typeof g2 === "number") goals[match.team2] += g2;
 
           let winner = "None";
           if (typeof g1 === "number" && typeof g2 === "number") {
@@ -198,12 +206,17 @@
         });
 
         // Prepare sorted point table for this group
+        // Now include goals and sort by points DESC, then goals DESC
         const sortedTeams = Object.entries(points).map(([team, stat]) => ({
           team,
           ...stat,
           points: stat.win * 3 + stat.draw,
-          played: stat.win + stat.loss + stat.draw
-        })).sort((a, b) => b.points - a.points);
+          played: stat.win + stat.loss + stat.draw,
+          goals: goals[team] || 0,
+        })).sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          return b.goals - a.goals; // if points equal, sort by goals desc
+        });
 
         allGroupsPoints.push({ groupName, sortedTeams });
 
@@ -226,6 +239,7 @@
                   <th class="px-2 py-1 border text-center">Win</th>
                   <th class="px-2 py-1 border text-center">Loss</th>
                   <th class="px-2 py-1 border text-center">Draw</th>
+                  <th class="px-2 py-1 border text-center">Goals</th>
                   <th class="px-2 py-1 border text-center">Points</th>
                 </tr>
               </thead>
@@ -238,6 +252,7 @@
                     <td class="px-2 py-1 border text-center">${team.win}</td>
                     <td class="px-2 py-1 border text-center">${team.loss}</td>
                     <td class="px-2 py-1 border text-center">${team.draw}</td>
+                    <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
                     <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
                   </tr>
                 `).join('')}
