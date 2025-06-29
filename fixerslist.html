@@ -60,12 +60,6 @@
       <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
         <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
       </div>
-
-      <!-- Knockout Matches Container -->
-      <div id="knockoutContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
-        <h2 class="text-lg font-semibold text-purple-700 mb-3">Knockout Matches</h2>
-        <div id="knockoutMatchesArea" class="space-y-2 text-sm text-gray-700"></div>
-      </div>
     </div>
   </main>
 
@@ -79,7 +73,7 @@
       getDocs,
       addDoc,
       deleteDoc,
-      updateDoc
+      updateDoc // ✅ Import updateDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -127,12 +121,10 @@
       const snapshot = await getDocs(collection(db, "fixers"));
       const fixersContainer = document.getElementById("fixersContainer");
       const pointTablesContainer = document.getElementById("pointTablesContainer");
-      const knockoutMatchesArea = document.getElementById("knockoutMatchesArea");
 
       if (snapshot.empty) {
         fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
         pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-        knockoutMatchesArea.innerHTML = `<p class="text-gray-500 text-center">No knockout matches to show.</p>`;
         return;
       }
 
@@ -193,7 +185,7 @@
               winner = "Draw";
             }
 
-            // Update Firestore status if still Pending
+            // ✅ Update Firestore status if still Pending
             if (status !== "Finished") {
               status = "Finished";
               const matchRef = snapshot.docs.find(doc => doc.id === match.id)?.ref;
@@ -264,44 +256,6 @@
 
       fixersContainer.innerHTML = fixersHTML;
       pointTablesContainer.innerHTML = allPointsHTML;
-
-      // Generate knockout matches from top 2 teams of each group
-      knockoutMatchesArea.innerHTML = generateKnockoutMatches(allGroupsPoints);
-    }
-
-    // Knockout generator function: pairs group1 1st vs group2 2nd and group2 1st vs group1 2nd
-    function generateKnockoutMatches(groups) {
-      if (groups.length < 2) return `<p class="text-gray-500 text-center">Not enough groups to generate knockouts.</p>`;
-
-      let html = "";
-      for (let i = 0; i < groups.length - 1; i += 2) {
-        const groupA = groups[i];
-        const groupB = groups[i + 1];
-
-        const gA1 = groupA.sortedTeams[0]?.team;
-        const gA2 = groupA.sortedTeams[1]?.team;
-        const gB1 = groupB.sortedTeams[0]?.team;
-        const gB2 = groupB.sortedTeams[1]?.team;
-
-        if (gA1 && gB2) {
-          html += `
-            <div class="border p-2 rounded bg-gray-50 shadow">
-              <div class="font-semibold text-gray-600 mb-1">Match: ${gA1} vs ${gB2}</div>
-              <div class="text-xs text-gray-500">(${groupA.groupName} 1st vs ${groupB.groupName} 2nd)</div>
-            </div>`;
-        }
-
-        if (gB1 && gA2) {
-          html += `
-            <div class="border p-2 rounded bg-gray-50 shadow">
-              <div class="font-semibold text-gray-600 mb-1">Match: ${gB1} vs ${gA2}</div>
-              <div class="text-xs text-gray-500">(${groupB.groupName} 1st vs ${groupA.groupName} 2nd)</div>
-            </div>`;
-        }
-      }
-
-      if (!html) html = `<p class="text-gray-500 text-center">Not enough qualified teams.</p>`;
-      return html;
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
