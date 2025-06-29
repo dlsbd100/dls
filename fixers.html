@@ -66,6 +66,14 @@
       return d.toISOString().split("T")[0];
     }
 
+    function convertBanglaToEnglish(str) {
+      const map = {
+        '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
+        '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
+      };
+      return str.replace(/[০-৯]/g, digit => map[digit]);
+    }
+
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         await loadTeamPhotos();
@@ -126,7 +134,7 @@
                   <div class="flex flex-col items-center gap-1 flex-1 justify-end">
                     ${team1Img ? `<img src="${team1Img}" class="w-10 h-10 rounded-full" alt="${match.team1}" />` : ""}
                     <span>${match.team1}</span>
-                    <input type="number" min="0" placeholder="0" id="goal1-${key}" value="${t1GoalVal}" class="mt-1 w-16 text-black rounded px-1 py-0.5 text-center text-sm" />
+                    <input type="text" inputmode="numeric" placeholder="0" id="goal1-${key}" value="${t1GoalVal}" class="mt-1 w-16 text-black rounded px-1 py-0.5 text-center text-sm goal-input" />
                   </div>
 
                   <div class="text-yellow-400 font-bold text-2xl select-none">VS</div>
@@ -134,7 +142,7 @@
                   <div class="flex flex-col items-center gap-1 flex-1 justify-start">
                     ${team2Img ? `<img src="${team2Img}" class="w-10 h-10 rounded-full" alt="${match.team2}" />` : ""}
                     <span>${match.team2}</span>
-                    <input type="number" min="0" placeholder="0" id="goal2-${key}" value="${t2GoalVal}" class="mt-1 w-16 text-black rounded px-1 py-0.5 text-center text-sm" />
+                    <input type="text" inputmode="numeric" placeholder="0" id="goal2-${key}" value="${t2GoalVal}" class="mt-1 w-16 text-black rounded px-1 py-0.5 text-center text-sm goal-input" />
                   </div>
                 </div>
                 <div class="text-center">
@@ -147,14 +155,21 @@
 
         fixersContainer.innerHTML = html;
 
+        // Force English numbers in input
+        document.querySelectorAll(".goal-input").forEach(input => {
+          input.addEventListener("input", () => {
+            input.value = convertBanglaToEnglish(input.value.replace(/[^০-৯০-৯0-9]/g, ''));
+          });
+        });
+
         document.querySelectorAll(".update-goal-btn").forEach(btn => {
           btn.addEventListener("click", async (e) => {
             const key = e.currentTarget.getAttribute("data-key");
             const goal1Input = document.getElementById(`goal1-${key}`);
             const goal2Input = document.getElementById(`goal2-${key}`);
 
-            let goal1 = goal1Input.value;
-            let goal2 = goal2Input.value;
+            let goal1 = convertBanglaToEnglish(goal1Input.value);
+            let goal2 = convertBanglaToEnglish(goal2Input.value);
 
             goal1 = goal1 === "" ? null : Number(goal1);
             goal2 = goal2 === "" ? null : Number(goal2);
@@ -178,7 +193,6 @@
             Swal.fire({ icon: "success", title: "Goal updated!", timer: 2000, toast: true, position: "top-end", showConfirmButton: false });
           });
         });
-
       });
     }
   </script>
