@@ -57,6 +57,11 @@
       <div id="fixersContainer" class="space-y-6 max-h-[600px] overflow-y-auto">
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
+
+      <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
+        <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
+        <!-- All point tables will appear here together -->
+      </div>
     </div>
   </main>
 
@@ -115,16 +120,19 @@
 
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
-      const container = document.getElementById("fixersContainer");
+      const fixersContainer = document.getElementById("fixersContainer");
+      const pointTablesContainer = document.getElementById("pointTablesContainer");
 
       if (snapshot.empty) {
-        container.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
+        fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
+        pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
         return;
       }
 
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
+      // Group fixers by date (each date = group)
       const fixersByDate = {};
       fixers.forEach(fix => {
         const key = fix.date;
@@ -135,14 +143,20 @@
       const sortedDates = Object.keys(fixersByDate).sort();
       const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
 
-      let html = "";
+      // Clear HTML containers
+      let fixersHTML = "";
+      let allPointsHTML = "";
+
       let groupIndex = 0;
 
+      // For collecting point tables after processing all groups
+      const allGroupsPoints = [];
+
       sortedDates.forEach(date => {
+        const groupName = String.fromCharCode(65 + groupIndex);
         const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
-        const groupName = String.fromCharCode(65 + groupIndex++);
-        html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
+        fixersHTML += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
 
         const points = {};
 
@@ -171,8 +185,8 @@
             }
           }
 
-          html += `
-            <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white">
+          fixersHTML += `
+            <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
               <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
               <div class="flex justify-between items-center px-2">
                 <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${g1 ?? "-"})</span></div>
@@ -183,44 +197,129 @@
             </div>`;
         });
 
-        const sortedTeams = Object.entries(points).map(([team, stat]) => {
-          return {
-            team,
-            ...stat,
-            points: stat.win * 3 + stat.draw
-          };
-        }).sort((a, b) => b.points - a.points);
+        // Prepare sorted point table for this group
+        const sortedTeams = Object.entries(points).map(([team, stat]) => ({
+          team,
+          ...stat,
+          points: stat.win * 3 + stat.draw,
+        })).sort((a, b) => b.points - a.points);
 
-        html += `<div class="mt-3 bg-gray-50 p-2 rounded">
-          <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
-          <table class="text-sm w-full table-auto border border-gray-200">
-            <thead>
-              <tr class="bg-gray-200">
-                <th class="px-2 py-1 border">#</th>
-                <th class="px-2 py-1 border">Team</th>
-                <th class="px-2 py-1 border">Win</th>
-                <th class="px-2 py-1 border">Loss</th>
-                <th class="px-2 py-1 border">Draw</th>
-                <th class="px-2 py-1 border">Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${sortedTeams.map((team, index) => `
-                <tr>
-                  <td class="px-2 py-1 border text-center">${index + 1}</td>
-                  <td class="px-2 py-1 border">${team.team}</td>
-                  <td class="px-2 py-1 border text-center">${team.win}</td>
-                  <td class="px-2 py-1 border text-center">${team.loss}</td>
-                  <td class="px-2 py-1 border text-center">${team.draw}</td>
-                  <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
-                </tr>`).join("")}
-            </tbody>
-          </table>
-        </div>`;
+        allGroupsPoints.push({ groupName, sortedTeams });
+
+        groupIndex++;
       });
 
-      container.innerHTML = html;
+      // Now build all point tables in one place
+      if (allGroupsPoints.length === 0) {
+        allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+      } else {
+        allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
+          <div class="mb-4">
+            <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
+            <table class="text-sm w-full table-auto border border-gray-200">
+              <thead>
+                <tr class="bg-gray-200">
+                  <th class="px-2 py-1 border">#</th>
+                  <th class="px-2 py-1 border">Team</th>
+                  <th class="px-2 py-1 border">Win</th>
+                  <th class="px-2 py-1 border">Loss</th>
+                  <th class="px-2 py-1 border">Draw</th>
+                  <th class="px-2 py-1 border">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sortedTeams.map((team, i) => `
+                  <tr>
+                    <td class="px-2 py-1 border text-center">${i + 1}</td>
+                    <td class="px-2 py-1 border">${team.team}</td>
+                    <td class="px-2 py-1 border text-center">${team.win}</td>
+                    <td class="px-2 py-1 border text-center">${team.loss}</td>
+                    <td class="px-2 py-1 border text-center">${team.draw}</td>
+                    <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `).join('');
+      }
+
+      fixersContainer.innerHTML = fixersHTML;
+      pointTablesContainer.innerHTML = allPointsHTML;
     }
+
+    document.getElementById("addFixerBtn").addEventListener("click", async () => {
+      const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
+      const baseDate = document.getElementById("fixerDate").value;
+      const groupCount = parseInt(document.getElementById("groupCount").value);
+
+      if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
+        Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+        return;
+      }
+
+      if (selectedTeams.length !== groupCount * 4) {
+        Swal.fire({ icon: 'error', title: `Select ${groupCount * 4} teams.`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
+        return;
+      }
+
+      const start = new Date(baseDate);
+      let added = 0;
+
+      for (let g = 0; g < groupCount; g++) {
+        const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
+        const matchDate = new Date(start);
+        matchDate.setDate(start.getDate() + g);
+        const dateStr = matchDate.toISOString().split("T")[0];
+
+        for (let i = 0; i < groupTeams.length; i++) {
+          for (let j = i + 1; j < groupTeams.length; j++) {
+            await addDoc(collection(db, "fixers"), {
+              team1: groupTeams[i],
+              team2: groupTeams[j],
+              date: dateStr,
+              team1Goal: null,
+              team2Goal: null
+            });
+            added++;
+          }
+        }
+      }
+
+      Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+
+      document.getElementById("teamSelector").selectedIndex = -1;
+      document.getElementById("groupCount").value = "1";
+      document.getElementById("fixerDate").value = "";
+      document.getElementById("selectAllTeams").checked = false;
+
+      loadFixers();
+    });
+
+    document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+      const all = document.getElementById("teamSelector").options;
+      for (let o of all) o.selected = e.target.checked;
+    });
+
+    document.getElementById("deleteAllBtn").addEventListener("click", async () => {
+      const confirm = await Swal.fire({
+        title: 'Are you sure?',
+        text: "All matches will be deleted!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete all!',
+      });
+
+      if (!confirm.isConfirmed) return;
+
+      const snapshot = await getDocs(collection(db, "fixers"));
+      const deletions = [];
+      snapshot.forEach(doc => deletions.push(deleteDoc(doc.ref)));
+      await Promise.all(deletions);
+
+      Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      loadFixers();
+    });
   </script>
 </body>
 </html>
