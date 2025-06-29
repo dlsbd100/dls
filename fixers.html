@@ -1,213 +1,137 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Match Fixers</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Match Fixers</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
 </head>
 <body class="bg-black text-white min-h-screen">
 
-  <!-- Header -->
-  <header class="bg-gradient-to-r from-black via-gray-900 to-black w-full max-w-md shadow-md py-2 px-3 mb-3 mx-auto border-b border-gray-700 flex items-center justify-between rounded-b-xl">
-    <div class="flex items-center gap-2">
-      <div class="bg-red-600 bg-opacity-50 border border-red-500 text-red-300 w-9 h-9 flex items-center justify-center font-bold rounded-full shadow">FX</div>
-      <h2 class="text-2xl font-bold bg-gradient-to-r from-red-400 via-yellow-300 to-red-400 bg-clip-text text-transparent">Fixers</h2>
-    </div>
-    <div class="flex items-center gap-1 bg-gradient-to-br from-red-500 via-yellow-700 to-red-500 text-black px-2 py-1 rounded-full shadow-lg border border-yellow-200 h-[29px]">
-      <i class="fa-solid fa-users text-white text-sm"></i>
-    </div>
-  </header>
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-black via-gray-900 to-black w-full max-w-md shadow-md py-2 px-3 mb-3 mx-auto border-b border-gray-700 flex items-center justify-between rounded-b-xl">
+    <div class="flex items-center gap-2">
+      <div class="bg-red-600 bg-opacity-50 border border-red-500 text-red-300 w-9 h-9 flex items-center justify-center font-bold rounded-full shadow">FX</div>
+      <h2 class="text-2xl font-bold bg-gradient-to-r from-red-400 via-yellow-300 to-red-400 bg-clip-text text-transparent">Fixers</h2>
+    </div>
+    <div class="flex items-center gap-1 bg-gradient-to-br from-red-500 via-yellow-700 to-red-500 text-black px-2 py-1 rounded-full shadow-lg border border-yellow-200 h-[29px]">
+      <i class="fa-solid fa-users text-white text-sm"></i>
+    </div>
+  </header>
 
-  <!-- Fixers List -->
-  <main class="max-w-3xl mx-auto px-4 mt-6 mb-20">
-    <div id="fixers-list" class="space-y-6">
-      <p class="text-center text-gray-400">লোড হচ্ছে...</p>
-    </div>
-  </main>
+  <!-- Fixers List -->
+  <main class="max-w-3xl mx-auto px-4 mt-6 mb-20">
+    <div id="fixers-list" class="space-y-6">
+      <p class="text-center text-gray-400">লোড হচ্ছে...</p>
+    </div>
+  </main>
 
-  <!-- Firebase & Logic -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  <!-- Firebase & Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
-      authDomain: "dlstournament-31ac1.firebaseapp.com",
-      projectId: "dlstournament-31ac1",
-      storageBucket: "dlstournament-31ac1.appspot.com",
-      messagingSenderId: "874377019055",
-      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
-    };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
+      authDomain: "dlstournament-31ac1.firebaseapp.com",
+      projectId: "dlstournament-31ac1",
+      storageBucket: "dlstournament-31ac1.appspot.com",
+      messagingSenderId: "874377019055",
+      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
+    };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    let teamPhotos = {};
-    let fixersDocs = []; // To keep track of doc ids for update
+    let teamPhotos = {};
 
-    async function loadTeamPhotos() {
-      const snap = await getDocs(collection(db, "playersform"));
-      snap.forEach(doc => {
-        const data = doc.data();
-        if (data.team && data.photoUrl) {
-          teamPhotos[data.team.trim().toLowerCase()] = data.photoUrl;
-        }
-      });
-    }
+    async function loadTeamPhotos() {
+      const snap = await getDocs(collection(db, "playersform"));
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (data.team && data.photoUrl) {
+          teamPhotos[data.team.trim().toLowerCase()] = data.photoUrl;
+        }
+      });
+    }
 
-    function addDays(dateStr, days) {
-      const d = new Date(dateStr);
-      d.setDate(d.getDate() + days);
-      return d.toISOString().split("T")[0];
-    }
+    function addDays(dateStr, days) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split("T")[0];
+    }
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        await loadTeamPhotos();
-        loadFixers();
-      } else {
-        // redirect or show login if needed
-        // window.location.href = "login.html";
-      }
-    });
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        await loadTeamPhotos();
+        loadFixers();
+      }
+    });
 
-    function loadFixers() {
-      const fixersRef = collection(db, "fixers");
-      onSnapshot(query(fixersRef), (snapshot) => {
-        const fixersContainer = document.getElementById("fixers-list");
-        fixersDocs = [];
+    function loadFixers() {
+      const fixersRef = collection(db, "fixers");
+      onSnapshot(query(fixersRef), (snapshot) => {
+        const fixersContainer = document.getElementById("fixers-list");
 
-        if (snapshot.empty) {
-          fixersContainer.innerHTML = `<p class="text-center text-gray-400">কোনো ফিক্সার নেই।</p>`;
-          return;
-        }
+        if (snapshot.empty) {
+          fixersContainer.innerHTML = `<p class="text-center text-gray-400">কোনো ফিক্সার নেই।</p>`;
+          return;
+        }
 
-        const fixers = [];
-        snapshot.forEach(docSnap => {
-          const data = docSnap.data();
-          data.id = docSnap.id; // store doc id for updates
-          fixers.push(data);
-          fixersDocs.push(data);
-        });
+        const fixers = [];
+        snapshot.forEach(doc => fixers.push(doc.data()));
 
-        const fixersByDate = {};
-        fixers.forEach(fix => {
-          const key = fix.date;
-          if (!fixersByDate[key]) fixersByDate[key] = [];
-          fixersByDate[key].push(fix);
-        });
+        const fixersByDate = {};
+        fixers.forEach(fix => {
+          const key = fix.date;
+          if (!fixersByDate[key]) fixersByDate[key] = [];
+          fixersByDate[key].push(fix);
+        });
 
-        const sortedDates = Object.keys(fixersByDate).sort();
-        const baseDate = sortedDates[0];
-        let html = "";
+        const sortedDates = Object.keys(fixersByDate).sort();
+        const baseDate = sortedDates[0];
+        let html = "";
 
-        sortedDates.forEach((date, groupIndex) => {
-          const groupName = String.fromCharCode(65 + groupIndex);
-          html += `<div class="text-lg font-semibold text-yellow-400 mb-2">Group ${groupName}</div>`;
+        sortedDates.forEach((date, groupIndex) => {
+          const groupName = String.fromCharCode(65 + groupIndex);
+          html += `<div class="text-lg font-semibold text-yellow-400">Group ${groupName}</div>`;
 
-          const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+          const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
-          matches.forEach((match, idx) => {
-            const matchDate = addDays(baseDate, idx);
-            const team1Img = teamPhotos[match.team1.trim().toLowerCase()] || "";
-            const team2Img = teamPhotos[match.team2.trim().toLowerCase()] || "";
+          matches.forEach((match, idx) => {
+            const matchDate = addDays(baseDate, idx);
+            const team1Img = teamPhotos[match.team1.trim().toLowerCase()] || "";
+            const team2Img = teamPhotos[match.team2.trim().toLowerCase()] || "";
 
-            html += `
-              <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow mb-3">
-                <div class="text-center text-gray-400 mb-1 text-md">${matchDate}</div>
-                <div class="flex justify-center items-center gap-3 font-semibold text-white mb-2">
-                  <div class="flex flex-col items-center gap-1 flex-1 justify-end">
-                    ${team1Img ? `<img src="${team1Img}" class="w-10 h-10 rounded-full" alt="${match.team1}" />` : ""}
-                    <span>${match.team1}</span>
-                  </div>
-                  <div class="text-yellow-400 font-bold text-2xl">VS</div>
-                  <div class="flex flex-col items-center gap-1 flex-1 justify-start">
-                    ${team2Img ? `<img src="${team2Img}" class="w-10 h-10 rounded-full" alt="${match.team2}" />` : ""}
-                    <span>${match.team2}</span>
-                  </div>
-                </div>
+            html += `
+              <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow">
+                <div class="text-center text-gray-400 mb-1 text-md">${matchDate}</div>
+                <div class="flex justify-center items-center gap-3 font-semibold text-white">
+                  <div class="text-gray-400 hidden">${idx + 1}.</div>
 
-                <!-- Goals input -->
-                <form data-docid="${match.id}" class="flex items-center justify-center gap-4">
-                  <div class="flex flex-col items-center">
-                    <label class="text-xs text-gray-400 mb-1">${match.team1} গোল</label>
-                    <input type="number" min="0" value="${match.team1Goal !== null ? match.team1Goal : ''}" class="team1-goal w-14 text-black rounded px-1" />
-                  </div>
-                  <div class="flex flex-col items-center">
-                    <label class="text-xs text-gray-400 mb-1">${match.team2} গোল</label>
-                    <input type="number" min="0" value="${match.team2Goal !== null ? match.team2Goal : ''}" class="team2-goal w-14 text-black rounded px-1" />
-                  </div>
-                  <button type="submit" class="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-300">সাবমিট</button>
-                </form>
-              </div>
-            `;
-          });
-        });
+                  <div class="flex flex-col items-center gap-1 flex-1 justify-end">
+                    ${team1Img ? `<img src="${team1Img}" class="w-10 h-10 rounded-full" alt="${match.team1}" />` : ""}
+                    <span>${match.team1}</span>
+                  </div>
 
-        fixersContainer.innerHTML = html;
+                  <div class="text-yellow-400 font-bold text-2xl">VS</div>
 
-        // Add submit listeners for all forms
-        document.querySelectorAll("#fixers-list form").forEach(form => {
-          form.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const docId = form.getAttribute("data-docid");
-            const team1GoalInput = form.querySelector(".team1-goal");
-            const team2GoalInput = form.querySelector(".team2-goal");
+                  <div class="flex flex-col items-center gap-1 flex-1 justify-start">
+                    ${team2Img ? `<img src="${team2Img}" class="w-10 h-10 rounded-full" alt="${match.team2}" />` : ""}
+                    <span>${match.team2}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+        });
 
-            let team1Goal = team1GoalInput.value.trim();
-            let team2Goal = team2GoalInput.value.trim();
-
-            // Validate inputs: empty string treated as null
-            team1Goal = team1Goal === "" ? null : parseInt(team1Goal);
-            team2Goal = team2Goal === "" ? null : parseInt(team2Goal);
-
-            if ((team1Goal !== null && (isNaN(team1Goal) || team1Goal < 0)) ||
-                (team2Goal !== null && (isNaN(team2Goal) || team2Goal < 0))) {
-              Swal.fire({
-                icon: "error",
-                title: "সঠিক গোল সংখ্যা দিন (0 বা তার বেশি)",
-                position: "top-end",
-                toast: true,
-                timer: 3000,
-                showConfirmButton: false,
-              });
-              return;
-            }
-
-            try {
-              const docRef = doc(db, "fixers", docId);
-              await updateDoc(docRef, {
-                team1Goal,
-                team2Goal
-              });
-              Swal.fire({
-                icon: "success",
-                title: "গোল সফলভাবে আপডেট হয়েছে",
-                position: "top-end",
-                toast: true,
-                timer: 2500,
-                showConfirmButton: false,
-              });
-            } catch (error) {
-              Swal.fire({
-                icon: "error",
-                title: "আপডেটে সমস্যা হয়েছে",
-                text: error.message,
-                position: "top-end",
-                toast: true,
-                timer: 4000,
-                showConfirmButton: false,
-              });
-            }
-          });
-        });
-      });
-    }
-  </script>
+        fixersContainer.innerHTML = html;
+      });
+    }
+  </script>
 </body>
 </html>
