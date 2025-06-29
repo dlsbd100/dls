@@ -72,8 +72,6 @@
       getDocs,
       addDoc,
       deleteDoc,
-      updateDoc,
-      doc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -117,19 +115,6 @@
       return d.toISOString().split("T")[0];
     }
 
-    async function updateStatus(matchId, g1, g2) {
-      const docRef = doc(db, "fixers", matchId);
-      let status = "None";
-      if (typeof g1 === "number" && typeof g2 === "number") {
-        status = "Finished";
-      } else if (g1 === null && g2 === null) {
-        status = "Pending";
-      } else {
-        status = "Pending";
-      }
-      await updateDoc(docRef, { status });
-    }
-
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const fixersContainer = document.getElementById("fixersContainer");
@@ -140,11 +125,7 @@
       }
 
       const fixers = [];
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        data.id = docSnap.id;
-        fixers.push(data);
-      });
+      snapshot.forEach(doc => fixers.push(doc.data()));
 
       const fixersByDate = {};
       fixers.forEach(fix => {
@@ -159,14 +140,14 @@
       let fixersHTML = "";
       let groupIndex = 0;
 
-      for (const date of sortedDates) {
+      sortedDates.forEach(date => {
         const groupName = String.fromCharCode(65 + groupIndex);
         const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
         fixersHTML += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
 
-        for (const match of matches) {
-          let displayDate = baseDate ? addDays(baseDate, groupIndex) : match.date;
+        matches.forEach((match, idx) => {
+          let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
           let winner = "None";
@@ -176,8 +157,6 @@
             else if (g2 > g1) winner = match.team2;
             else winner = "Draw";
           }
-
-          await updateStatus(match.id, g1, g2);
 
           fixersHTML += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
@@ -189,10 +168,10 @@
               </div>
               <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
             </div>`;
-        }
+        });
 
         groupIndex++;
-      }
+      });
 
       fixersContainer.innerHTML = fixersHTML;
     }
@@ -228,8 +207,7 @@
               team2: groupTeams[j],
               date: dateStr,
               team1Goal: null,
-              team2Goal: null,
-              status: "Pending"
+              team2Goal: null
             });
             added++;
           }
