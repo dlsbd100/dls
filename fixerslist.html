@@ -60,6 +60,12 @@
       <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
         <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
       </div>
+
+      <!-- New Knockout Section -->
+      <div id="knockoutContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
+        <h2 class="text-lg font-semibold text-red-700 mb-3">Knockout Matches</h2>
+        <div id="knockoutMatchesContent" class="text-gray-500 text-center">Loading knockout matches...</div>
+      </div>
     </div>
   </main>
 
@@ -73,7 +79,9 @@
       getDocs,
       addDoc,
       deleteDoc,
-      updateDoc // ✅ Import updateDoc
+      updateDoc,
+      query,
+      where
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -117,20 +125,25 @@
       return d.toISOString().split("T")[0];
     }
 
+    // Main load fixers + points + knockout generation
     async function loadFixers() {
+      // Load group fixers
       const snapshot = await getDocs(collection(db, "fixers"));
       const fixersContainer = document.getElementById("fixersContainer");
       const pointTablesContainer = document.getElementById("pointTablesContainer");
+      const knockoutContainerContent = document.getElementById("knockoutMatchesContent");
 
       if (snapshot.empty) {
         fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
         pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+        knockoutContainerContent.innerHTML = `<p class="text-gray-500 text-center">No knockout matches to show.</p>`;
         return;
       }
 
       const fixers = [];
-      snapshot.forEach(doc => fixers.push({ ...doc.data(), id: doc.id }));
+      snapshot.forEach(doc => fixers.push({ ...doc.data(), id: doc.id, ref: doc.ref }));
 
+      // Group fixers by date
       const fixersByDate = {};
       fixers.forEach(fix => {
         const key = fix.date;
@@ -142,7 +155,6 @@
       const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
 
       let fixersHTML = "";
-      let allPointsHTML = "";
       const allGroupsPoints = [];
       let groupIndex = 0;
 
@@ -185,13 +197,10 @@
               winner = "Draw";
             }
 
-            // ✅ Update Firestore status if still Pending
+            // Update Firestore status if still Pending
             if (status !== "Finished") {
               status = "Finished";
-              const matchRef = snapshot.docs.find(doc => doc.id === match.id)?.ref;
-              if (matchRef) {
-                await updateDoc(matchRef, { status: "Finished" });
-              }
+              updateDoc(match.ref, { status: "Finished" }).catch(console.error);
             }
           }
 
@@ -220,7 +229,8 @@
         groupIndex++;
       }
 
-      allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
+      // Render point tables
+      const allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
         <div class="mb-4">
           <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
           <table class="text-sm w-full table-auto border border-gray-200">
@@ -256,6 +266,130 @@
 
       fixersContainer.innerHTML = fixersHTML;
       pointTablesContainer.innerHTML = allPointsHTML;
+
+      // Now generate knockout matches automatically
+      await generateKnockoutMatches(allGroupsPoints);
+      await loadKnockoutMatches();
+    }
+
+    // Generate knockout matches for top 2 teams per group
+    async function generateKnockoutMatches(allGroupsPoints) {
+      if (allGroupsPoints.length < 2) {
+        // Need at least 2 groups for knockout pairing
+        document.getElementById("knockoutMatchesContent").innerHTML = `<p class="text-gray-500 text-center">At least 2 groups required for knockout matches.</p>`;
+        return;
+      }
+
+      // Fetch existing knockout matches to avoid duplicates
+      const knockoutSnapshot = await getDocs(collection(db, "knockouts"));
+      const existingMatches = new Set();
+      knockoutSnapshot.forEach(doc => {
+        const data = doc.data();
+        // Store as team1|team2 string for quick check
+        existingMatches.add(data.team1 + "|" + data.team2);
+      });
+
+      // Prepare qualifier teams: top 2 per group
+      const qualifiers = allGroupsPoints.map(gp => {
+        const top2 = gp.sortedTeams.slice(0, 2);
+        return { groupName: gp.groupName, teams: top2 };
+      });
+
+      // Generate knockout pairings
+      // For example: A1 vs B2, B1 vs A2, C1 vs D2, D1 vs C2 ...
+      // We'll only generate pairings for even number of groups, pairing groups in pairs
+      const pairsCount = Math.floor(qualifiers.length / 2);
+      let matchesToAdd = [];
+
+      for (let i = 0; i < pairsCount; i++) {
+        const groupA = qualifiers[i];
+        const groupB = qualifiers[i + pairsCount]; // pair group i with group i + half count
+
+        if (!groupA || !groupB) continue;
+
+        // Validate both groups have 2 qualifiers
+        if (groupA.teams.length < 2 || groupB.teams.length < 2) continue;
+
+        const dateStr = addDays(new Date().toISOString().split("T")[0], 7 + i); // knockout matches scheduled 7+ days later
+
+        // 1st A vs 2nd B
+        if (!existingMatches.has(groupA.teams[0].team + "|" + groupB.teams[1].team)) {
+          matchesToAdd.push({
+            team1: groupA.teams[0].team,
+            team2: groupB.teams[1].team,
+            date: dateStr,
+            team1Goal: null,
+            team2Goal: null,
+            status: "Pending"
+          });
+        }
+
+        // 1st B vs 2nd A
+        if (!existingMatches.has(groupB.teams[0].team + "|" + groupA.teams[1].team)) {
+          matchesToAdd.push({
+            team1: groupB.teams[0].team,
+            team2: groupA.teams[1].team,
+            date: dateStr,
+            team1Goal: null,
+            team2Goal: null,
+            status: "Pending"
+          });
+        }
+      }
+
+      // Add the knockout matches to Firestore if not existing
+      if (matchesToAdd.length > 0) {
+        try {
+          for (const match of matchesToAdd) {
+            await addDoc(collection(db, "knockouts"), match);
+          }
+          // console.log(`${matchesToAdd.length} knockout matches added.`);
+        } catch (err) {
+          console.error("Error adding knockout matches:", err);
+        }
+      }
+    }
+
+    // Load knockout matches and render in knockoutContainer
+    async function loadKnockoutMatches() {
+      const knockoutSnapshot = await getDocs(collection(db, "knockouts"));
+      const container = document.getElementById("knockoutMatchesContent");
+
+      if (knockoutSnapshot.empty) {
+        container.innerHTML = `<p class="text-gray-500 text-center">No knockout matches to show.</p>`;
+        return;
+      }
+
+      const matches = [];
+      knockoutSnapshot.forEach(doc => matches.push({ id: doc.id, ...doc.data() }));
+
+      matches.sort((a, b) => a.date.localeCompare(b.date) || a.team1.localeCompare(b.team1));
+
+      const html = matches.map(m => {
+        const g1 = m.team1Goal;
+        const g2 = m.team2Goal;
+        let winner = "None";
+        if (typeof g1 === "number" && typeof g2 === "number") {
+          if (g1 > g2) winner = m.team1;
+          else if (g2 > g1) winner = m.team2;
+          else winner = "Draw";
+        }
+        const status = m.status || "Pending";
+        return `
+          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1 max-w-md mx-auto">
+            <div class="text-center text-[13px] text-gray-500 font-semibold">${m.date}</div>
+            <div class="flex justify-between items-center px-2">
+              <div class="text-sm font-semibold text-gray-600">${m.team1} <span class="text-black">(${g1 ?? "-"})</span></div>
+              <div class="text-base font-bold text-red-700">VS</div>
+              <div class="text-sm font-semibold text-gray-600">${m.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
+            </div>
+            <div class="text-center text-green-700 text-xs font-medium">Winner: ${winner}</div>
+            <div class="text-center text-yellow-700 text-xs font-medium">Status: ${status}</div>
+          </div>
+        `;
+      }).join("");
+
+      container.innerHTML = html;
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
@@ -327,12 +461,19 @@
 
       if (!confirm.isConfirmed) return;
 
-      const snapshot = await getDocs(collection(db, "fixers"));
-      const deletions = [];
-      snapshot.forEach(doc => deletions.push(deleteDoc(doc.ref)));
-      await Promise.all(deletions);
+      // Delete fixers
+      const fixersSnapshot = await getDocs(collection(db, "fixers"));
+      const fixersDeletions = [];
+      fixersSnapshot.forEach(doc => fixersDeletions.push(deleteDoc(doc.ref)));
+      await Promise.all(fixersDeletions);
 
-      Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      // Delete knockout matches as well to keep clean
+      const knockoutSnapshot = await getDocs(collection(db, "knockouts"));
+      const knockoutDeletions = [];
+      knockoutSnapshot.forEach(doc => knockoutDeletions.push(deleteDoc(doc.ref)));
+      await Promise.all(knockoutDeletions);
+
+      Swal.fire({ icon: 'success', title: 'All fixers and knockout matches deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
       loadFixers();
     });
   </script>
