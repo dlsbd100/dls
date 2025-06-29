@@ -202,6 +202,7 @@
           team,
           ...stat,
           points: stat.win * 3 + stat.draw,
+          played: stat.win + stat.loss + stat.draw
         })).sort((a, b) => b.points - a.points);
 
         allGroupsPoints.push({ groupName, sortedTeams });
@@ -221,10 +222,11 @@
                 <tr class="bg-gray-200">
                   <th class="px-2 py-1 border">#</th>
                   <th class="px-2 py-1 border">Team</th>
-                  <th class="px-2 py-1 border">Win</th>
-                  <th class="px-2 py-1 border">Loss</th>
-                  <th class="px-2 py-1 border">Draw</th>
-                  <th class="px-2 py-1 border">Points</th>
+                  <th class="px-2 py-1 border text-center">Played</th>
+                  <th class="px-2 py-1 border text-center">Win</th>
+                  <th class="px-2 py-1 border text-center">Loss</th>
+                  <th class="px-2 py-1 border text-center">Draw</th>
+                  <th class="px-2 py-1 border text-center">Points</th>
                 </tr>
               </thead>
               <tbody>
@@ -232,6 +234,7 @@
                   <tr>
                     <td class="px-2 py-1 border text-center">${i + 1}</td>
                     <td class="px-2 py-1 border">${team.team}</td>
+                    <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
                     <td class="px-2 py-1 border text-center">${team.win}</td>
                     <td class="px-2 py-1 border text-center">${team.loss}</td>
                     <td class="px-2 py-1 border text-center">${team.draw}</td>
