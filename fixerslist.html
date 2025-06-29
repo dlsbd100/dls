@@ -165,7 +165,7 @@
           let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
-          const status = match.status || "Pending"; // Read status from Firestore, default to Pending
+          let status = match.status || "Pending"; // Read status from Firestore, default to Pending
 
           // Initialize stats if not exists
           if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
@@ -192,6 +192,11 @@
               points[match.team2].draw++;
               winner = "Draw";
             }
+          }
+
+          // Update status based on winner/draw logic:
+          if (winner !== "None") {
+            status = "Finished";
           }
 
           fixersHTML += `
