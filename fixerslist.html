@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Football Match Fixers - Admin Panel</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -21,19 +22,31 @@
 
   <!-- Main -->
   <main class="max-w-4xl mx-auto p-4 space-y-6">
+    <!-- Fixers Section -->
     <div class="bg-white shadow rounded p-4">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
         <div class="text-xl font-semibold text-green-700">Football Match Fixers</div>
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2 flex-wrap">
-            <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-28 h-28 overflow-y-auto" size="8"></select>
+            <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-26 h-9 overflow-y-auto" size="8"></select>
             <label class="text-sm text-gray-600 flex items-center gap-2 pl-1">
               <input type="checkbox" id="selectAllTeams" class="accent-green-600" />
               Select All Teams
             </label>
             <input type="date" id="fixerDate" class="border border-gray-300 rounded p-2 text-sm h-9" />
+            <select id="groupCount" class="border border-gray-300 rounded p-2 text-sm h-9">
+              <option disabled selected>Select Group</option>
+              <option value="1">1 Group</option>
+              <option value="2">2 Groups</option>
+              <option value="3">3 Groups</option>
+              <option value="4">4 Groups</option>
+              <option value="5">5 Groups</option>
+              <option value="6">6 Groups</option>
+              <option value="7">7 Groups</option>
+              <option value="8">8 Groups</option>
+            </select>
             <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 whitespace-nowrap">
-              <i class="fas fa-plus mr-1"></i> Add Knockout Fixers
+              <i class="fas fa-plus mr-1"></i> Add Fixers
             </button>
             <button id="deleteAllBtn" class="bg-red-600 text-white text-sm px-3 py-2 rounded hover:bg-red-700 whitespace-nowrap">
               <i class="fas fa-trash mr-1"></i> Delete All Fixers
@@ -72,6 +85,8 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    let teamList = [];
+
     onAuthStateChanged(auth, (user) => {
       if (!user) window.location.href = "login.html";
       else {
@@ -87,11 +102,12 @@
         const data = doc.data();
         if (data.team) teams.add(data.team);
       });
-      const teamList = Array.from(teams);
+      teamList = Array.from(teams);
       const selector = document.getElementById("teamSelector");
       selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
+    // Function to add days to a date and return ISO date string
     function addDays(dateStr, days) {
       const d = new Date(dateStr);
       d.setDate(d.getDate() + days);
@@ -110,23 +126,39 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
-      // Group by round or date
-      const grouped = {};
+      // Group fixers by date (unique dates)
+      const fixersByDate = {};
       fixers.forEach(fix => {
-        const key = fix.round || fix.date;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(fix);
+        const key = fix.date;
+        if (!fixersByDate[key]) fixersByDate[key] = [];
+        fixersByDate[key].push(fix);
       });
 
-      const keys = Object.keys(grouped).sort();
-      let html = "";
+      // Sort the dates ascending
+      const sortedDates = Object.keys(fixersByDate).sort();
 
-      keys.forEach(key => {
-        html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700">${key}</div>`;
-        grouped[key].forEach((match, idx) => {
+      // Here, we will generate each group by index, but for each match serial number (idx), date = fixerDate + idx
+      // So we need the base date = the smallest date in the data (or from UI - safer to pick min date in fixers)
+      const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
+
+      let html = "";
+      sortedDates.forEach((date, groupIndex) => {
+        // Group name from A, B, C...
+        const groupName = String.fromCharCode(65 + groupIndex);
+        html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
+
+        // sort matches by team1 for neatness
+        const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+
+        matches.forEach((match, idx) => {
+          // Calculate date for this match based on baseDate + idx (serial number - 1)
+          // So serial number 1 -> baseDate + 0 days
+          // serial number 2 -> baseDate + 1 day, etc.
+          let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
+
           html += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1">
-              <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date}</div>
+              <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
               <div class="flex justify-center items-center gap-3">
                 <div class="text-sm font-semibold text-gray-600">${idx + 1}.</div>
                 <div class="flex-1 text-right font-medium">${match.team1}</div>
@@ -141,56 +173,46 @@
       container.innerHTML = html;
     }
 
-    async function generateKnockoutMatches(teams, baseDate) {
-      let round = 1;
-      let roundTeams = [...teams];
-      let dateOffset = 0;
-
-      while (roundTeams.length >= 2) {
-        roundTeams.sort(() => Math.random() - 0.5);
-        const newRoundTeams = [];
-
-        for (let i = 0; i < roundTeams.length; i += 2) {
-          const team1 = roundTeams[i];
-          const team2 = roundTeams[i + 1];
-
-          const matchDate = addDays(baseDate, dateOffset);
-          await addDoc(collection(db, "fixers"), {
-            team1,
-            team2,
-            date: matchDate,
-            round: `Round ${round}`
-          });
-
-          const winner = Math.random() > 0.5 ? team1 : team2;
-          newRoundTeams.push(winner);
-        }
-
-        roundTeams = newRoundTeams;
-        dateOffset++;
-        round++;
-      }
-    }
-
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
       const baseDate = document.getElementById("fixerDate").value;
+      const groupCount = parseInt(document.getElementById("groupCount").value);
 
-      if (!baseDate || selectedTeams.length < 2) {
-        Swal.fire({ icon: 'warning', title: 'Select teams and date first.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
+        Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
         return;
       }
 
-      if (selectedTeams.length % 2 !== 0) {
-        Swal.fire({ icon: 'error', title: 'Team number must be even for knockout.', position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
+      if (selectedTeams.length !== groupCount * 4) {
+        Swal.fire({ icon: 'error', title: `Select ${groupCount * 4} teams.`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
         return;
       }
 
-      await generateKnockoutMatches(selectedTeams, baseDate);
+      const start = new Date(baseDate);
+      let added = 0;
 
-      Swal.fire({ icon: 'success', title: 'Knockout fixtures created.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      for (let g = 0; g < groupCount; g++) {
+        const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
+        const matchDate = new Date(start);
+        matchDate.setDate(start.getDate() + g);
+        const dateStr = matchDate.toISOString().split("T")[0];
+
+        for (let i = 0; i < groupTeams.length; i++) {
+          for (let j = i + 1; j < groupTeams.length; j++) {
+            await addDoc(collection(db, "fixers"), {
+              team1: groupTeams[i],
+              team2: groupTeams[j],
+              date: dateStr
+            });
+            added++;
+          }
+        }
+      }
+
+      Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
 
       document.getElementById("teamSelector").selectedIndex = -1;
+      document.getElementById("groupCount").value = "1";
       document.getElementById("fixerDate").value = "";
       document.getElementById("selectAllTeams").checked = false;
 
