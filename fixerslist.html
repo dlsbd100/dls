@@ -167,6 +167,7 @@
                 <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
               </div>
               <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
+              <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status || "Pending"}</div>
             </div>`;
         });
 
@@ -207,7 +208,8 @@
               team2: groupTeams[j],
               date: dateStr,
               team1Goal: null,
-              team2Goal: null
+              team2Goal: null,
+              status: "Pending"
             });
             added++;
           }
