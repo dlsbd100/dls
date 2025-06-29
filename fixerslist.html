@@ -22,8 +22,6 @@
 
   <!-- Main -->
   <main class="max-w-4xl mx-auto p-4 space-y-6">
-
-    <!-- Fixers Section -->
     <div class="bg-white shadow rounded p-4">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
         <div class="text-xl font-semibold text-green-700">Football Match Fixers</div>
@@ -31,26 +29,15 @@
           <div class="flex items-center gap-2 flex-wrap">
             <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-26 h-9 overflow-y-auto" size="8"></select>
             <label class="text-sm text-gray-600 flex items-center gap-2 pl-1">
-              <input type="checkbox" id="selectAllTeams" class="accent-green-600" />
-              Select All Teams
+              <input type="checkbox" id="selectAllTeams" class="accent-green-600" /> Select All Teams
             </label>
             <input type="date" id="fixerDate" class="border border-gray-300 rounded p-2 text-sm h-9" />
             <select id="groupCount" class="border border-gray-300 rounded p-2 text-sm h-9">
               <option disabled selected>Select Group</option>
-              <option value="1">1 Group</option>
-              <option value="2">2 Groups</option>
-              <option value="3">3 Groups</option>
-              <option value="4">4 Groups</option>
-              <option value="5">5 Groups</option>
-              <option value="6">6 Groups</option>
-              <option value="7">7 Groups</option>
-              <option value="8">8 Groups</option>
+              ${[...Array(8).keys()].map(i => `<option value="${i + 1}">${i + 1} Group${i ? 's' : ''}</option>`).join('')}
             </select>
             <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 whitespace-nowrap">
               <i class="fas fa-plus mr-1"></i> Add Fixers
-            </button>
-            <button id="generateKnockoutsBtn" class="bg-blue-600 text-white text-sm px-3 py-2 rounded hover:bg-blue-700 whitespace-nowrap">
-              <i class="fas fa-trophy mr-1"></i> Generate Knockouts
             </button>
             <button id="deleteAllBtn" class="bg-red-600 text-white text-sm px-3 py-2 rounded hover:bg-red-700 whitespace-nowrap">
               <i class="fas fa-trash mr-1"></i> Delete All Fixers
@@ -58,21 +45,13 @@
           </div>
         </div>
       </div>
-
       <div id="fixersContainer" class="space-y-6 max-h-[600px] overflow-y-auto">
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
 
       <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
         <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
-        <!-- Point tables here -->
       </div>
-
-      <div id="knockoutContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
-        <h2 class="text-lg font-semibold text-blue-700 mb-3">Knockout Matches</h2>
-        <!-- Knockout matches will appear here -->
-      </div>
-
     </div>
   </main>
 
@@ -85,29 +64,24 @@
       collection,
       getDocs,
       addDoc,
-      deleteDoc,
-      doc,
-      updateDoc,
-      query,
-      where
+      deleteDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const firebaseConfig = {
+    const app = initializeApp({
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
       authDomain: "dlstournament-31ac1.firebaseapp.com",
       projectId: "dlstournament-31ac1",
       storageBucket: "dlstournament-31ac1.appspot.com",
       messagingSenderId: "874377019055",
-      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
-    };
+      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
+    });
 
-    const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
     let teamList = [];
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, user => {
       if (!user) window.location.href = "login.html";
       else {
         loadTeams();
@@ -123,8 +97,7 @@
         if (data.team) teams.add(data.team);
       });
       teamList = Array.from(teams);
-      const selector = document.getElementById("teamSelector");
-      selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
+      document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
     function addDays(dateStr, days) {
@@ -133,67 +106,29 @@
       return d.toISOString().split("T")[0];
     }
 
-    async function updateFixerStatus(fixerDoc, fixerData) {
-      const { team1Goal, team2Goal } = fixerData;
-      let newStatus = "Pending";
-      if (typeof team1Goal === "number" && typeof team2Goal === "number") {
-        newStatus = "Finished";
-      }
-      if (fixerData.status !== newStatus) {
-        await updateDoc(fixerDoc, { status: newStatus });
-      }
-    }
-
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const fixersContainer = document.getElementById("fixersContainer");
       const pointTablesContainer = document.getElementById("pointTablesContainer");
-      const knockoutContainer = document.getElementById("knockoutContainer");
 
       if (snapshot.empty) {
         fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
         pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-        knockoutContainer.innerHTML = `<p class="text-gray-500 text-center">No knockout matches.</p>`;
         return;
       }
 
-      // Separate fixers into group matches and knockout matches
-      const fixers = [];
-      const knockoutFixers = [];
-
-      const updateStatusPromises = [];
-
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        data.docRef = docSnap.ref;
-        if (data.knockout === true) knockoutFixers.push(data);
-        else fixers.push(data);
-      });
-
-      // Update status for all fixers
-      for (const f of fixers.concat(knockoutFixers)) {
-        updateStatusPromises.push(updateFixerStatus(f.docRef, f));
-      }
-      await Promise.all(updateStatusPromises);
-
-      // Group fixers by date (each date = group)
+      const fixers = snapshot.docs.map(doc => doc.data());
       const fixersByDate = {};
       fixers.forEach(fix => {
-        const key = fix.date;
-        if (!fixersByDate[key]) fixersByDate[key] = [];
-        fixersByDate[key].push(fix);
+        if (!fixersByDate[fix.date]) fixersByDate[fix.date] = [];
+        fixersByDate[fix.date].push(fix);
       });
 
       const sortedDates = Object.keys(fixersByDate).sort();
-      const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
-
-      // Clear HTML containers
+      const baseDate = sortedDates.length ? sortedDates[0] : null;
       let fixersHTML = "";
       let allPointsHTML = "";
-
       let groupIndex = 0;
-
-      // For collecting point tables after processing all groups
       const allGroupsPoints = [];
 
       sortedDates.forEach(date => {
@@ -201,22 +136,16 @@
         const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
         fixersHTML += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
-
-        const points = {};
-        const goals = {}; // Track total goals per team
+        const points = {}, goals = {};
 
         matches.forEach((match, idx) => {
-          let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
+          const displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
-
-          // Initialize stats if not exists
           if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
           if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
           if (!goals[match.team1]) goals[match.team1] = 0;
           if (!goals[match.team2]) goals[match.team2] = 0;
-
-          // Add goals (if number)
           if (typeof g1 === "number") goals[match.team1] += g1;
           if (typeof g2 === "number") goals[match.team2] += g2;
 
@@ -246,229 +175,57 @@
                 <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
               </div>
               <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-              <div class="text-center text-xs font-medium text-gray-400">Status: ${match.status || "Pending"}</div>
+              <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status ?? "pending"}</div>
             </div>`;
         });
 
-        // Prepare sorted point table for this group
-        // Include goals and sort by points DESC, then goals DESC
         const sortedTeams = Object.entries(points).map(([team, stat]) => ({
           team,
           ...stat,
           points: stat.win * 3 + stat.draw,
           played: stat.win + stat.loss + stat.draw,
-          goals: goals[team] || 0,
-        })).sort((a, b) => {
-          if (b.points !== a.points) return b.points - a.points;
-          return b.goals - a.goals; // if points equal, sort by goals desc
-        });
+          goals: goals[team] || 0
+        })).sort((a, b) => b.points - a.points || b.goals - a.goals);
 
         allGroupsPoints.push({ groupName, sortedTeams });
-
         groupIndex++;
       });
 
-      // Build all point tables
-      if (allGroupsPoints.length === 0) {
-        allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-      } else {
-        allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
-          <div class="mb-4">
-            <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
-            <table class="text-sm w-full table-auto border border-gray-200">
-              <thead>
-                <tr class="bg-gray-200">
-                  <th class="px-2 py-1 border">#</th>
-                  <th class="px-2 py-1 border">Team</th>
-                  <th class="px-2 py-1 border text-center">Played</th>
-                  <th class="px-2 py-1 border text-center">Win</th>
-                  <th class="px-2 py-1 border text-center">Loss</th>
-                  <th class="px-2 py-1 border text-center">Draw</th>
-                  <th class="px-2 py-1 border text-center">Goals</th>
-                  <th class="px-2 py-1 border text-center">Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${sortedTeams.map((team, i) => `
-                  <tr>
-                    <td class="px-2 py-1 border text-center">${i + 1}</td>
-                    <td class="px-2 py-1 border">${team.team}</td>
-                    <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
-                    <td class="px-2 py-1 border text-center">${team.win}</td>
-                    <td class="px-2 py-1 border text-center">${team.loss}</td>
-                    <td class="px-2 py-1 border text-center">${team.draw}</td>
-                    <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
-                    <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `).join('');
-      }
-
-      // Show knockout matches
-      let knockoutHTML = "";
-      if (knockoutFixers.length === 0) {
-        knockoutHTML = `<p class="text-gray-500 text-center">No knockout matches.</p>`;
-      } else {
-        // Sort knockout matches by date ascending
-        knockoutFixers.sort((a, b) => a.date.localeCompare(b.date));
-        knockoutHTML += knockoutFixers.map(match => {
-          const g1 = match.team1Goal ?? "-";
-          const g2 = match.team2Goal ?? "-";
-          let winner = "None";
-          if (typeof match.team1Goal === "number" && typeof match.team2Goal === "number") {
-            if (match.team1Goal > match.team2Goal) winner = match.team1;
-            else if (match.team2Goal > match.team1Goal) winner = match.team2;
-            else winner = "Draw";
-          }
-          return `
-            <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-              <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date}</div>
-              <div class="flex justify-between items-center px-2">
-                <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${g1})</span></div>
-                <div class="text-base font-bold text-red-500">VS</div>
-                <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2})</span></div>
-              </div>
-              <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-              <div class="text-center text-xs font-medium text-gray-400">Status: ${match.status || "Pending"}</div>
-            </div>
-          `;
-        }).join('');
-      }
-
       fixersContainer.innerHTML = fixersHTML;
-      pointTablesContainer.innerHTML = allPointsHTML;
-      knockoutContainer.innerHTML = knockoutHTML;
+      pointTablesContainer.innerHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
+        <div class="mb-4">
+          <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
+          <table class="text-sm w-full table-auto border border-gray-200">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="px-2 py-1 border">#</th>
+                <th class="px-2 py-1 border">Team</th>
+                <th class="px-2 py-1 border text-center">Played</th>
+                <th class="px-2 py-1 border text-center">Win</th>
+                <th class="px-2 py-1 border text-center">Loss</th>
+                <th class="px-2 py-1 border text-center">Draw</th>
+                <th class="px-2 py-1 border text-center">Goals</th>
+                <th class="px-2 py-1 border text-center">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sortedTeams.map((team, i) => `
+                <tr>
+                  <td class="px-2 py-1 border text-center">${i + 1}</td>
+                  <td class="px-2 py-1 border">${team.team}</td>
+                  <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
+                  <td class="px-2 py-1 border text-center">${team.win}</td>
+                  <td class="px-2 py-1 border text-center">${team.loss}</td>
+                  <td class="px-2 py-1 border text-center">${team.draw}</td>
+                  <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
+                  <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `).join('');
     }
-
-    // Generate Knockouts based on current group standings
-    document.getElementById("generateKnockoutsBtn").addEventListener("click", async () => {
-      // First load all fixers again for up-to-date data
-      const snapshot = await getDocs(collection(db, "fixers"));
-      if (snapshot.empty) {
-        Swal.fire({ icon: 'warning', title: 'No fixers found to generate knockouts.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-        return;
-      }
-
-      const fixers = [];
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        if (!data.knockout) fixers.push(data);
-      });
-
-      if (fixers.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'No group matches found.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-        return;
-      }
-
-      // Group fixers by date (group)
-      const fixersByDate = {};
-      fixers.forEach(fix => {
-        if (!fixersByDate[fix.date]) fixersByDate[fix.date] = [];
-        fixersByDate[fix.date].push(fix);
-      });
-
-      // For each group calculate standings and pick top 2
-      const qualifiedTeams = [];
-
-      for (const date in fixersByDate) {
-        const groupMatches = fixersByDate[date];
-
-        const points = {};
-        const goals = {};
-
-        groupMatches.forEach(match => {
-          const g1 = match.team1Goal;
-          const g2 = match.team2Goal;
-
-          if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
-          if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
-          if (!goals[match.team1]) goals[match.team1] = 0;
-          if (!goals[match.team2]) goals[match.team2] = 0;
-
-          if (typeof g1 === "number") goals[match.team1] += g1;
-          if (typeof g2 === "number") goals[match.team2] += g2;
-
-          if (typeof g1 === "number" && typeof g2 === "number") {
-            if (g1 > g2) {
-              points[match.team1].win++;
-              points[match.team2].loss++;
-            } else if (g2 > g1) {
-              points[match.team2].win++;
-              points[match.team1].loss++;
-            } else {
-              points[match.team1].draw++;
-              points[match.team2].draw++;
-            }
-          }
-        });
-
-        const sortedTeams = Object.entries(points).map(([team, stat]) => ({
-          team,
-          points: stat.win * 3 + stat.draw,
-          goals: goals[team] || 0,
-        })).sort((a, b) => {
-          if (b.points !== a.points) return b.points - a.points;
-          return b.goals - a.goals;
-        });
-
-        qualifiedTeams.push(...sortedTeams.slice(0, 2));
-      }
-
-      if (qualifiedTeams.length < 4) {
-        Swal.fire({ icon: 'warning', title: 'Not enough qualified teams (minimum 4 needed) to generate knockouts.', position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
-        return;
-      }
-
-      // Clear existing knockout matches first
-      const knockoutQuery = query(collection(db, "fixers"), where("knockout", "==", true));
-      const existingKnockoutSnapshot = await getDocs(knockoutQuery);
-      const deletionPromises = [];
-      existingKnockoutSnapshot.forEach(docSnap => {
-        deletionPromises.push(deleteDoc(docSnap.ref));
-      });
-      await Promise.all(deletionPromises);
-
-      // Generate knockout matches (Quarter Finals)
-      // Matches: QF1: 1st vs 4th, QF2: 2nd vs 3rd (if 4 teams)
-      // If more than 4 qualified, pair sequentially: 1v2, 3v4, 5v6...
-
-      // Sort qualified teams again by points desc + goals desc just in case
-      qualifiedTeams.sort((a,b) => {
-        if(b.points !== a.points) return b.points - a.points;
-        return b.goals - a.goals;
-      });
-
-      const knockoutMatches = [];
-      for (let i = 0; i < qualifiedTeams.length; i += 2) {
-        if (qualifiedTeams[i+1]) {
-          knockoutMatches.push([qualifiedTeams[i].team, qualifiedTeams[i+1].team]);
-        }
-      }
-
-      const todayStr = new Date().toISOString().split("T")[0];
-
-      // Add knockout matches to firestore
-      let addedCount = 0;
-      for (const [t1, t2] of knockoutMatches) {
-        await addDoc(collection(db, "fixers"), {
-          team1: t1,
-          team2: t2,
-          date: todayStr,
-          team1Goal: null,
-          team2Goal: null,
-          status: "Pending",
-          knockout: true
-        });
-        addedCount++;
-      }
-
-      Swal.fire({ icon: 'success', title: `${addedCount} knockout matches generated.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-
-      loadFixers();
-    });
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
@@ -502,8 +259,7 @@
               date: dateStr,
               team1Goal: null,
               team2Goal: null,
-              status: "Pending",
-              knockout: false
+              status: "pending"
             });
             added++;
           }
@@ -511,16 +267,14 @@
       }
 
       Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-
       document.getElementById("teamSelector").selectedIndex = -1;
       document.getElementById("groupCount").value = "1";
       document.getElementById("fixerDate").value = "";
       document.getElementById("selectAllTeams").checked = false;
-
       loadFixers();
     });
 
-    document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+    document.getElementById("selectAllTeams").addEventListener("change", e => {
       const all = document.getElementById("teamSelector").options;
       for (let o of all) o.selected = e.target.checked;
     });
@@ -531,14 +285,12 @@
         text: "All matches will be deleted!",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Yes, delete all!',
+        confirmButtonText: 'Yes, delete all!'
       });
-
       if (!confirm.isConfirmed) return;
 
       const snapshot = await getDocs(collection(db, "fixers"));
-      const deletions = [];
-      snapshot.forEach(doc => deletions.push(deleteDoc(doc.ref)));
+      const deletions = snapshot.docs.map(doc => deleteDoc(doc.ref));
       await Promise.all(deletions);
 
       Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
