@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Football Match Fixers - Admin Panel</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
+
   <!-- Header -->
   <header class="bg-white shadow-md relative">
     <div class="max-w-4xl mx-auto px-4 py-3 relative flex items-center justify-center">
@@ -107,7 +107,6 @@
       selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
-    // Function to add days to a date and return ISO date string
     function addDays(dateStr, days) {
       const d = new Date(dateStr);
       d.setDate(d.getDate() + days);
@@ -126,7 +125,6 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
-      // Group fixers by date (unique dates)
       const fixersByDate = {};
       fixers.forEach(fix => {
         const key = fix.date;
@@ -134,37 +132,36 @@
         fixersByDate[key].push(fix);
       });
 
-      // Sort the dates ascending
       const sortedDates = Object.keys(fixersByDate).sort();
-
-      // Here, we will generate each group by index, but for each match serial number (idx), date = fixerDate + idx
-      // So we need the base date = the smallest date in the data (or from UI - safer to pick min date in fixers)
       const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
 
       let html = "";
       sortedDates.forEach((date, groupIndex) => {
-        // Group name from A, B, C...
         const groupName = String.fromCharCode(65 + groupIndex);
         html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
 
-        // sort matches by team1 for neatness
         const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
         matches.forEach((match, idx) => {
-          // Calculate date for this match based on baseDate + idx (serial number - 1)
-          // So serial number 1 -> baseDate + 0 days
-          // serial number 2 -> baseDate + 1 day, etc.
           let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
 
+          const goal1 = match.team1Goal ?? "-";
+          const goal2 = match.team2Goal ?? "-";
+          let winner = "Draw";
+          if (typeof goal1 === "number" && typeof goal2 === "number") {
+            if (goal1 > goal2) winner = match.team1;
+            else if (goal2 > goal1) winner = match.team2;
+          }
+
           html += `
-            <div class="border p-2 rounded shadow-sm text-xs space-y-1">
+            <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white">
               <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
-              <div class="flex justify-center items-center gap-3">
-                <div class="text-sm font-semibold text-gray-600">${idx + 1}.</div>
-                <div class="flex-1 text-right font-medium">${match.team1}</div>
+              <div class="flex justify-between items-center px-2">
+                <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${goal1})</span></div>
                 <div class="text-base font-bold text-red-500">VS</div>
-                <div class="flex-1 text-left font-medium">${match.team2}</div>
+                <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${goal2})</span></div>
               </div>
+              <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
             </div>
           `;
         });
@@ -202,7 +199,9 @@
             await addDoc(collection(db, "fixers"), {
               team1: groupTeams[i],
               team2: groupTeams[j],
-              date: dateStr
+              date: dateStr,
+              team1Goal: null,
+              team2Goal: null
             });
             added++;
           }
