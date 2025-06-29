@@ -62,12 +62,6 @@
         <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
         <!-- All point tables will appear here together -->
       </div>
-
-      <div id="knockoutContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
-        <h2 class="text-lg font-semibold text-red-700 mb-3">Knockout Matches</h2>
-        <!-- Knockout matches will appear here -->
-        <p class="text-gray-500 text-center">No knockout matches yet.</p>
-      </div>
     </div>
   </main>
 
@@ -124,47 +118,14 @@
       return d.toISOString().split("T")[0];
     }
 
-    // Generate knockout pairs - example pairing for quarterfinals: A1 vs B2, B1 vs A2, C1 vs D2, D1 vs C2, etc.
-    // For N groups, pair Group[i] 1st with Group[(i+1)%N] 2nd.
-    function generateKnockoutMatches(qualifiedTeams) {
-      const knockoutMatches = [];
-      const groupCount = qualifiedTeams.length;
-
-      for (let i = 0; i < groupCount; i++) {
-        const groupA = qualifiedTeams[i];
-        const groupB = qualifiedTeams[(i + 1) % groupCount];
-        // groupA[0] = 1st place, groupA[1] = 2nd place
-        // groupB[0] = 1st place, groupB[1] = 2nd place
-
-        knockoutMatches.push({
-          team1: groupA[0].team,
-          team2: groupB[1].team,
-          team1Goal: null,
-          team2Goal: null,
-          round: "Quarterfinal"
-        });
-        knockoutMatches.push({
-          team1: groupB[0].team,
-          team2: groupA[1].team,
-          team1Goal: null,
-          team2Goal: null,
-          round: "Quarterfinal"
-        });
-      }
-
-      return knockoutMatches;
-    }
-
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const fixersContainer = document.getElementById("fixersContainer");
       const pointTablesContainer = document.getElementById("pointTablesContainer");
-      const knockoutContainer = document.getElementById("knockoutContainer");
 
       if (snapshot.empty) {
         fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
         pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-        knockoutContainer.innerHTML = `<p class="text-gray-500 text-center">No knockout matches yet.</p>`;
         return;
       }
 
@@ -245,7 +206,7 @@
         });
 
         // Prepare sorted point table for this group
-        // Include goals and sort by points DESC, then goals DESC
+        // Now include goals and sort by points DESC, then goals DESC
         const sortedTeams = Object.entries(points).map(([team, stat]) => ({
           team,
           ...stat,
@@ -262,7 +223,7 @@
         groupIndex++;
       });
 
-      // Build all point tables in one place
+      // Now build all point tables in one place
       if (allGroupsPoints.length === 0) {
         allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
       } else {
@@ -303,38 +264,6 @@
 
       fixersContainer.innerHTML = fixersHTML;
       pointTablesContainer.innerHTML = allPointsHTML;
-
-      // Generate knockout matches based on qualified teams (top 2 per group)
-      if (allGroupsPoints.length < 2) {
-        // Need at least 2 groups to have knockout matches
-        knockoutContainer.innerHTML = `<p class="text-gray-500 text-center">Not enough groups for knockout matches.</p>`;
-        return;
-      }
-
-      const qualifiedTeams = allGroupsPoints.map(g => g.sortedTeams.slice(0, 2));
-      const knockoutMatches = generateKnockoutMatches(qualifiedTeams);
-
-      if (knockoutMatches.length === 0) {
-        knockoutContainer.innerHTML = `<p class="text-gray-500 text-center">No knockout matches yet.</p>`;
-        return;
-      }
-
-      // Build knockout matches HTML
-      let knockoutHTML = "";
-      knockoutMatches.forEach((match, i) => {
-        knockoutHTML += `
-          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-            <div class="text-center text-sm font-semibold text-red-600">${match.round}</div>
-            <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-700">${match.team1} <span class="text-black">( - )</span></div>
-              <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-700">${match.team2} <span class="text-black">( - )</span></div>
-            </div>
-            <div class="text-center text-gray-500 text-xs font-medium">Winner: TBD</div>
-          </div>`;
-      });
-
-      knockoutContainer.innerHTML = knockoutHTML;
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
