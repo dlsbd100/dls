@@ -73,7 +73,7 @@
       getDocs,
       addDoc,
       deleteDoc,
-      updateDoc // ✅ Import updateDoc
+      updateDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -131,6 +131,11 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push({ ...doc.data(), id: doc.id }));
 
+      // Separate group matches vs knockout matches by checking status or date logic if needed
+      // For simplicity: group matches have status Pending/Finished but knockout matches we will mark with "knockout": true (optional)
+      // But here we just separate by date/group for now.
+
+      // Group fixers by date (and implicitly by groups)
       const fixersByDate = {};
       fixers.forEach(fix => {
         const key = fix.date;
@@ -142,7 +147,6 @@
       const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
 
       let fixersHTML = "";
-      let allPointsHTML = "";
       const allGroupsPoints = [];
       let groupIndex = 0;
 
@@ -185,7 +189,7 @@
               winner = "Draw";
             }
 
-            // ✅ Update Firestore status if still Pending
+            // Update status to Finished if not already
             if (status !== "Finished") {
               status = "Finished";
               const matchRef = snapshot.docs.find(doc => doc.id === match.id)?.ref;
@@ -220,7 +224,10 @@
         groupIndex++;
       }
 
-      allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
+      fixersContainer.innerHTML = fixersHTML;
+
+      // Show point tables
+      const allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
         <div class="mb-4">
           <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
           <table class="text-sm w-full table-auto border border-gray-200">
@@ -254,8 +261,128 @@
         </div>
       `).join("");
 
-      fixersContainer.innerHTML = fixersHTML;
-      pointTablesContainer.innerHTML = allPointsHTML;
+      document.getElementById("pointTablesContainer").innerHTML = allPointsHTML;
+
+      // Generate knockout matches automatically
+      await generateKnockoutMatches(allGroupsPoints);
+    }
+
+    /**
+     * Generate knockout matches from top 2 teams of each group
+     * Logic: Take top 2 teams from each group and create knockout pairs
+     * For example, if 2 groups: 
+     *  QF1: Group A 1st vs Group B 2nd
+     *  QF2: Group B 1st vs Group A 2nd
+     * If more groups, can be extended or adapted.
+     */
+    async function generateKnockoutMatches(allGroupsPoints) {
+      // Clear existing knockout matches first (if any)
+      // We can identify knockout matches as those with "knockout": true flag in firestore
+      // But since you don't have that field, let's identify knockout matches by checking dates after group stage or by custom logic
+      // For simplicity, let's delete existing knockout matches which date is after last group date + 10 days
+      // Or better, let's keep track and delete matches that do NOT belong to group dates
+
+      // Find the latest group date
+      const latestGroupDate = (() => {
+        const dates = allGroupsPoints.map((_, idx) => {
+          // Assume group dates are in order starting from baseDate + idx days
+          // We do not have dates per group here, but from loadFixers logic groups were assigned date = baseDate + groupIndex
+          // So get the max date by adding groupIndex days to baseDate
+          // Let's take baseDate from first date in fixers
+          const baseDateInput = document.getElementById("fixerDate").value;
+          if (!baseDateInput) return null;
+          const d = new Date(baseDateInput);
+          d.setDate(d.getDate() + idx);
+          return d;
+        }).filter(Boolean);
+
+        if (dates.length === 0) return null;
+        return new Date(Math.max(...dates));
+      })();
+
+      // If no group date or no groups, no knockout generation
+      if (!latestGroupDate) return;
+
+      // Let's identify knockout matches by date after latestGroupDate (e.g. latestGroupDate + 1 day or more)
+      const knockoutStartDate = new Date(latestGroupDate);
+      knockoutStartDate.setDate(knockoutStartDate.getDate() + 1);
+      const knockoutStartDateStr = knockoutStartDate.toISOString().split("T")[0];
+
+      // Get all fixers again (to avoid race conditions)
+      const snapshot = await getDocs(collection(db, "fixers"));
+
+      // Delete old knockout matches (matches with date >= knockoutStartDateStr)
+      const deletions = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.date >= knockoutStartDateStr) {
+          deletions.push(deleteDoc(doc.ref));
+        }
+      });
+      await Promise.all(deletions);
+
+      // Prepare knockout pairs from top 2 teams of each group
+      // We'll generate Quarter Finals / Semi Finals etc based on number of groups
+      // For now, implement only for even number of groups >= 2
+
+      if (allGroupsPoints.length < 2) {
+        // Not enough groups for knockout pairs
+        return;
+      }
+
+      // Collect top 2 teams from each group
+      const topTeams = allGroupsPoints.map(g => g.sortedTeams.slice(0, 2).map(t => t.team));
+
+      // Flatten to array of pairs per group
+      // We'll create knockout pairs in a standard way:
+      // Group 1 winner vs Group 2 runner-up
+      // Group 2 winner vs Group 1 runner-up
+      // Group 3 winner vs Group 4 runner-up
+      // Group 4 winner vs Group 3 runner-up
+      // and so on...
+
+      const knockoutMatches = [];
+      const knockoutMatchDate = new Date(knockoutStartDate); // Start knockout from day after group matches end
+
+      for (let i = 0; i < topTeams.length; i += 2) {
+        if (i + 1 >= topTeams.length) break; // Odd group count, ignore last group for pairing
+
+        const groupA = topTeams[i];
+        const groupB = topTeams[i + 1];
+
+        // QF1: Group A 1st vs Group B 2nd
+        knockoutMatches.push({
+          team1: groupA[0],
+          team2: groupB[1],
+          date: knockoutMatchDate.toISOString().split("T")[0],
+          team1Goal: null,
+          team2Goal: null,
+          status: "Pending",
+          knockout: true
+        });
+
+        // QF2: Group B 1st vs Group A 2nd
+        knockoutMatches.push({
+          team1: groupB[0],
+          team2: groupA[1],
+          date: knockoutMatchDate.toISOString().split("T")[0],
+          team1Goal: null,
+          team2Goal: null,
+          status: "Pending",
+          knockout: true
+        });
+
+        // Next knockout round can be scheduled on knockoutMatchDate + 1 day if you want to extend
+        knockoutMatchDate.setDate(knockoutMatchDate.getDate() + 1);
+      }
+
+      // Add knockout matches to Firestore
+      for (const match of knockoutMatches) {
+        await addDoc(collection(db, "fixers"), match);
+      }
+
+      // Reload fixers to reflect knockout matches
+      loadFixers();
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
