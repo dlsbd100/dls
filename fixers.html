@@ -30,7 +30,7 @@
   <!-- Firebase & Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -47,6 +47,7 @@
     const auth = getAuth(app);
 
     let teamPhotos = {};
+    let fixersData = new Map(); // docId -> data for quick update
 
     async function loadTeamPhotos() {
       const snap = await getDocs(collection(db, "playersform"));
@@ -64,12 +65,34 @@
       return d.toISOString().split("T")[0];
     }
 
+    // debounce helper to limit updates while typing fast
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         await loadTeamPhotos();
         loadFixers();
+      } else {
+        // যদি login পেজ থাকে, redirect করো
+        // window.location.href = "login.html";
       }
     });
+
+    function createGoalInput(value, onChange) {
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "0";
+      input.value = (value !== null && value !== undefined) ? value : "";
+      input.className = "w-12 text-black rounded px-1 text-center";
+      input.addEventListener("input", onChange);
+      return input;
+    }
 
     function loadFixers() {
       const fixersRef = collection(db, "fixers");
@@ -82,7 +105,14 @@
         }
 
         const fixers = [];
-        snapshot.forEach(doc => fixers.push(doc.data()));
+        fixersData.clear();
+
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          data._id = docSnap.id;
+          fixers.push(data);
+          fixersData.set(docSnap.id, data);
+        });
 
         const fixersByDate = {};
         fixers.forEach(fix => {
@@ -95,42 +125,133 @@
         const baseDate = sortedDates[0];
         let html = "";
 
+        fixersContainer.innerHTML = ""; // clear before append
+
         sortedDates.forEach((date, groupIndex) => {
           const groupName = String.fromCharCode(65 + groupIndex);
-          html += `<div class="text-lg font-semibold text-yellow-400">Group ${groupName}</div>`;
+
+          const groupDiv = document.createElement("div");
+          groupDiv.className = "space-y-3";
+
+          const groupTitle = document.createElement("div");
+          groupTitle.className = "text-lg font-semibold text-yellow-400 mb-2";
+          groupTitle.textContent = `Group ${groupName}`;
+          groupDiv.appendChild(groupTitle);
 
           const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
           matches.forEach((match, idx) => {
             const matchDate = addDays(baseDate, idx);
-            const team1Img = teamPhotos[match.team1.trim().toLowerCase()] || "";
-            const team2Img = teamPhotos[match.team2.trim().toLowerCase()] || "";
 
-            html += `
-              <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow">
-                <div class="text-center text-gray-400 mb-1 text-md">${matchDate}</div>
-                <div class="flex justify-center items-center gap-3 font-semibold text-white">
-                  <div class="text-gray-400 hidden">${idx + 1}.</div>
+            const container = document.createElement("div");
+            container.className = "border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow flex flex-col gap-2";
 
-                  <div class="flex flex-col items-center gap-1 flex-1 justify-end">
-                    ${team1Img ? `<img src="${team1Img}" class="w-10 h-10 rounded-full" alt="${match.team1}" />` : ""}
-                    <span>${match.team1}</span>
-                  </div>
+            // Date line
+            const dateDiv = document.createElement("div");
+            dateDiv.className = "text-center text-gray-400 mb-1 text-md";
+            dateDiv.textContent = matchDate;
+            container.appendChild(dateDiv);
 
-                  <div class="text-yellow-400 font-bold text-2xl">VS</div>
+            // Teams line
+            const teamsDiv = document.createElement("div");
+            teamsDiv.className = "flex justify-center items-center gap-3 font-semibold text-white";
 
-                  <div class="flex flex-col items-center gap-1 flex-1 justify-start">
-                    ${team2Img ? `<img src="${team2Img}" class="w-10 h-10 rounded-full" alt="${match.team2}" />` : ""}
-                    <span>${match.team2}</span>
-                  </div>
-                </div>
-              </div>
-            `;
+            // Team 1
+            const team1Div = document.createElement("div");
+            team1Div.className = "flex flex-col items-center gap-1 flex-1 justify-end";
+
+            if (teamPhotos[match.team1.trim().toLowerCase()]) {
+              const img1 = document.createElement("img");
+              img1.src = teamPhotos[match.team1.trim().toLowerCase()];
+              img1.alt = match.team1;
+              img1.className = "w-10 h-10 rounded-full";
+              team1Div.appendChild(img1);
+            }
+            const team1Name = document.createElement("span");
+            team1Name.textContent = match.team1;
+            team1Div.appendChild(team1Name);
+
+            teamsDiv.appendChild(team1Div);
+
+            // VS
+            const vsDiv = document.createElement("div");
+            vsDiv.className = "text-yellow-400 font-bold text-2xl select-none";
+            vsDiv.textContent = "VS";
+            teamsDiv.appendChild(vsDiv);
+
+            // Team 2
+            const team2Div = document.createElement("div");
+            team2Div.className = "flex flex-col items-center gap-1 flex-1 justify-start";
+
+            if (teamPhotos[match.team2.trim().toLowerCase()]) {
+              const img2 = document.createElement("img");
+              img2.src = teamPhotos[match.team2.trim().toLowerCase()];
+              img2.alt = match.team2;
+              img2.className = "w-10 h-10 rounded-full";
+              team2Div.appendChild(img2);
+            }
+            const team2Name = document.createElement("span");
+            team2Name.textContent = match.team2;
+            team2Div.appendChild(team2Name);
+
+            teamsDiv.appendChild(team2Div);
+
+            container.appendChild(teamsDiv);
+
+            // Goals Input Section
+            const goalsDiv = document.createElement("div");
+            goalsDiv.className = "flex justify-center items-center gap-6 mt-2 text-black";
+
+            // team1Goal input
+            const t1GoalInput = createGoalInput(match.team1Goal, debounce(async (e) => {
+              const val = e.target.value;
+              const numVal = val === "" ? null : parseInt(val);
+              if (numVal !== null && (isNaN(numVal) || numVal < 0)) {
+                e.target.value = "";
+                return;
+              }
+              await updateGoal(match._id, "team1Goal", numVal);
+            }, 700));
+            goalsDiv.appendChild(t1GoalInput);
+
+            // separator
+            const sep = document.createElement("div");
+            sep.textContent = "-";
+            sep.className = "text-white font-bold text-xl";
+            goalsDiv.appendChild(sep);
+
+            // team2Goal input
+            const t2GoalInput = createGoalInput(match.team2Goal, debounce(async (e) => {
+              const val = e.target.value;
+              const numVal = val === "" ? null : parseInt(val);
+              if (numVal !== null && (isNaN(numVal) || numVal < 0)) {
+                e.target.value = "";
+                return;
+              }
+              await updateGoal(match._id, "team2Goal", numVal);
+            }, 700));
+            goalsDiv.appendChild(t2GoalInput);
+
+            container.appendChild(goalsDiv);
+
+            fixersContainer.appendChild(container);
           });
-        });
 
-        fixersContainer.innerHTML = html;
+          fixersContainer.appendChild(groupDiv);
+        });
       });
+    }
+
+    async function updateGoal(docId, goalField, value) {
+      try {
+        const docRef = doc(db, "fixers", docId);
+        await updateDoc(docRef, {
+          [goalField]: value
+        });
+      } catch (err) {
+        console.error("Goal update error:", err);
+        // চাইলে এখানে UI তে error দেখাতে পারো
+      }
     }
   </script>
 </body>
