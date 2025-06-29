@@ -59,8 +59,8 @@
       </div>
 
       <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
-        <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
-        <!-- All point tables will appear here together -->
+        <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables & Knockouts</h2>
+        <!-- All point tables and knockouts will appear here -->
       </div>
     </div>
   </main>
@@ -132,7 +132,6 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
-      // Group fixers by date (each date = group)
       const fixersByDate = {};
       fixers.forEach(fix => {
         const key = fix.date;
@@ -143,13 +142,10 @@
       const sortedDates = Object.keys(fixersByDate).sort();
       const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
 
-      // Clear HTML containers
       let fixersHTML = "";
-      let allPointsHTML = "";
+      let pointTablesHTML = "";
 
       let groupIndex = 0;
-
-      // For collecting point tables after processing all groups
       const allGroupsPoints = [];
 
       sortedDates.forEach(date => {
@@ -159,20 +155,18 @@
         fixersHTML += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
 
         const points = {};
-        const goals = {}; // Track total goals per team
+        const goals = {};
 
         matches.forEach((match, idx) => {
           let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
 
-          // Initialize stats if not exists
           if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
           if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
           if (!goals[match.team1]) goals[match.team1] = 0;
           if (!goals[match.team2]) goals[match.team2] = 0;
 
-          // Add goals (if number)
           if (typeof g1 === "number") goals[match.team1] += g1;
           if (typeof g2 === "number") goals[match.team2] += g2;
 
@@ -205,8 +199,6 @@
             </div>`;
         });
 
-        // Prepare sorted point table for this group
-        // Now include goals and sort by points DESC, then goals DESC
         const sortedTeams = Object.entries(points).map(([team, stat]) => ({
           team,
           ...stat,
@@ -215,55 +207,74 @@
           goals: goals[team] || 0,
         })).sort((a, b) => {
           if (b.points !== a.points) return b.points - a.points;
-          return b.goals - a.goals; // if points equal, sort by goals desc
+          return b.goals - a.goals;
         });
 
         allGroupsPoints.push({ groupName, sortedTeams });
-
         groupIndex++;
       });
 
-      // Now build all point tables in one place
-      if (allGroupsPoints.length === 0) {
-        allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-      } else {
-        allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
-          <div class="mb-4">
-            <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
-            <table class="text-sm w-full table-auto border border-gray-200">
-              <thead>
-                <tr class="bg-gray-200">
-                  <th class="px-2 py-1 border">#</th>
-                  <th class="px-2 py-1 border">Team</th>
-                  <th class="px-2 py-1 border text-center">Played</th>
-                  <th class="px-2 py-1 border text-center">Win</th>
-                  <th class="px-2 py-1 border text-center">Loss</th>
-                  <th class="px-2 py-1 border text-center">Draw</th>
-                  <th class="px-2 py-1 border text-center">Goals</th>
-                  <th class="px-2 py-1 border text-center">Points</th>
+      // Create group point tables
+      pointTablesHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
+        <div class="mb-4">
+          <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
+          <table class="text-sm w-full table-auto border border-gray-200">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="px-2 py-1 border">#</th>
+                <th class="px-2 py-1 border">Team</th>
+                <th class="px-2 py-1 border text-center">Played</th>
+                <th class="px-2 py-1 border text-center">Win</th>
+                <th class="px-2 py-1 border text-center">Loss</th>
+                <th class="px-2 py-1 border text-center">Draw</th>
+                <th class="px-2 py-1 border text-center">Goals</th>
+                <th class="px-2 py-1 border text-center">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sortedTeams.map((team, i) => `
+                <tr>
+                  <td class="px-2 py-1 border text-center">${i + 1}</td>
+                  <td class="px-2 py-1 border">${team.team}</td>
+                  <td class="px-2 py-1 border text-center">${team.played}</td>
+                  <td class="px-2 py-1 border text-center">${team.win}</td>
+                  <td class="px-2 py-1 border text-center">${team.loss}</td>
+                  <td class="px-2 py-1 border text-center">${team.draw}</td>
+                  <td class="px-2 py-1 border text-center">${team.goals}</td>
+                  <td class="px-2 py-1 border text-center">${team.points}</td>
                 </tr>
-              </thead>
-              <tbody>
-                ${sortedTeams.map((team, i) => `
-                  <tr>
-                    <td class="px-2 py-1 border text-center">${i + 1}</td>
-                    <td class="px-2 py-1 border">${team.team}</td>
-                    <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
-                    <td class="px-2 py-1 border text-center">${team.win}</td>
-                    <td class="px-2 py-1 border text-center">${team.loss}</td>
-                    <td class="px-2 py-1 border text-center">${team.draw}</td>
-                    <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
-                    <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `).join('');
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `).join('');
+
+      // Prepare knockout teams (top 2 per group)
+      let knockoutTeams = [];
+      allGroupsPoints.forEach(({ sortedTeams }) => {
+        knockoutTeams.push(sortedTeams[0]?.team);
+        knockoutTeams.push(sortedTeams[1]?.team);
+      });
+
+      // Create knockout fixtures
+      let knockoutHTML = "";
+      if (knockoutTeams.length >= 2) {
+        knockoutHTML += `<div class="mt-4 font-semibold text-purple-700">Knockout Fixtures</div>`;
+        for (let i = 0; i < knockoutTeams.length; i += 2) {
+          if (i + 1 < knockoutTeams.length) {
+            knockoutHTML += `
+              <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1 flex justify-between">
+                <span class="font-semibold">${knockoutTeams[i]}</span>
+                <span class="font-bold text-red-500">VS</span>
+                <span class="font-semibold">${knockoutTeams[i + 1]}</span>
+              </div>
+            `;
+          }
+        }
       }
 
+      pointTablesContainer.innerHTML = pointTablesHTML + knockoutHTML;
       fixersContainer.innerHTML = fixersHTML;
-      pointTablesContainer.innerHTML = allPointsHTML;
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
