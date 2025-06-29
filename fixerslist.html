@@ -22,6 +22,7 @@
 
   <!-- Main -->
   <main class="max-w-4xl mx-auto p-4 space-y-6">
+    <!-- Fixers Section -->
     <div class="bg-white shadow rounded p-4">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
         <div class="text-xl font-semibold text-green-700">Football Match Fixers</div>
@@ -54,23 +55,14 @@
         </div>
       </div>
 
-      <!-- Regular Fixers Container -->
-      <div id="fixersContainer" class="space-y-6 max-h-[300px] overflow-y-auto border border-gray-300 rounded p-2 mb-6">
+      <!-- Fixers Display -->
+      <div id="fixersContainer" class="space-y-6 max-h-[600px] overflow-y-auto">
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
-
-      <!-- Knockout Fixers Container -->
-      <div>
-        <div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Knockout Fixers</div>
-        <div id="knockoutFixersContainer" class="space-y-6 max-h-[250px] overflow-y-auto border border-gray-300 rounded p-2">
-          <p class="text-gray-500 text-center">Loading knockout fixers...</p>
-        </div>
-      </div>
-
     </div>
   </main>
 
-  <!-- Firebase & Logic -->
+  <!-- Firebase + Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -127,17 +119,13 @@
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const fixersContainer = document.getElementById("fixersContainer");
-      const knockoutContainer = document.getElementById("knockoutFixersContainer");
 
       if (snapshot.empty) {
         fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
-        knockoutContainer.innerHTML = `<p class="text-gray-500 text-center">No knockout fixers found.</p>`;
         return;
       }
 
-      // Separate regular and knockout fixers
       const fixers = [];
-      const knockoutFixers = [];
 
       for (const docSnap of snapshot.docs) {
         const data = docSnap.data();
@@ -147,16 +135,15 @@
         const g2 = data.team2Goal;
         let status = (typeof g1 === 'number' && typeof g2 === 'number') ? "Finished" : "Pending";
 
+        // Auto-update Firestore if status changed
         if (data.status !== status) {
           await updateDoc(docRef, { status });
           data.status = status;
         }
 
-        if (data.round === "knockout") knockoutFixers.push(data);
-        else fixers.push(data);
+        fixers.push(data);
       }
 
-      // Render regular fixers grouped by date
       const fixersByDate = {};
       fixers.forEach(fix => {
         const key = fix.date;
@@ -201,114 +188,6 @@
       });
 
       fixersContainer.innerHTML = html;
-
-      // Render knockout fixers
-      if (knockoutFixers.length === 0) {
-        knockoutContainer.innerHTML = `<p class="text-gray-500 text-center">No knockout fixers found.</p>`;
-      } else {
-        let knockoutHTML = "";
-        knockoutFixers.sort((a, b) => (a.date ?? "").localeCompare(b.date ?? "")).forEach(match => {
-          let winner = "None";
-          if (typeof match.team1Goal === "number" && typeof match.team2Goal === "number") {
-            if (match.team1Goal > match.team2Goal) winner = match.team1;
-            else if (match.team2Goal > match.team1Goal) winner = match.team2;
-            else winner = "Draw";
-          }
-
-          knockoutHTML += `
-            <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-              <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date ?? "-"}</div>
-              <div class="flex justify-between items-center px-2">
-                <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
-                <div class="text-base font-bold text-red-500">VS</div>
-                <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
-              </div>
-              <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-              <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
-            </div>`;
-        });
-        knockoutContainer.innerHTML = knockoutHTML;
-      }
-
-      // 🟢 Auto-generate knockout fixers if needed
-      await generateKnockoutFixersIfNeeded();
-    }
-
-    async function generateKnockoutFixersIfNeeded() {
-      const snapshot = await getDocs(collection(db, "fixers"));
-      const allFixers = snapshot.docs.map(doc => doc.data());
-
-      const knockoutExists = allFixers.some(f => f.round === "knockout");
-      if (knockoutExists) return;
-
-      const groups = {};
-      allFixers.forEach(fix => {
-        if (!groups[fix.date]) groups[fix.date] = [];
-        groups[fix.date].push(fix);
-      });
-
-      const sortedDates = Object.keys(groups).sort();
-      const topTeams = [];
-
-      for (let i = 0; i < sortedDates.length; i++) {
-        const matches = groups[sortedDates[i]];
-        const stats = {};
-
-        matches.forEach(match => {
-          const { team1, team2, team1Goal, team2Goal } = match;
-
-          if (!stats[team1]) stats[team1] = { win: 0, draw: 0, loss: 0, goals: 0 };
-          if (!stats[team2]) stats[team2] = { win: 0, draw: 0, loss: 0, goals: 0 };
-
-          if (typeof team1Goal === 'number') stats[team1].goals += team1Goal;
-          if (typeof team2Goal === 'number') stats[team2].goals += team2Goal;
-
-          if (typeof team1Goal === 'number' && typeof team2Goal === 'number') {
-            if (team1Goal > team2Goal) {
-              stats[team1].win++; stats[team2].loss++;
-            } else if (team2Goal > team1Goal) {
-              stats[team2].win++; stats[team1].loss++;
-            } else {
-              stats[team1].draw++; stats[team2].draw++;
-            }
-          }
-        });
-
-        const sorted = Object.entries(stats).map(([team, s]) => ({
-          team,
-          points: s.win * 3 + s.draw,
-          goals: s.goals
-        })).sort((a, b) => {
-          if (b.points !== a.points) return b.points - a.points;
-          return b.goals - a.goals;
-        });
-
-        if (sorted[0]) topTeams.push(sorted[0].team);
-        if (sorted[1]) topTeams.push(sorted[1].team);
-      }
-
-      if (topTeams.length < 2) return;
-
-      // Shuffle top teams
-      for (let i = topTeams.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [topTeams[i], topTeams[j]] = [topTeams[j], topTeams[i]];
-      }
-
-      const today = new Date().toISOString().split("T")[0];
-      for (let i = 0; i < topTeams.length; i += 2) {
-        if (topTeams[i + 1]) {
-          await addDoc(collection(db, "fixers"), {
-            team1: topTeams[i],
-            team2: topTeams[i + 1],
-            date: today,
-            team1Goal: null,
-            team2Goal: null,
-            status: "Pending",
-            round: "knockout"
-          });
-        }
-      }
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
