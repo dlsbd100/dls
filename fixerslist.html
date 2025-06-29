@@ -165,6 +165,7 @@
           let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
+          const status = match.status || "Pending"; // Read status from Firestore, default to Pending
 
           // Initialize stats if not exists
           if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
@@ -178,24 +179,19 @@
 
           let winner = "None";
           if (typeof g1 === "number" && typeof g2 === "number") {
-            if (g1 > g2) winner = match.team1;
-            else if (g2 > g1) winner = match.team2;
-            else winner = "Draw";
-          }
-
-          // Compute status based on winner
-          let status = (winner === "None") ? "Pending" : "Finished";
-
-          // Count points based on match result
-          if (winner === match.team1) {
-            points[match.team1].win++;
-            points[match.team2].loss++;
-          } else if (winner === match.team2) {
-            points[match.team2].win++;
-            points[match.team1].loss++;
-          } else if (winner === "Draw") {
-            points[match.team1].draw++;
-            points[match.team2].draw++;
+            if (g1 > g2) {
+              points[match.team1].win++;
+              points[match.team2].loss++;
+              winner = match.team1;
+            } else if (g2 > g1) {
+              points[match.team2].win++;
+              points[match.team1].loss++;
+              winner = match.team2;
+            } else {
+              points[match.team1].draw++;
+              points[match.team2].draw++;
+              winner = "Draw";
+            }
           }
 
           fixersHTML += `
@@ -299,14 +295,16 @@
 
           for (let i = 0; i < groupTeams.length; i++) {
             for (let j = i + 1; j < groupTeams.length; j++) {
-              await addDoc(collection(db, "fixers"), {
+              const newMatchData = {
                 team1: groupTeams[i],
                 team2: groupTeams[j],
                 date: dateStr,
                 team1Goal: null,
                 team2Goal: null,
                 status: "Pending"
-              });
+              };
+              console.log("Adding fixer:", newMatchData);
+              await addDoc(collection(db, "fixers"), newMatchData);
               added++;
             }
           }
