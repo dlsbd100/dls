@@ -193,6 +193,9 @@
             }
           }
 
+          // Determine status
+          const status = (winner === "None") ? "Pending" : "Finished";
+
           fixersHTML += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
               <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
@@ -202,6 +205,7 @@
                 <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
               </div>
               <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
+              <div class="text-center text-yellow-600 text-xs font-medium">Status: ${status}</div>
             </div>`;
         });
 
