@@ -48,7 +48,7 @@
     const auth = getAuth(app);
 
     let teamPhotos = {};
-    let fixersDocs = {}; // match key → docRef
+    let fixersDocs = {};
 
     async function loadTeamPhotos() {
       const snap = await getDocs(collection(db, "playersform"));
@@ -84,11 +84,10 @@
         }
 
         const fixers = [];
-        fixersDocs = {}; // clear old
+        fixersDocs = {};
 
         snapshot.forEach(docSnap => {
           fixers.push(docSnap.data());
-          // store docRef with unique key (team1-team2-date) for updates
           const d = docSnap.data();
           const key = `${d.team1}__${d.team2}__${d.date}`;
           fixersDocs[key] = docSnap.ref;
@@ -127,7 +126,7 @@
                   <div class="flex flex-col items-center gap-1 flex-1 justify-end">
                     ${team1Img ? `<img src="${team1Img}" class="w-10 h-10 rounded-full" alt="${match.team1}" />` : ""}
                     <span>${match.team1}</span>
-                    <input type="number" min="0" placeholder="Goal" id="goal1-${key}" value="${t1GoalVal}" class="mt-1 w-16 text-black rounded px-1 py-0.5 text-center text-sm" />
+                    <input type="number" min="0" placeholder="0" id="goal1-${key}" value="${t1GoalVal}" class="mt-1 w-16 text-black rounded px-1 py-0.5 text-center text-sm" />
                   </div>
 
                   <div class="text-yellow-400 font-bold text-2xl select-none">VS</div>
@@ -135,7 +134,7 @@
                   <div class="flex flex-col items-center gap-1 flex-1 justify-start">
                     ${team2Img ? `<img src="${team2Img}" class="w-10 h-10 rounded-full" alt="${match.team2}" />` : ""}
                     <span>${match.team2}</span>
-                    <input type="number" min="0" placeholder="Goal" id="goal2-${key}" value="${t2GoalVal}" class="mt-1 w-16 text-black rounded px-1 py-0.5 text-center text-sm" />
+                    <input type="number" min="0" placeholder="0" id="goal2-${key}" value="${t2GoalVal}" class="mt-1 w-16 text-black rounded px-1 py-0.5 text-center text-sm" />
                   </div>
                 </div>
                 <div class="text-center">
@@ -148,7 +147,6 @@
 
         fixersContainer.innerHTML = html;
 
-        // Add event listeners for update buttons
         document.querySelectorAll(".update-goal-btn").forEach(btn => {
           btn.addEventListener("click", async (e) => {
             const key = e.currentTarget.getAttribute("data-key");
@@ -158,7 +156,6 @@
             let goal1 = goal1Input.value;
             let goal2 = goal2Input.value;
 
-            // Validate numbers (allow empty string = null)
             goal1 = goal1 === "" ? null : Number(goal1);
             goal2 = goal2 === "" ? null : Number(goal2);
 
