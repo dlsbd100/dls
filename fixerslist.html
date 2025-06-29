@@ -150,13 +150,15 @@
           let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
-          let winner = "None";
 
+          let winner = "None";
           if (typeof g1 === "number" && typeof g2 === "number") {
             if (g1 > g2) winner = match.team1;
             else if (g2 > g1) winner = match.team2;
             else winner = "Draw";
           }
+
+          let status = (typeof g1 === "number" && typeof g2 === "number") ? "Finished" : "Pending";
 
           fixersHTML += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
@@ -167,7 +169,7 @@
                 <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
               </div>
               <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-              <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status || "Pending"}</div>
+              <div class="text-center text-blue-600 text-xs font-medium">Status: ${status}</div>
             </div>`;
         });
 
