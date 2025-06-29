@@ -136,37 +136,79 @@
       const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
 
       let html = "";
-      sortedDates.forEach((date, groupIndex) => {
-        const groupName = String.fromCharCode(65 + groupIndex);
+      let groupIndex = 0;
+
+      sortedDates.forEach(date => {
+        const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+
+        const groupName = String.fromCharCode(65 + groupIndex++);
         html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700">Group ${groupName}</div>`;
 
-        const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+        const points = {};
 
         matches.forEach((match, idx) => {
           let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
+          const g1 = match.team1Goal;
+          const g2 = match.team2Goal;
 
-          const goal1 = match.team1Goal ?? "-";
-          const goal2 = match.team2Goal ?? "-";
+          if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
+          if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
 
           let winner = "None";
-          if (typeof goal1 === "number" && typeof goal2 === "number") {
-            if (goal1 > goal2) winner = match.team1;
-            else if (goal2 > goal1) winner = match.team2;
-            else winner = "Draw";
+          if (typeof g1 === "number" && typeof g2 === "number") {
+            if (g1 > g2) {
+              points[match.team1].win++;
+              points[match.team2].loss++;
+              winner = match.team1;
+            } else if (g2 > g1) {
+              points[match.team2].win++;
+              points[match.team1].loss++;
+              winner = match.team2;
+            } else {
+              points[match.team1].draw++;
+              points[match.team2].draw++;
+              winner = "Draw";
+            }
           }
 
           html += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white">
               <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
               <div class="flex justify-between items-center px-2">
-                <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${goal1})</span></div>
+                <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${g1 ?? "-"})</span></div>
                 <div class="text-base font-bold text-red-500">VS</div>
-                <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${goal2})</span></div>
+                <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
               </div>
               <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-            </div>
-          `;
+            </div>`;
         });
+
+        html += `<div class="mt-2 bg-gray-50 p-2 rounded">
+          <div class="font-semibold mb-1">Point Table</div>
+          <table class="text-sm w-full table-auto border border-gray-200">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="px-2 py-1 border">Team</th>
+                <th class="px-2 py-1 border">Win</th>
+                <th class="px-2 py-1 border">Loss</th>
+                <th class="px-2 py-1 border">Draw</th>
+                <th class="px-2 py-1 border">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.entries(points).map(([team, stat]) => {
+                const pts = stat.win * 3 + stat.draw;
+                return `<tr>
+                  <td class="px-2 py-1 border">${team}</td>
+                  <td class="px-2 py-1 border text-center">${stat.win}</td>
+                  <td class="px-2 py-1 border text-center">${stat.loss}</td>
+                  <td class="px-2 py-1 border text-center">${stat.draw}</td>
+                  <td class="px-2 py-1 border text-center font-bold">${pts}</td>
+                </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>`;
       });
 
       container.innerHTML = html;
