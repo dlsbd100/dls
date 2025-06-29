@@ -124,8 +124,8 @@
             const team2Img = teamPhotos[match.team2.trim().toLowerCase()] || "";
 
             const key = `${match.team1}__${match.team2}__${match.date}`;
-            const t1GoalVal = match.team1Goal !== null ? match.team1Goal : "";
-            const t2GoalVal = match.team2Goal !== null ? match.team2Goal : "";
+            const t1GoalVal = (match.team1Goal ?? "").toString();
+            const t2GoalVal = (match.team2Goal ?? "").toString();
 
             html += `
               <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow space-y-2">
@@ -155,10 +155,10 @@
 
         fixersContainer.innerHTML = html;
 
-        // Force English numbers in input
+        // Convert input to English digits only
         document.querySelectorAll(".goal-input").forEach(input => {
           input.addEventListener("input", () => {
-            input.value = convertBanglaToEnglish(input.value.replace(/[^০-৯০-৯0-9]/g, ''));
+            input.value = convertBanglaToEnglish(input.value.replace(/[^০-৯0-9]/g, ''));
           });
         });
 
