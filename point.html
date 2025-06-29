@@ -134,7 +134,7 @@
           }
         });
 
-        const sortedTeams = Object.entries(points).map(([team, stat]) => ({
+        let sortedTeams = Object.entries(points).map(([team, stat]) => ({
           team,
           ...stat,
           points: stat.win * 3 + stat.draw,
@@ -144,6 +144,9 @@
           if (b.points !== a.points) return b.points - a.points;
           return b.goals - a.goals;
         });
+
+        // **Limit to max 4 teams per group here:**
+        sortedTeams = sortedTeams.slice(0, 4);
 
         allGroupsPoints.push({ groupName, sortedTeams });
         groupIndex++;
