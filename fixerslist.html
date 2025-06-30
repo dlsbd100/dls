@@ -74,6 +74,8 @@
     getDocs,
     addDoc,
     deleteDoc,
+    updateDoc,
+    doc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -129,7 +131,7 @@
     }
 
     const fixers = [];
-    snapshot.forEach(doc => fixers.push(doc.data()));
+    snapshot.forEach(doc => fixers.push({ id: doc.id, ...doc.data() }));
 
     const fixersByDate = {};
     fixers.forEach(fix => {
@@ -143,10 +145,8 @@
 
     let fixersHTML = "";
     let allPointsHTML = "";
-
-    let groupIndex = 0;
-
     const allGroupsPoints = [];
+    let groupIndex = 0;
 
     sortedDates.forEach(date => {
       const groupName = String.fromCharCode(65 + groupIndex);
@@ -211,7 +211,6 @@
       });
 
       allGroupsPoints.push({ groupName, sortedTeams });
-
       groupIndex++;
     });
 
@@ -220,8 +219,12 @@
       const top2Teams = group.sortedTeams.slice(0, 2);
       if (top2Teams.length === 2) {
         quarterfinals.push({
+          id: `qf-${group.groupName}`,
           team1: top2Teams[0].team,
           team2: top2Teams[1].team,
+          team1Goal: null,
+          team2Goal: null,
+          winner: null,
         });
       }
     });
@@ -229,13 +232,14 @@
     let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
     quarterfinals.forEach((match, idx) => {
       quarterfinalsHTML += `
-        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+        <div id="quarterfinal-${match.id}" class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="text-center text-gray-500 font-semibold">Quarterfinal ${idx + 1}</div>
           <div class="flex justify-between items-center px-2">
             <div class="text-sm font-semibold text-gray-600">${match.team1}</div>
             <div class="text-base font-bold text-red-500">VS</div>
             <div class="text-sm font-semibold text-gray-600">${match.team2}</div>
           </div>
+          <div class="text-center text-green-600 text-xs font-medium winner">Winner: ${match.winner ?? "TBD"}</div>
         </div>`;
     });
 
@@ -275,6 +279,31 @@
 
     fixersContainer.innerHTML = fixersHTML + quarterfinalsHTML;
     pointTablesContainer.innerHTML = allPointsHTML;
+  }
+
+  async function updateQuarterfinalResults(matchId, team1Goals, team2Goals) {
+    const matchIndex = quarterfinals.findIndex((match) => match.id === matchId);
+    if (matchIndex !== -1) {
+      const match = quarterfinals[matchIndex];
+      match.team1Goal = team1Goals;
+      match.team2Goal = team2Goals;
+
+      if (team1Goals > team2Goals) {
+        match.winner = match.team1;
+      } else if (team2Goals > team1Goals) {
+        match.winner = match.team2;
+      } else {
+        match.winner = "Draw";
+      }
+
+      document.querySelector(`#quarterfinal-${matchId} .winner`).textContent = `Winner: ${match.winner}`;
+
+      await updateDoc(doc(db, "fixers", matchId), {
+        team1Goal: team1Goals,
+        team2Goal: team2Goals,
+        winner: match.winner,
+      });
+    }
   }
 
   document.getElementById("addFixerBtn").addEventListener("click", async () => {
