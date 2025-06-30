@@ -214,7 +214,8 @@
               team1: topTeams[i].team,
               team2: topTeams[j].team,
               date: new Date().toISOString(),
-              winner: null
+              winner: null,
+              status: "Pending"
             });
           }
         }
@@ -254,6 +255,7 @@
               <div class="text-sm font-semibold text-gray-600">${match.team2}</div>
             </div>
             <div class="text-center text-green-600 text-xs font-medium">Winner: ${match.winner || "TBD"}</div>
+            <div class="text-center text-yellow-600 text-xs font-medium">Status: ${match.status}</div>
           </div>
         `;
       });
