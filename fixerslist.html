@@ -75,7 +75,8 @@
     addDoc,
     deleteDoc,
     updateDoc,
-    doc
+    doc,
+    writeBatch
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -288,39 +289,106 @@
 
     fixersContainer.innerHTML = fixersHTML + quarterfinalsHTML;
     pointTablesContainer.innerHTML = allPointsHTML;
+
+    // After all group matches are loaded, generate quarterfinals
+    generateQuarterfinals();
   }
 
-  // New function to load Quarterfinals from Firestore
-  async function loadQuarterfinals() {
-    const snapshot = await getDocs(collection(db, "quarterfinals"));
-    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+  async function generateQuarterfinals() {
+    // Create quarterfinals from the top 2 teams of each group
+    const snapshot = await getDocs(collection(db, "fixers"));
+    const fixers = [];
+    snapshot.forEach(doc => fixers.push({ id: doc.id, ...doc.data() }));
 
-    if (snapshot.empty) {
-      quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No quarterfinals found.</p>`;
-      return;
-    }
-
-    let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
-
-    snapshot.forEach(doc => {
-      const match = doc.data();
-      const displayDate = match.date || "TBD";
-
-      quarterfinalsHTML += `
-        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-          <div class="text-center text-gray-500 font-semibold">${displayDate}</div>
-          <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
-            <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
-          </div>
-          <div class="text-center text-green-600 text-xs font-medium winner">Winner: ${match.winner ?? "TBD"}</div>
-        </div>`;
+    const fixersByDate = {};
+    fixers.forEach(fix => {
+      const key = fix.date;
+      if (!fixersByDate[key]) fixersByDate[key] = [];
+      fixersByDate[key].push(fix);
     });
 
-    quarterfinalsContainer.innerHTML = quarterfinalsHTML;
+    const allGroupsPoints = [];
+    let groupIndex = 0;
+
+    const sortedDates = Object.keys(fixersByDate).sort();
+    const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
+
+    sortedDates.forEach(date => {
+      const groupName = String.fromCharCode(65 + groupIndex);
+      const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+
+      const points = {};
+      const goals = {};
+
+      matches.forEach((match) => {
+        let g1 = match.team1Goal;
+        let g2 = match.team2Goal;
+
+        if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
+        if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
+        if (!goals[match.team1]) goals[match.team1] = 0;
+        if (!goals[match.team2]) goals[match.team2] = 0;
+
+        if (typeof g1 === "number") goals[match.team1] += g1;
+        if (typeof g2 === "number") goals[match.team2] += g2;
+
+        if (g1 > g2) {
+          points[match.team1].win++;
+          points[match.team2].loss++;
+        } else if (g2 > g1) {
+          points[match.team2].win++;
+          points[match.team1].loss++;
+        } else {
+          points[match.team1].draw++;
+          points[match.team2].draw++;
+        }
+      });
+
+      const sortedTeams = Object.entries(points).map(([team, stat]) => ({
+        team,
+        ...stat,
+        points: stat.win * 3 + stat.draw,
+        played: stat.win + stat.loss + stat.draw,
+        goals: goals[team] || 0,
+      })).sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        return b.goals - a.goals;
+      });
+
+      allGroupsPoints.push({ groupName, sortedTeams });
+      groupIndex++;
+    });
+
+    const quarterfinals = [];
+    allGroupsPoints.forEach(group => {
+      const top2Teams = group.sortedTeams.slice(0, 2);
+      if (top2Teams.length === 2) {
+        quarterfinals.push({
+          team1: top2Teams[0].team,
+          team2: top2Teams[1].team,
+          team1Goal: null,
+          team2Goal: null,
+          winner: null,
+          date: addDays(sortedDates[sortedDates.length - 1], 3), // Start 3 days after last group match
+        });
+      }
+    });
+
+    // Save quarterfinals to Firestore
+    const batch = writeBatch(db);  // Use batch to avoid multiple firestore calls
+    quarterfinals.forEach((match, idx) => {
+      const matchRef = doc(collection(db, "quarterfinals"));
+      batch.set(matchRef, match);
+    });
+
+    // Commit the batch
+    await batch.commit();
+
+    // Refresh the quarterfinal UI
+    loadQuarterfinals();
   }
 
+  // Event listeners
   document.getElementById("addFixerBtn").addEventListener("click", async () => {
     const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
     const baseDate = document.getElementById("fixerDate").value;
@@ -393,6 +461,6 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-   </script>
+      </script>
 </body>
 </html>
