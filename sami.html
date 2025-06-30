@@ -37,7 +37,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -196,6 +196,30 @@
         `).join('');
       }
       pointTablesContainer.innerHTML = allPointsHTML;
+
+      // Generate Quarterfinals based on the top 2 teams from each group
+      const quarterfinals = [];
+      allGroupsPoints.forEach(group => {
+        const topTeams = group.sortedTeams.slice(0, 2); // Top 2 teams from each group
+        for (let i = 0; i < topTeams.length; i++) {
+          for (let j = i + 1; j < topTeams.length; j++) {
+            quarterfinals.push({
+              team1: topTeams[i].team,
+              team2: topTeams[j].team,
+              date: new Date().toISOString(),
+              winner: null
+            });
+          }
+        }
+      });
+
+      // Store quarterfinals in Firestore
+      quarterfinals.forEach(async (match) => {
+        await addDoc(collection(db, "quarterfinals"), match);
+      });
+
+      // Update the quarterfinal fixtures
+      loadQuarterfinals();
     }
 
     // Function to load quarterfinal fixtures
