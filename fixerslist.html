@@ -159,7 +159,7 @@
       const goals = {};
 
       matches.forEach((match, idx) => {
-        let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
+        let displayDate = match.date;
         const g1 = match.team1Goal;
         const g2 = match.team2Goal;
 
@@ -233,14 +233,32 @@
       }
     });
 
-    let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
+    // ✅ Fixed Quarterfinal date: day after group Match 6
+    const match6Dates = [];
+    const allMatches = Object.values(fixersByDate).flat();
+    const grouped = {};
 
-    // 🔥 New Logic: Determine latest group match date
-    let latestMatchDate = sortedDates.reduce((latest, date) => {
+    allMatches.forEach(match => {
+      const key = match.date + "|" + [match.team1, match.team2].sort().join("-");
+      if (!grouped[key]) grouped[key] = match;
+    });
+
+    const groupedDates = Object.values(grouped).reduce((acc, match) => {
+      acc[match.date] = acc[match.date] ? acc[match.date] + 1 : 1;
+      return acc;
+    }, {});
+
+    const lastMatchDates = Object.entries(groupedDates)
+      .filter(([_, count]) => count >= 6)
+      .map(([date]) => date);
+
+    let latestMatchDate = lastMatchDates.reduce((latest, date) => {
       return new Date(date) > new Date(latest) ? date : latest;
-    }, sortedDates[0]);
+    }, lastMatchDates[0]);
 
     const quarterfinalBaseDate = addDays(latestMatchDate, 1);
+
+    let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
 
     quarterfinals.forEach((match, idx) => {
       const displayQuarterfinalDate = addDays(quarterfinalBaseDate, idx);
@@ -391,7 +409,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-   </script>
+  </script>
 
 </body>
 </html>
