@@ -58,6 +58,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Load and display Point Tables
     async function loadPointTables() {
       const snapshot = await getDocs(collection(db, "fixers"));
       const pointTablesContainer = document.getElementById("pointTablesContainer");
@@ -161,6 +162,7 @@
       pointTablesContainer.innerHTML = allPointsHTML;
     }
 
+    // Load and display Quarterfinal Fixtures
     async function loadQuarterfinals() {
       const snapshot = await getDocs(collection(db, "quarterfinals"));
       const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
@@ -182,15 +184,16 @@
               <div class="text-sm font-semibold text-gray-600">${match.team2}</div>
             </div>
             <div class="text-center text-green-600 text-xs font-medium">Winner: ${match.winner ?? "TBD"}</div>
-          </div>
-        `;
+          </div>`;
       });
 
       quarterfinalsContainer.innerHTML = quarterfinalsHTML;
     }
 
+    // Initial Load
     loadPointTables();
     loadQuarterfinals();
   </script>
+
 </body>
 </html>
