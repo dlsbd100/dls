@@ -213,8 +213,6 @@
             quarterfinals.push({
               team1: topTeams[i].team,
               team2: topTeams[j].team,
-              team1Goal: null,
-              team2Goal: null,
               date: new Date().toISOString(),
               winner: null,
               status: "Pending"
@@ -258,7 +256,6 @@
             </div>
             <div class="text-center text-green-600 text-xs font-medium">Winner: ${match.winner || "TBD"}</div>
             <div class="text-center text-yellow-600 text-xs font-medium">Status: ${match.status}</div>
-            <div class="text-center text-black text-xs font-medium">Goals: ${match.team1Goal ?? "-" } - ${match.team2Goal ?? "-"}</div>
           </div>
         `;
       });
