@@ -49,6 +49,7 @@
 
     let teamPhotos = {};
     let fixersDocs = {};
+    let groupWinners = [];
 
     async function loadTeamPhotos() {
       const snap = await getDocs(collection(db, "playersform"));
@@ -153,12 +154,47 @@
           });
         });
 
-        // Add Quarterfinal and Semifinal Fixers below the group matches
+        // Add Quarterfinals
         html += `<div class="text-lg font-semibold text-yellow-400 mb-2">Quarterfinals</div>`;
-        // Logic to display Quarterfinal fixtures goes here
+        for (let i = 0; i < 4; i++) {
+          html += `
+            <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow space-y-2">
+              <div class="flex justify-center items-center gap-3 font-semibold text-white">
+                <div class="flex flex-col items-center gap-1 flex-1 justify-end">
+                  <span>${groupWinners[i * 2]}</span>
+                </div>
+                <div class="text-yellow-400 font-bold text-2xl select-none">VS</div>
+                <div class="flex flex-col items-center gap-1 flex-1 justify-start">
+                  <span>${groupWinners[i * 2 + 1]}</span>
+                </div>
+              </div>
+              <div class="text-center">
+                <button class="update-goal-btn bg-yellow-400 text-black font-semibold px-3 py-1 rounded hover:bg-yellow-300 transition duration-200">Update</button>
+              </div>
+            </div>
+          `;
+        }
 
+        // Add Semifinals
         html += `<div class="text-lg font-semibold text-yellow-400 mb-2">Semifinals</div>`;
-        // Logic to display Semifinal fixtures goes here
+        for (let i = 0; i < 2; i++) {
+          html += `
+            <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow space-y-2">
+              <div class="flex justify-center items-center gap-3 font-semibold text-white">
+                <div class="flex flex-col items-center gap-1 flex-1 justify-end">
+                  <span>${groupWinners[i * 2]}</span>
+                </div>
+                <div class="text-yellow-400 font-bold text-2xl select-none">VS</div>
+                <div class="flex flex-col items-center gap-1 flex-1 justify-start">
+                  <span>${groupWinners[i * 2 + 1]}</span>
+                </div>
+              </div>
+              <div class="text-center">
+                <button class="update-goal-btn bg-yellow-400 text-black font-semibold px-3 py-1 rounded hover:bg-yellow-300 transition duration-200">Update</button>
+              </div>
+            </div>
+          `;
+        }
 
         fixersContainer.innerHTML = html;
 
