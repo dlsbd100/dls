@@ -72,7 +72,13 @@
       }
 
       const fixers = [];
-      snapshot.forEach(doc => fixers.push(doc.data()));
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        fixers.push({
+          ...data,
+          date: data.date ? new Date(data.date.seconds * 1000).toLocaleDateString() : "N/A", // Convert Firestore timestamp to a readable date format
+        });
+      });
 
       const fixersByDate = {};
       fixers.forEach(fix => {
@@ -196,39 +202,6 @@
         `).join('');
       }
       pointTablesContainer.innerHTML = allPointsHTML;
-
-      // Generate Quarterfinal fixtures automatically after point tables are loaded
-      generateQuarterfinalFixtures(allGroupsPoints);
-    }
-
-    // Function to generate quarterfinal fixtures automatically
-    async function generateQuarterfinalFixtures(groups) {
-      const quarterfinalsRef = collection(db, "quarterfinals");
-
-      // Collect top 2 teams from each group
-      const topTeams = [];
-      groups.forEach(group => {
-        topTeams.push(...group.sortedTeams.slice(0, 2)); // Take top 2 teams
-      });
-
-      // Generate quarterfinal fixtures
-      const quarterfinals = [];
-      for (let i = 0; i < topTeams.length; i += 2) {
-        quarterfinals.push({
-          team1: topTeams[i].team,
-          team2: topTeams[i + 1].team,
-          date: new Date(),
-          winner: null, // TBD
-        });
-      }
-
-      // Add quarterfinal fixtures to Firestore
-      for (const match of quarterfinals) {
-        const matchRef = doc(quarterfinalsRef);
-        await setDoc(matchRef, match);
-      }
-
-      loadQuarterfinals(); // Reload quarterfinal fixtures
     }
 
     // Function to load quarterfinal fixtures
