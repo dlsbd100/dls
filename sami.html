@@ -21,9 +21,16 @@
 
   <!-- Main content -->
   <main class="max-w-4xl mx-auto p-4 space-y-6">
+    <!-- Point Tables Section -->
     <div id="pointTablesContainer" class="bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
       <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
       <!-- Group-wise point tables will appear here -->
+    </div>
+
+    <!-- Quarterfinals Section -->
+    <div id="quarterfinalsContainer" class="bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
+      <h2 class="text-lg font-semibold text-green-700 mb-3">Quarterfinals</h2>
+      <!-- Quarterfinal fixtures will appear here -->
     </div>
   </main>
 
@@ -47,9 +54,13 @@
 
     onAuthStateChanged(auth, (user) => {
       if (!user) window.location.href = "login.html";
-      else loadPointTables();
+      else {
+        loadPointTables();
+        loadQuarterfinals(); // Load quarterfinal fixtures
+      }
     });
 
+    // Function to load point tables
     async function loadPointTables() {
       const snapshot = await getDocs(collection(db, "fixers"));
 
@@ -185,6 +196,38 @@
         `).join('');
       }
       pointTablesContainer.innerHTML = allPointsHTML;
+    }
+
+    // Function to load quarterfinal fixtures
+    async function loadQuarterfinals() {
+      const snapshot = await getDocs(collection(db, "quarterfinals"));
+      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+
+      if (snapshot.empty) {
+        quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No quarterfinal fixtures to show.</p>`;
+        return;
+      }
+
+      let quarterfinalsHTML = "";
+      snapshot.forEach(doc => {
+        const match = doc.data();
+        const date = new Date(match.date);
+        const formattedDate = date.toLocaleDateString();
+
+        quarterfinalsHTML += `
+          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+            <div class="text-center text-gray-500 font-semibold">Quarterfinal - ${formattedDate}</div>
+            <div class="flex justify-between items-center px-2">
+              <div class="text-sm font-semibold text-gray-600">${match.team1}</div>
+              <div class="text-base font-bold text-red-500">VS</div>
+              <div class="text-sm font-semibold text-gray-600">${match.team2}</div>
+            </div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${match.winner || "TBD"}</div>
+          </div>
+        `;
+      });
+
+      quarterfinalsContainer.innerHTML = quarterfinalsHTML;
     }
   </script>
 </body>
