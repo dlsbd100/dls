@@ -131,7 +131,6 @@
     const fixers = [];
     snapshot.forEach(doc => fixers.push(doc.data()));
 
-    // Group fixers by date (each date = group)
     const fixersByDate = {};
     fixers.forEach(fix => {
       const key = fix.date;
@@ -142,13 +141,11 @@
     const sortedDates = Object.keys(fixersByDate).sort();
     const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
 
-    // Clear HTML containers
     let fixersHTML = "";
     let allPointsHTML = "";
 
     let groupIndex = 0;
 
-    // For collecting point tables after processing all groups
     const allGroupsPoints = [];
 
     sortedDates.forEach(date => {
@@ -158,20 +155,18 @@
       fixersHTML += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
 
       const points = {};
-      const goals = {}; // Track total goals per team
+      const goals = {};
 
       matches.forEach((match, idx) => {
         let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
         const g1 = match.team1Goal;
         const g2 = match.team2Goal;
 
-        // Initialize stats if not exists
         if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
         if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
         if (!goals[match.team1]) goals[match.team1] = 0;
         if (!goals[match.team2]) goals[match.team2] = 0;
 
-        // Add goals (if number)
         if (typeof g1 === "number") goals[match.team1] += g1;
         if (typeof g2 === "number") goals[match.team2] += g2;
 
@@ -204,7 +199,6 @@
           </div>`;
       });
 
-      // Prepare sorted point table for this group
       const sortedTeams = Object.entries(points).map(([team, stat]) => ({
         team,
         ...stat,
@@ -213,7 +207,7 @@
         goals: goals[team] || 0,
       })).sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points;
-        return b.goals - a.goals; // if points equal, sort by goals desc
+        return b.goals - a.goals;
       });
 
       allGroupsPoints.push({ groupName, sortedTeams });
@@ -221,10 +215,9 @@
       groupIndex++;
     });
 
-    // Generate Quarterfinal Fixtures from the top 2 teams of each group
     const quarterfinals = [];
     allGroupsPoints.forEach(group => {
-      const top2Teams = group.sortedTeams.slice(0, 2); // Top 2 teams from each group
+      const top2Teams = group.sortedTeams.slice(0, 2);
       if (top2Teams.length === 2) {
         quarterfinals.push({
           team1: top2Teams[0].team,
@@ -233,7 +226,6 @@
       }
     });
 
-    // Generate fixtures for Quarterfinals
     let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
     quarterfinals.forEach((match, idx) => {
       quarterfinalsHTML += `
@@ -357,6 +349,6 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-                                                     </script>
+   </script>
 </body>
 </html>
