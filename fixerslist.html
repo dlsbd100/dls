@@ -148,7 +148,7 @@
     const allGroupsPoints = [];
     let groupIndex = 0;
 
-    let lastGroupMatchDate = null;
+    let lastGroupMatchDate = null; // Variable to track the last match date of the group stage
 
     sortedDates.forEach(date => {
       const groupName = String.fromCharCode(65 + groupIndex);
@@ -215,7 +215,7 @@
       allGroupsPoints.push({ groupName, sortedTeams });
       groupIndex++;
 
-      lastGroupMatchDate = date;
+      lastGroupMatchDate = date; // Track the last match date of the group stage
     });
 
     const quarterfinals = [];
@@ -233,13 +233,14 @@
       }
     });
 
-    let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2 flex justify-between items-center'>Quarterfinal Fixtures
-    <input type='date' id='quarterfinalDateSelector' class='border rounded px-2 py-1 text-gray-700' /></h3>";
+    let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
 
-    const quarterfinalStartDate = addDays(lastGroupMatchDate, 2);
+    // Calculate the start date for the quarterfinals (1 day after the last group match date)
+    const quarterfinalStartDate = addDays(lastGroupMatchDate, 2); // 1 day gap + 1 day for the match
 
+    // Add quarterfinal fixtures with the calculated date
     quarterfinals.forEach((match, idx) => {
-      const displayQuarterfinalDate = addDays(quarterfinalStartDate, idx);
+      const displayQuarterfinalDate = addDays(quarterfinalStartDate, idx); // Get the date for each quarterfinal
       quarterfinalsHTML += `
         <div id="quarterfinal-${match.id}" class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="text-center text-gray-500 font-semibold">Quarterfinal ${idx + 1} - ${displayQuarterfinalDate}</div>
@@ -319,8 +320,9 @@
     const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
     const baseDate = document.getElementById("fixerDate").value;
     const groupCount = parseInt(document.getElementById("groupCount").value);
+    const quarterfinalDate = document.getElementById("quarterfinalDate").value;  // New quarterfinal date input
 
-    if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
+    if (selectedTeams.length < 2 || !baseDate || !quarterfinalDate || isNaN(groupCount)) {
       Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
       return;
     }
@@ -353,11 +355,18 @@
       }
     }
 
+    // Add quarterfinals with the selected quarterfinal date
+    const quarterfinalStartDate = new Date(quarterfinalDate);
+    quarterfinals.forEach((match, idx) => {
+      match.date = addDays(quarterfinalStartDate, idx);
+    });
+
     Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
 
     document.getElementById("teamSelector").selectedIndex = -1;
     document.getElementById("groupCount").value = "1";
     document.getElementById("fixerDate").value = "";
+    document.getElementById("quarterfinalDate").value = ""; // Clear quarterfinal date
     document.getElementById("selectAllTeams").checked = false;
 
     loadFixers();
@@ -387,7 +396,8 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-      </script>
+</script>
+
 
 </body>
 </html>
