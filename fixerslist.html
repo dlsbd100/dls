@@ -237,10 +237,13 @@
 
     // Calculate the start date for the quarterfinals (1 day after the last group match date)
     const quarterfinalStartDate = addDays(lastGroupMatchDate, 2); // 1 day gap + 1 day for the match
+
+    // Add quarterfinal fixtures with the calculated date
     quarterfinals.forEach((match, idx) => {
+      const displayQuarterfinalDate = addDays(quarterfinalStartDate, idx); // Get the date for each quarterfinal
       quarterfinalsHTML += `
         <div id="quarterfinal-${match.id}" class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-          <div class="text-center text-gray-500 font-semibold">Quarterfinal ${idx + 1} - ${quarterfinalStartDate}</div>
+          <div class="text-center text-gray-500 font-semibold">Quarterfinal ${idx + 1} - ${displayQuarterfinalDate}</div>
           <div class="flex justify-between items-center px-2">
             <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
             <div class="text-base font-bold text-red-500">VS</div>
@@ -385,7 +388,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-   </script>
+    </script>
 
 </body>
 </html>
