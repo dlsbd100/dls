@@ -153,6 +153,13 @@
           });
         });
 
+        // Add Quarterfinal and Semifinal Fixers below the group matches
+        html += `<div class="text-lg font-semibold text-yellow-400 mb-2">Quarterfinals</div>`;
+        // Logic to display Quarterfinal fixtures goes here
+
+        html += `<div class="text-lg font-semibold text-yellow-400 mb-2">Semifinals</div>`;
+        // Logic to display Semifinal fixtures goes here
+
         fixersContainer.innerHTML = html;
 
         // Convert input to English digits only
