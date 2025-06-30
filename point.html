@@ -35,7 +35,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -145,11 +145,16 @@
           return b.goals - a.goals;
         });
 
-        // **Limit to max 4 teams per group here:**
+        // Limit to max 4 teams per group here:
         sortedTeams = sortedTeams.slice(0, 4);
 
         allGroupsPoints.push({ groupName, sortedTeams });
         groupIndex++;
+
+        // Insert point table into Firestore
+        await setDoc(doc(db, "pointTables", groupName), {
+          teams: sortedTeams
+        });
       });
 
       // Group-wise tables
