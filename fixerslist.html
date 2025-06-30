@@ -58,8 +58,9 @@
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
 
-      <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[600px] overflow-y-auto">
-        <h2 class="text-lg font-semibold text-green-700 mb-3">Loading...</h2>
+      <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
+        <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
+        <!-- All point tables will appear here together -->
       </div>
     </div>
   </main>
@@ -73,8 +74,6 @@
       collection,
       getDocs,
       addDoc,
-      updateDoc,
-      doc,
       deleteDoc,
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -113,10 +112,11 @@
       selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
-    document.getElementById("selectAllTeams").addEventListener("change", (e) => {
-      const all = document.getElementById("teamSelector").options;
-      for (let o of all) o.selected = e.target.checked;
-    });
+    function addDays(dateStr, days) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split("T")[0];
+    }
 
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
@@ -132,6 +132,7 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push(doc.data()));
 
+      // Group fixers by date (each date = group)
       const fixersByDate = {};
       fixers.forEach(fix => {
         const key = fix.date;
@@ -142,10 +143,13 @@
       const sortedDates = Object.keys(fixersByDate).sort();
       const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
 
+      // Clear HTML containers
       let fixersHTML = "";
-      let pointTablesHTML = "";
+      let allPointsHTML = "";
 
       let groupIndex = 0;
+
+      // For collecting point tables after processing all groups
       const allGroupsPoints = [];
 
       sortedDates.forEach(date => {
@@ -155,18 +159,20 @@
         fixersHTML += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
 
         const points = {};
-        const goals = {};
+        const goals = {}; // Track total goals per team
 
         matches.forEach((match, idx) => {
           let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
           const g1 = match.team1Goal;
           const g2 = match.team2Goal;
 
+          // Initialize stats if not exists
           if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
           if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
           if (!goals[match.team1]) goals[match.team1] = 0;
           if (!goals[match.team2]) goals[match.team2] = 0;
 
+          // Add goals (if number)
           if (typeof g1 === "number") goals[match.team1] += g1;
           if (typeof g2 === "number") goals[match.team2] += g2;
 
@@ -199,6 +205,8 @@
             </div>`;
         });
 
+        // Prepare sorted point table for this group
+        // Now include goals and sort by points DESC, then goals DESC
         const sortedTeams = Object.entries(points).map(([team, stat]) => ({
           team,
           ...stat,
@@ -207,107 +215,55 @@
           goals: goals[team] || 0,
         })).sort((a, b) => {
           if (b.points !== a.points) return b.points - a.points;
-          return b.goals - a.goals;
+          return b.goals - a.goals; // if points equal, sort by goals desc
         });
 
         allGroupsPoints.push({ groupName, sortedTeams });
+
         groupIndex++;
       });
 
-      // Point tables
-      pointTablesHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
-        <div class="mb-4">
-          <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
-          <table class="text-sm w-full table-auto border border-gray-200">
-            <thead>
-              <tr class="bg-gray-200">
-                <th class="px-2 py-1 border">#</th>
-                <th class="px-2 py-1 border">Team</th>
-                <th class="px-2 py-1 border text-center">Played</th>
-                <th class="px-2 py-1 border text-center">Win</th>
-                <th class="px-2 py-1 border text-center">Loss</th>
-                <th class="px-2 py-1 border text-center">Draw</th>
-                <th class="px-2 py-1 border text-center">Goals</th>
-                <th class="px-2 py-1 border text-center">Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${sortedTeams.map((team, i) => `
-                <tr>
-                  <td class="px-2 py-1 border text-center">${i + 1}</td>
-                  <td class="px-2 py-1 border">${team.team}</td>
-                  <td class="px-2 py-1 border text-center">${team.played}</td>
-                  <td class="px-2 py-1 border text-center">${team.win}</td>
-                  <td class="px-2 py-1 border text-center">${team.loss}</td>
-                  <td class="px-2 py-1 border text-center">${team.draw}</td>
-                  <td class="px-2 py-1 border text-center">${team.goals}</td>
-                  <td class="px-2 py-1 border text-center">${team.points}</td>
+      // Now build all point tables in one place
+      if (allGroupsPoints.length === 0) {
+        allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+      } else {
+        allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
+          <div class="mb-4">
+            <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
+            <table class="text-sm w-full table-auto border border-gray-200">
+              <thead>
+                <tr class="bg-gray-200">
+                  <th class="px-2 py-1 border">#</th>
+                  <th class="px-2 py-1 border">Team</th>
+                  <th class="px-2 py-1 border text-center">Played</th>
+                  <th class="px-2 py-1 border text-center">Win</th>
+                  <th class="px-2 py-1 border text-center">Loss</th>
+                  <th class="px-2 py-1 border text-center">Draw</th>
+                  <th class="px-2 py-1 border text-center">Goals</th>
+                  <th class="px-2 py-1 border text-center">Points</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `).join('');
-
-      // Quarterfinal teams
-      let quarterfinalTeams = [];
-      allGroupsPoints.forEach(({ sortedTeams }) => {
-        quarterfinalTeams.push(sortedTeams[0]?.team);
-        quarterfinalTeams.push(sortedTeams[1]?.team);
-      });
-
-      let stagesHTML = "";
-
-      // Quarterfinal
-      if (quarterfinalTeams.length >= 2) {
-        stagesHTML += `<div class="mt-4 font-semibold text-purple-700">Quarterfinal Fixtures</div>`;
-        let semiFinalTeams = [];
-        for (let i = 0; i < quarterfinalTeams.length; i += 2) {
-          if (i + 1 < quarterfinalTeams.length) {
-            stagesHTML += `
-              <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1 flex justify-between">
-                <span class="font-semibold">${quarterfinalTeams[i]}</span>
-                <span class="font-bold text-red-500">VS</span>
-                <span class="font-semibold">${quarterfinalTeams[i + 1]}</span>
-              </div>
-            `;
-            semiFinalTeams.push(quarterfinalTeams[i]); // Placeholder winner
-          }
-        }
-
-        // Semifinal
-        if (semiFinalTeams.length >= 2) {
-          stagesHTML += `<div class="mt-4 font-semibold text-pink-700">Semifinal Fixtures</div>`;
-          let finalTeams = [];
-          for (let i = 0; i < semiFinalTeams.length; i += 2) {
-            if (i + 1 < semiFinalTeams.length) {
-              stagesHTML += `
-                <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1 flex justify-between">
-                  <span class="font-semibold">${semiFinalTeams[i]}</span>
-                  <span class="font-bold text-red-500">VS</span>
-                  <span class="font-semibold">${semiFinalTeams[i + 1]}</span>
-                </div>
-              `;
-              finalTeams.push(semiFinalTeams[i]); // Placeholder winner
-            }
-          }
-
-          // Final
-          if (finalTeams.length === 2) {
-            stagesHTML += `<div class="mt-4 font-semibold text-green-700">Final Fixture</div>`;
-            stagesHTML += `
-              <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1 flex justify-between">
-                <span class="font-semibold">${finalTeams[0]}</span>
-                <span class="font-bold text-red-500">VS</span>
-                <span class="font-semibold">${finalTeams[1]}</span>
-              </div>
-            `;
-          }
-        }
+              </thead>
+              <tbody>
+                ${sortedTeams.map((team, i) => `
+                  <tr>
+                    <td class="px-2 py-1 border text-center">${i + 1}</td>
+                    <td class="px-2 py-1 border">${team.team}</td>
+                    <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
+                    <td class="px-2 py-1 border text-center">${team.win}</td>
+                    <td class="px-2 py-1 border text-center">${team.loss}</td>
+                    <td class="px-2 py-1 border text-center">${team.draw}</td>
+                    <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
+                    <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `).join('');
       }
 
-      pointTablesContainer.innerHTML = pointTablesHTML + stagesHTML;
       fixersContainer.innerHTML = fixersHTML;
+      pointTablesContainer.innerHTML = allPointsHTML;
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
@@ -356,6 +312,11 @@
       document.getElementById("selectAllTeams").checked = false;
 
       loadFixers();
+    });
+
+    document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+      const all = document.getElementById("teamSelector").options;
+      for (let o of all) o.selected = e.target.checked;
     });
 
     document.getElementById("deleteAllBtn").addEventListener("click", async () => {
