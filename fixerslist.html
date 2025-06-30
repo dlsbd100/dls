@@ -148,7 +148,7 @@
     const allGroupsPoints = [];
     let groupIndex = 0;
 
-    let lastGroupMatchDate = null; // Variable to track the last match date of the group stage
+    let lastGroupMatchDate = null;
 
     sortedDates.forEach(date => {
       const groupName = String.fromCharCode(65 + groupIndex);
@@ -215,7 +215,7 @@
       allGroupsPoints.push({ groupName, sortedTeams });
       groupIndex++;
 
-      lastGroupMatchDate = date; // Track the last match date of the group stage
+      lastGroupMatchDate = date;
     });
 
     const quarterfinals = [];
@@ -233,14 +233,13 @@
       }
     });
 
-    let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
+    let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2 flex justify-between items-center'>Quarterfinal Fixtures
+    <input type='date' id='quarterfinalDateSelector' class='border rounded px-2 py-1 text-gray-700' /></h3>";
 
-    // Calculate the start date for the quarterfinals (1 day after the last group match date)
-    const quarterfinalStartDate = addDays(lastGroupMatchDate, 2); // 1 day gap + 1 day for the match
+    const quarterfinalStartDate = addDays(lastGroupMatchDate, 2);
 
-    // Add quarterfinal fixtures with the calculated date
     quarterfinals.forEach((match, idx) => {
-      const displayQuarterfinalDate = addDays(quarterfinalStartDate, idx); // Get the date for each quarterfinal
+      const displayQuarterfinalDate = addDays(quarterfinalStartDate, idx);
       quarterfinalsHTML += `
         <div id="quarterfinal-${match.id}" class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="text-center text-gray-500 font-semibold">Quarterfinal ${idx + 1} - ${displayQuarterfinalDate}</div>
