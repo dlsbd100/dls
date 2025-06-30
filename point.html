@@ -35,7 +35,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -56,7 +56,7 @@
     });
 
     async function loadPointTables() {
-      const snapshot = await getDocs(collection(db, "pointTables"));
+      const snapshot = await getDocs(collection(db, "fixers"));
 
       const pointTablesContainer = document.getElementById("pointTablesContainer");
       const allPointsContainer = document.getElementById("allPointsContainer");
@@ -67,39 +67,92 @@
         return;
       }
 
-      const pointTables = [];
-      snapshot.forEach(doc => pointTables.push(doc.data()));
+      const fixers = [];
+      snapshot.forEach(doc => fixers.push(doc.data()));
 
-      let allGroupsPoints = [];
-      let globalPoints = {};
-      let globalGoals = {};
+      const fixersByDate = {};
+      fixers.forEach(fix => {
+        const key = fix.date;
+        if (!fixersByDate[key]) fixersByDate[key] = [];
+        fixersByDate[key].push(fix);
+      });
 
-      pointTables.forEach((groupData, groupName) => {
-        let sortedTeams = Object.entries(groupData).map(([team, stats]) => ({
+      const sortedDates = Object.keys(fixersByDate).sort();
+
+      let groupIndex = 0;
+      const allGroupsPoints = [];
+      const globalPoints = {};
+      const globalGoals = {};
+
+      sortedDates.forEach(date => {
+        const groupName = String.fromCharCode(65 + groupIndex);
+        const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+
+        const points = {};
+        const goals = {};
+
+        matches.forEach(match => {
+          const g1 = match.team1Goal;
+          const g2 = match.team2Goal;
+
+          if (!points[match.team1]) points[match.team1] = { win: 0, loss: 0, draw: 0 };
+          if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
+          if (!goals[match.team1]) goals[match.team1] = 0;
+          if (!goals[match.team2]) goals[match.team2] = 0;
+
+          if (!globalPoints[match.team1]) globalPoints[match.team1] = { win: 0, loss: 0, draw: 0 };
+          if (!globalPoints[match.team2]) globalPoints[match.team2] = { win: 0, loss: 0, draw: 0 };
+          if (!globalGoals[match.team1]) globalGoals[match.team1] = 0;
+          if (!globalGoals[match.team2]) globalGoals[match.team2] = 0;
+
+          if (typeof g1 === "number") {
+            goals[match.team1] += g1;
+            globalGoals[match.team1] += g1;
+          }
+          if (typeof g2 === "number") {
+            goals[match.team2] += g2;
+            globalGoals[match.team2] += g2;
+          }
+
+          if (typeof g1 === "number" && typeof g2 === "number") {
+            if (g1 > g2) {
+              points[match.team1].win++;
+              points[match.team2].loss++;
+              globalPoints[match.team1].win++;
+              globalPoints[match.team2].loss++;
+            } else if (g2 > g1) {
+              points[match.team2].win++;
+              points[match.team1].loss++;
+              globalPoints[match.team2].win++;
+              globalPoints[match.team1].loss++;
+            } else {
+              points[match.team1].draw++;
+              points[match.team2].draw++;
+              globalPoints[match.team1].draw++;
+              globalPoints[match.team2].draw++;
+            }
+          }
+        });
+
+        let sortedTeams = Object.entries(points).map(([team, stat]) => ({
           team,
-          ...stats,
-          points: stats.win * 3 + stats.draw,
-          played: stats.win + stats.loss + stats.draw,
-          goals: stats.goals || 0,
+          ...stat,
+          points: stat.win * 3 + stat.draw,
+          played: stat.win + stat.loss + stat.draw,
+          goals: goals[team] || 0,
         })).sort((a, b) => {
           if (b.points !== a.points) return b.points - a.points;
           return b.goals - a.goals;
         });
 
+        // **Limit to max 4 teams per group here:**
+        sortedTeams = sortedTeams.slice(0, 4);
+
         allGroupsPoints.push({ groupName, sortedTeams });
-
-        sortedTeams.forEach(team => {
-          if (!globalPoints[team.team]) globalPoints[team.team] = { win: 0, loss: 0, draw: 0 };
-          if (!globalGoals[team.team]) globalGoals[team.team] = 0;
-
-          globalPoints[team.team].win += team.win;
-          globalPoints[team.team].loss += team.loss;
-          globalPoints[team.team].draw += team.draw;
-          globalGoals[team.team] += team.goals;
-        });
+        groupIndex++;
       });
 
-      // Group-wise tables display
+      // Group-wise tables
       let allPointsHTML = "";
       if (allGroupsPoints.length === 0) {
         allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
@@ -140,7 +193,7 @@
       }
       pointTablesContainer.innerHTML = allPointsHTML;
 
-      // Consolidated All Teams Point Table
+      // All teams consolidated table
       const allTeams = Object.entries(globalPoints).map(([team, stat]) => ({
         team,
         ...stat,
