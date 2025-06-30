@@ -321,6 +321,59 @@
     quarterfinalsContainer.innerHTML = quarterfinalsHTML;
   }
 
+  document.getElementById("addFixerBtn").addEventListener("click", async () => {
+    const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
+    const baseDate = document.getElementById("fixerDate").value;
+    const groupCount = parseInt(document.getElementById("groupCount").value);
+
+    if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
+      Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      return;
+    }
+
+    if (selectedTeams.length !== groupCount * 4) {
+      Swal.fire({ icon: 'error', title: `Select ${groupCount * 4} teams.`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
+      return;
+    }
+
+    const start = new Date(baseDate);
+    let added = 0;
+
+    for (let g = 0; g < groupCount; g++) {
+      const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
+      const matchDate = new Date(start);
+      matchDate.setDate(start.getDate() + g);
+      const dateStr = matchDate.toISOString().split("T")[0];
+
+      for (let i = 0; i < groupTeams.length; i++) {
+        for (let j = i + 1; j < groupTeams.length; j++) {
+          await addDoc(collection(db, "fixers"), {
+            team1: groupTeams[i],
+            team2: groupTeams[j],
+            date: dateStr,
+            team1Goal: null,
+            team2Goal: null
+          });
+          added++;
+        }
+      }
+    }
+
+    Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+
+    document.getElementById("teamSelector").selectedIndex = -1;
+    document.getElementById("groupCount").value = "1";
+    document.getElementById("fixerDate").value = "";
+    document.getElementById("selectAllTeams").checked = false;
+
+    loadFixers();
+  });
+
+  document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+    const all = document.getElementById("teamSelector").options;
+    for (let o of all) o.selected = e.target.checked;
+  });
+
   document.getElementById("deleteAllBtn").addEventListener("click", async () => {
     const confirm = await Swal.fire({
       title: 'Are you sure?',
@@ -332,23 +385,16 @@
 
     if (!confirm.isConfirmed) return;
 
-    // Delete fixers from "fixers" collection
-    const fixerSnapshot = await getDocs(collection(db, "fixers"));
-    const fixerDeletions = [];
-    fixerSnapshot.forEach(doc => fixerDeletions.push(deleteDoc(doc.ref)));
-    await Promise.all(fixerDeletions);
+    const snapshot = await getDocs(collection(db, "fixers"));
+    const deletions = [];
+    snapshot.forEach(doc => deletions.push(deleteDoc(doc.ref)));
+    await Promise.all(deletions);
 
-    // Delete quarterfinals from "quarterfinals" collection
-    const quarterfinalSnapshot = await getDocs(collection(db, "quarterfinals"));
-    const quarterfinalDeletions = [];
-    quarterfinalSnapshot.forEach(doc => quarterfinalDeletions.push(deleteDoc(doc.ref)));
-    await Promise.all(quarterfinalDeletions);
-
-    Swal.fire({ icon: 'success', title: 'All fixers and quarterfinals deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+    Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
-    loadQuarterfinals();  // Reload quarterfinals after deletion
   });
-   </script>
+</script>
+
 
 </body>
 </html>
