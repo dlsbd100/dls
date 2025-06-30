@@ -56,122 +56,126 @@
     });
 
     async function loadPointTables() {
-      // Fetch point tables from Firestore
-      const snapshot = await getDocs(collection(db, "pointTables"));
+      try {
+        const snapshot = await getDocs(collection(db, "pointTables"));
 
-      const pointTablesContainer = document.getElementById("pointTablesContainer");
-      const allPointsContainer = document.getElementById("allPointsContainer");
+        const pointTablesContainer = document.getElementById("pointTablesContainer");
+        const allPointsContainer = document.getElementById("allPointsContainer");
 
-      if (snapshot.empty) {
-        pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-        allPointsContainer.innerHTML = `<p class="text-gray-500 text-center">No overall point table to show.</p>`;
-        return;
-      }
+        if (snapshot.empty) {
+          pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+          allPointsContainer.innerHTML = `<p class="text-gray-500 text-center">No overall point table to show.</p>`;
+          return;
+        }
 
-      const allGroupsPoints = [];
-      const globalPoints = {};
-      const globalGoals = {};
+        const allGroupsPoints = [];
+        const globalPoints = {};
+        const globalGoals = {};
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const groupName = data.groupName;
-        const sortedTeams = data.teams.sort((a, b) => b.points - a.points || b.goals - a.goals);
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const groupName = data.groupName;
+          const sortedTeams = data.teams ? data.teams.sort((a, b) => b.points - a.points || b.goals - a.goals) : [];
 
-        allGroupsPoints.push({ groupName, sortedTeams });
+          if (!sortedTeams.length) {
+            console.log(`No teams found for group: ${groupName}`);
+          }
 
-        sortedTeams.forEach(team => {
-          // Collect global points and goals for all teams
-          if (!globalPoints[team.name]) globalPoints[team.name] = { win: 0, loss: 0, draw: 0 };
-          if (!globalGoals[team.name]) globalGoals[team.name] = 0;
+          allGroupsPoints.push({ groupName, sortedTeams });
 
-          globalPoints[team.name].win += team.win;
-          globalPoints[team.name].loss += team.loss;
-          globalPoints[team.name].draw += team.draw;
-          globalGoals[team.name] += team.goals;
+          sortedTeams.forEach(team => {
+            if (!globalPoints[team.name]) globalPoints[team.name] = { win: 0, loss: 0, draw: 0 };
+            if (!globalGoals[team.name]) globalGoals[team.name] = 0;
+
+            globalPoints[team.name].win += team.win;
+            globalPoints[team.name].loss += team.loss;
+            globalPoints[team.name].draw += team.draw;
+            globalGoals[team.name] += team.goals;
+          });
         });
-      });
 
-      // Group-wise tables
-      let groupHTML = "";
-      allGroupsPoints.forEach(({ groupName, sortedTeams }) => {
-        groupHTML += `
-          <div class="mb-4">
-            <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
-            <table class="text-sm w-full table-auto border border-gray-200">
-              <thead>
-                <tr class="bg-gray-200">
-                  <th class="px-2 py-1 border">#</th>
-                  <th class="px-2 py-1 border">Team</th>
-                  <th class="px-2 py-1 border text-center">Played</th>
-                  <th class="px-2 py-1 border text-center">Win</th>
-                  <th class="px-2 py-1 border text-center">Loss</th>
-                  <th class="px-2 py-1 border text-center">Draw</th>
-                  <th class="px-2 py-1 border text-center">Goals</th>
-                  <th class="px-2 py-1 border text-center">Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${sortedTeams.map((team, i) => `
-                  <tr>
-                    <td class="px-2 py-1 border text-center">${i + 1}</td>
-                    <td class="px-2 py-1 border">${team.name}</td>
-                    <td class="px-2 py-1 border text-center">${team.played}</td>
-                    <td class="px-2 py-1 border text-center">${team.win}</td>
-                    <td class="px-2 py-1 border text-center">${team.loss}</td>
-                    <td class="px-2 py-1 border text-center">${team.draw}</td>
-                    <td class="px-2 py-1 border text-center">${team.goals}</td>
-                    <td class="px-2 py-1 border text-center">${team.points}</td>
+        let groupHTML = "";
+        allGroupsPoints.forEach(({ groupName, sortedTeams }) => {
+          groupHTML += `
+            <div class="mb-4">
+              <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
+              <table class="text-sm w-full table-auto border border-gray-200">
+                <thead>
+                  <tr class="bg-gray-200">
+                    <th class="px-2 py-1 border">#</th>
+                    <th class="px-2 py-1 border">Team</th>
+                    <th class="px-2 py-1 border text-center">Played</th>
+                    <th class="px-2 py-1 border text-center">Win</th>
+                    <th class="px-2 py-1 border text-center">Loss</th>
+                    <th class="px-2 py-1 border text-center">Draw</th>
+                    <th class="px-2 py-1 border text-center">Goals</th>
+                    <th class="px-2 py-1 border text-center">Points</th>
                   </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      });
+                </thead>
+                <tbody>
+                  ${sortedTeams.map((team, i) => `
+                    <tr>
+                      <td class="px-2 py-1 border text-center">${i + 1}</td>
+                      <td class="px-2 py-1 border">${team.name}</td>
+                      <td class="px-2 py-1 border text-center">${team.played}</td>
+                      <td class="px-2 py-1 border text-center">${team.win}</td>
+                      <td class="px-2 py-1 border text-center">${team.loss}</td>
+                      <td class="px-2 py-1 border text-center">${team.draw}</td>
+                      <td class="px-2 py-1 border text-center">${team.goals}</td>
+                      <td class="px-2 py-1 border text-center">${team.points}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        });
 
-      pointTablesContainer.innerHTML = groupHTML;
+        pointTablesContainer.innerHTML = groupHTML;
 
-      // All teams consolidated table
-      const allTeams = Object.entries(globalPoints).map(([teamName, stat]) => ({
-        team: teamName,
-        ...stat,
-        points: stat.win * 3 + stat.draw,
-        played: stat.win + stat.loss + stat.draw,
-        goals: globalGoals[teamName] || 0,
-      })).sort((a, b) => b.points - a.points || b.goals - a.goals);
+        const allTeams = Object.entries(globalPoints).map(([teamName, stat]) => ({
+          team: teamName,
+          ...stat,
+          points: stat.win * 3 + stat.draw,
+          played: stat.win + stat.loss + stat.draw,
+          goals: globalGoals[teamName] || 0,
+        })).sort((a, b) => b.points - a.points || b.goals - a.goals);
 
-      let allTeamsHTML = "";
-      allTeamsHTML = `
-        <table class="text-sm w-full table-auto border border-gray-200">
-          <thead>
-            <tr class="bg-gray-200">
-              <th class="px-2 py-1 border">#</th>
-              <th class="px-2 py-1 border">Team</th>
-              <th class="px-2 py-1 border text-center">Played</th>
-              <th class="px-2 py-1 border text-center">Win</th>
-              <th class="px-2 py-1 border text-center">Loss</th>
-              <th class="px-2 py-1 border text-center">Draw</th>
-              <th class="px-2 py-1 border text-center">Goals</th>
-              <th class="px-2 py-1 border text-center">Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${allTeams.map((team, i) => `
-              <tr>
-                <td class="px-2 py-1 border text-center">${i + 1}</td>
-                <td class="px-2 py-1 border">${team.team}</td>
-                <td class="px-2 py-1 border text-center">${team.played}</td>
-                <td class="px-2 py-1 border text-center">${team.win}</td>
-                <td class="px-2 py-1 border text-center">${team.loss}</td>
-                <td class="px-2 py-1 border text-center">${team.draw}</td>
-                <td class="px-2 py-1 border text-center">${team.goals}</td>
-                <td class="px-2 py-1 border text-center">${team.points}</td>
+        let allTeamsHTML = "";
+        allTeamsHTML = `
+          <table class="text-sm w-full table-auto border border-gray-200">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="px-2 py-1 border">#</th>
+                <th class="px-2 py-1 border">Team</th>
+                <th class="px-2 py-1 border text-center">Played</th>
+                <th class="px-2 py-1 border text-center">Win</th>
+                <th class="px-2 py-1 border text-center">Loss</th>
+                <th class="px-2 py-1 border text-center">Draw</th>
+                <th class="px-2 py-1 border text-center">Goals</th>
+                <th class="px-2 py-1 border text-center">Points</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-      allPointsContainer.innerHTML = allTeamsHTML;
+            </thead>
+            <tbody>
+              ${allTeams.map((team, i) => `
+                <tr>
+                  <td class="px-2 py-1 border text-center">${i + 1}</td>
+                  <td class="px-2 py-1 border">${team.team}</td>
+                  <td class="px-2 py-1 border text-center">${team.played}</td>
+                  <td class="px-2 py-1 border text-center">${team.win}</td>
+                  <td class="px-2 py-1 border text-center">${team.loss}</td>
+                  <td class="px-2 py-1 border text-center">${team.draw}</td>
+                  <td class="px-2 py-1 border text-center">${team.goals}</td>
+                  <td class="px-2 py-1 border text-center">${team.points}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        allPointsContainer.innerHTML = allTeamsHTML;
+      } catch (error) {
+        console.error("Error loading point tables:", error);
+      }
     }
   </script>
 </body>
