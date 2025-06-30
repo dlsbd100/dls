@@ -55,12 +55,16 @@
       const fixers = [];
       snapshot.forEach(doc => fixers.push({ id: doc.id, ...doc.data() }));
 
+      console.log("Fetched fixers:", fixers);  // Log fixers to check if data is fetched correctly
+
       const fixersByDate = {};
       fixers.forEach(fix => {
         const key = fix.date;
         if (!fixersByDate[key]) fixersByDate[key] = [];
         fixersByDate[key].push(fix);
       });
+
+      console.log("Fixers by Date:", fixersByDate);  // Log to check the data grouped by date
 
       const sortedDates = Object.keys(fixersByDate).sort();
       const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
@@ -84,6 +88,8 @@
           if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
           if (!goals[match.team1]) goals[match.team1] = 0;
           if (!goals[match.team2]) goals[match.team2] = 0;
+
+          console.log(`Match: ${match.team1} vs ${match.team2} | Goals: ${g1} - ${g2}`); // Log match data
 
           if (g1 > g2) {
             points[match.team1].win++;
