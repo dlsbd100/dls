@@ -294,32 +294,6 @@
     }));
   }
 
-  // Additional function for updating semifinals
-  async function updateSemifinalResults(matchId, team1Goals, team2Goals) {
-    const matchIndex = semifinals.findIndex((match) => match.id === matchId);
-    if (matchIndex !== -1) {
-      const match = semifinals[matchIndex];
-      match.team1Goal = team1Goals;
-      match.team2Goal = team2Goals;
-
-      if (team1Goals > team2Goals) {
-        match.winner = match.team1;
-      } else if (team2Goals > team1Goals) {
-        match.winner = match.team2;
-      } else {
-        match.winner = "Draw";
-      }
-
-      document.querySelector(`#semifinal-${matchId} .winner`).textContent = `Winner: ${match.winner}`;
-
-      await updateDoc(doc(db, "fixers", matchId), {
-        team1Goal: team1Goals,
-        team2Goal: team2Goals,
-        winner: match.winner,
-      });
-    }
-  }
-
   document.getElementById("addFixerBtn").addEventListener("click", async () => {
     const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
     const baseDate = document.getElementById("fixerDate").value;
@@ -392,7 +366,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-  </script>
+   </script>
 
 </body>
 </html>
