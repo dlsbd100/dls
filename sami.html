@@ -57,6 +57,8 @@
 
       snapshot.forEach(doc => {
         const match = doc.data();
+        console.log("Match Data:", match); // Add logging to debug data
+
         // Make sure the data contains team names and date before displaying
         if (match.team1 && match.team2 && match.date) {
           quarterfinalsHTML += `
@@ -74,7 +76,11 @@
         }
       });
 
-      quarterfinalsContainer.innerHTML = quarterfinalsHTML;
+      if (quarterfinalsHTML === "") {
+        quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No valid quarterfinal fixtures to display.</p>`;
+      } else {
+        quarterfinalsContainer.innerHTML = quarterfinalsHTML;
+      }
     }
 
     // Call the function to load quarterfinal fixtures
