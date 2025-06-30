@@ -65,7 +65,7 @@
     </div>
   </main>
 
-   <script type="module">
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
@@ -92,6 +92,7 @@
   const db = getFirestore(app);
 
   let teamList = [];
+  let quarterfinals = [];
 
   onAuthStateChanged(auth, (user) => {
     if (!user) window.location.href = "login.html";
@@ -187,7 +188,6 @@
           }
         }
 
-        // Update match display with serial number
         fixersHTML += `
           <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
             <div class="flex gap-1 items-center justify-center text-center">
@@ -218,7 +218,7 @@
       groupIndex++;
     });
 
-    const quarterfinals = [];
+    quarterfinals = [];
     allGroupsPoints.forEach(group => {
       const top2Teams = group.sortedTeams.slice(0, 2);
       if (top2Teams.length === 2) {
@@ -235,9 +235,15 @@
 
     let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
 
-    // Add quarterfinal fixtures (based on the existing date order)
+    // 🔥 New Logic: Determine latest group match date
+    let latestMatchDate = sortedDates.reduce((latest, date) => {
+      return new Date(date) > new Date(latest) ? date : latest;
+    }, sortedDates[0]);
+
+    const quarterfinalBaseDate = addDays(latestMatchDate, 1);
+
     quarterfinals.forEach((match, idx) => {
-      const displayQuarterfinalDate = addDays(baseDate, idx + 2); // 1 day gap + 1 day for the match
+      const displayQuarterfinalDate = addDays(quarterfinalBaseDate, idx);
       quarterfinalsHTML += `
         <div id="quarterfinal-${match.id}" class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="text-center text-gray-500 font-semibold">Quarterfinal ${idx + 1} - ${displayQuarterfinalDate}</div>
@@ -385,7 +391,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-</script>
+   </script>
 
 </body>
 </html>
