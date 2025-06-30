@@ -98,6 +98,7 @@
     else {
       loadTeams();
       loadFixers();
+      loadQuarterfinals(); // কোয়ার্টারফাইনাল ম্যাচ লোড করার জন্য ফাংশন কল করা হলো
     }
   });
 
@@ -287,11 +288,37 @@
 
     fixersContainer.innerHTML = fixersHTML + quarterfinalsHTML;
     pointTablesContainer.innerHTML = allPointsHTML;
+  }
 
-    // Add quarterfinals to Firestore
-    await Promise.all(quarterfinals.map(async (match) => {
-      await addDoc(collection(db, "quarterfinals"), match);
-    }));
+  // New function to load Quarterfinals from Firestore
+  async function loadQuarterfinals() {
+    const snapshot = await getDocs(collection(db, "quarterfinals"));
+    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+
+    if (snapshot.empty) {
+      quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No quarterfinals found.</p>`;
+      return;
+    }
+
+    let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
+
+    snapshot.forEach(doc => {
+      const match = doc.data();
+      const displayDate = match.date || "TBD";
+
+      quarterfinalsHTML += `
+        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+          <div class="text-center text-gray-500 font-semibold">${displayDate}</div>
+          <div class="flex justify-between items-center px-2">
+            <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
+            <div class="text-base font-bold text-red-500">VS</div>
+            <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
+          </div>
+          <div class="text-center text-green-600 text-xs font-medium winner">Winner: ${match.winner ?? "TBD"}</div>
+        </div>`;
+    });
+
+    quarterfinalsContainer.innerHTML = quarterfinalsHTML;
   }
 
   document.getElementById("addFixerBtn").addEventListener("click", async () => {
@@ -366,7 +393,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-   </script>
+  </script>
 
 </body>
 </html>
