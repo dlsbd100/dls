@@ -65,7 +65,7 @@
     </div>
   </main>
 
-  <script type="module">
+   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
@@ -320,9 +320,8 @@
     const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
     const baseDate = document.getElementById("fixerDate").value;
     const groupCount = parseInt(document.getElementById("groupCount").value);
-    const quarterfinalDate = document.getElementById("quarterfinalDate").value;  // New quarterfinal date input
 
-    if (selectedTeams.length < 2 || !baseDate || !quarterfinalDate || isNaN(groupCount)) {
+    if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
       Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
       return;
     }
@@ -355,18 +354,11 @@
       }
     }
 
-    // Add quarterfinals with the selected quarterfinal date
-    const quarterfinalStartDate = new Date(quarterfinalDate);
-    quarterfinals.forEach((match, idx) => {
-      match.date = addDays(quarterfinalStartDate, idx);
-    });
-
     Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
 
     document.getElementById("teamSelector").selectedIndex = -1;
     document.getElementById("groupCount").value = "1";
     document.getElementById("fixerDate").value = "";
-    document.getElementById("quarterfinalDate").value = ""; // Clear quarterfinal date
     document.getElementById("selectAllTeams").checked = false;
 
     loadFixers();
@@ -396,8 +388,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-</script>
-
+   </script>
 
 </body>
 </html>
