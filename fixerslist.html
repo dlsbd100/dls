@@ -258,19 +258,18 @@
     const quarterfinalWinners = quarterfinals.filter(match => match.winner).map(match => match.winner);
 
     if (quarterfinalWinners.length === 4) {
-      // Create Semifinal Matches
       semifinals.push({
         id: "sf-1",
-        team1: quarterfinalWinners[0],
-        team2: quarterfinalWinners[1],
+        team1: quarterfinalWinners[0] ?? "TBD1",
+        team2: quarterfinalWinners[1] ?? "TBD2",
         team1Goal: null,
         team2Goal: null,
         winner: null,
       });
       semifinals.push({
         id: "sf-2",
-        team1: quarterfinalWinners[2],
-        team2: quarterfinalWinners[3],
+        team1: quarterfinalWinners[2] ?? "TBD3",
+        team2: quarterfinalWinners[3] ?? "TBD4",
         team1Goal: null,
         team2Goal: null,
         winner: null,
@@ -432,7 +431,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-   </script>
+  </script>
 
 </body>
 </html>
