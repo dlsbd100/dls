@@ -236,11 +236,12 @@
     let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
 
     // 🔥 New Logic: Determine latest group match date
-    let latestMatchDate = sortedDates.reduce((latest, date) => {
-      return new Date(date) > new Date(latest) ? date : latest;
-    }, sortedDates[0]);
+let latestMatchDate = fixers.reduce((latest, match) => {
+  return new Date(match.date) > new Date(latest) ? match.date : latest;
+}, fixers[0].date);
 
-    const quarterfinalBaseDate = addDays(latestMatchDate, 1);
+const quarterfinalBaseDate = addDays(latestMatchDate, 1);
+
 
     quarterfinals.forEach((match, idx) => {
       const displayQuarterfinalDate = addDays(quarterfinalBaseDate, idx);
