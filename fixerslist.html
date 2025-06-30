@@ -235,8 +235,8 @@
 
     let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
 
-    // Calculate the start date for the quarterfinals (1 day after the last group match date)
-    const quarterfinalStartDate = addDays(lastGroupMatchDate, 2); // 1 day gap + 1 day for the match
+    // Calculate the start date for the quarterfinals
+    const quarterfinalStartDate = addDays(lastGroupMatchDate, 3); 
 
     // Add quarterfinal fixtures with the calculated date
     quarterfinals.forEach((match, idx) => {
