@@ -259,7 +259,7 @@
         <table class="text-sm w-full table-auto border border-gray-200">
           <thead>
             <tr class="bg-gray-200">
-              <th class="px-2 py-1 border">#</th>
+              <th class="px-2 py-1 border text-center">#</th>
               <th class="px-2 py-1 border">Team</th>
               <th class="px-2 py-1 border text-center">Played</th>
               <th class="px-2 py-1 border text-center">Win</th>
@@ -295,7 +295,6 @@
   }
 
   async function generateQuarterfinals() {
-    // Create quarterfinals from the top 2 teams of each group
     const snapshot = await getDocs(collection(db, "fixers"));
     const fixers = [];
     snapshot.forEach(doc => fixers.push({ id: doc.id, ...doc.data() }));
@@ -328,9 +327,6 @@
         if (!points[match.team2]) points[match.team2] = { win: 0, loss: 0, draw: 0 };
         if (!goals[match.team1]) goals[match.team1] = 0;
         if (!goals[match.team2]) goals[match.team2] = 0;
-
-        if (typeof g1 === "number") goals[match.team1] += g1;
-        if (typeof g2 === "number") goals[match.team2] += g2;
 
         if (g1 > g2) {
           points[match.team1].win++;
@@ -453,14 +449,23 @@
 
     if (!confirm.isConfirmed) return;
 
-    const snapshot = await getDocs(collection(db, "fixers"));
-    const deletions = [];
-    snapshot.forEach(doc => deletions.push(deleteDoc(doc.ref)));
-    await Promise.all(deletions);
+    const batch = writeBatch(db); // Use batch to avoid multiple firestore calls
 
-    Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+    // Delete all matches in fixers collection
+    const snapshotFixers = await getDocs(collection(db, "fixers"));
+    snapshotFixers.forEach(doc => batch.delete(doc.ref));
+
+    // Delete all matches in quarterfinals collection
+    const snapshotQF = await getDocs(collection(db, "quarterfinals"));
+    snapshotQF.forEach(doc => batch.delete(doc.ref));
+
+    // Commit the batch
+    await batch.commit();
+
+    Swal.fire({ icon: 'success', title: 'All fixers and quarterfinals deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
+    loadQuarterfinals();
   });
-      </script>
+  </script>
 </body>
 </html>
