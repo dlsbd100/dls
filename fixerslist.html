@@ -73,6 +73,8 @@
       collection,
       getDocs,
       addDoc,
+      updateDoc,
+      doc,
       deleteDoc,
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -111,11 +113,10 @@
       selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
-    function addDays(dateStr, days) {
-      const d = new Date(dateStr);
-      d.setDate(d.getDate() + days);
-      return d.toISOString().split("T")[0];
-    }
+    document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+      const all = document.getElementById("teamSelector").options;
+      for (let o of all) o.selected = e.target.checked;
+    });
 
     async function loadFixers() {
       const snapshot = await getDocs(collection(db, "fixers"));
@@ -355,11 +356,6 @@
       document.getElementById("selectAllTeams").checked = false;
 
       loadFixers();
-    });
-
-    document.getElementById("selectAllTeams").addEventListener("change", (e) => {
-      const all = document.getElementById("teamSelector").options;
-      for (let o of all) o.selected = e.target.checked;
     });
 
     document.getElementById("deleteAllBtn").addEventListener("click", async () => {
