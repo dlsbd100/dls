@@ -256,14 +256,14 @@
       });
 
       // Quarterfinal fixtures
-      let knockoutHTML = "";
+      let quarterfinalHTML = "";
       let semiFinalTeams = [];
 
       if (quarterfinalTeams.length >= 2) {
-        knockoutHTML += `<div class="mt-4 font-semibold text-purple-700">Quarterfinal Fixtures</div>`;
+        quarterfinalHTML += `<div class="mt-4 font-semibold text-purple-700">Quarterfinal Fixtures</div>`;
         for (let i = 0; i < quarterfinalTeams.length; i += 2) {
           if (i + 1 < quarterfinalTeams.length) {
-            knockoutHTML += `
+            quarterfinalHTML += `
               <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1 flex justify-between">
                 <span class="font-semibold">${quarterfinalTeams[i]}</span>
                 <span class="font-bold text-red-500">VS</span>
@@ -278,10 +278,10 @@
 
       // Semifinal fixtures
       if (semiFinalTeams.length >= 2) {
-        knockoutHTML += `<div class="mt-4 font-semibold text-pink-700">Semifinal Fixtures</div>`;
+        quarterfinalHTML += `<div class="mt-4 font-semibold text-pink-700">Semifinal Fixtures</div>`;
         for (let i = 0; i < semiFinalTeams.length; i += 2) {
           if (i + 1 < semiFinalTeams.length) {
-            knockoutHTML += `
+            quarterfinalHTML += `
               <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1 flex justify-between">
                 <span class="font-semibold">${semiFinalTeams[i]}</span>
                 <span class="font-bold text-red-500">VS</span>
