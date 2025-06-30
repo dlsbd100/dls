@@ -148,7 +148,7 @@
     const allGroupsPoints = [];
     let groupIndex = 0;
 
-    let lastGroupMatchDate = null; // Variable to track the last match date of the group stage
+    let lastGroupMatchDate = null;
 
     sortedDates.forEach(date => {
       const groupName = String.fromCharCode(65 + groupIndex);
@@ -215,7 +215,7 @@
       allGroupsPoints.push({ groupName, sortedTeams });
       groupIndex++;
 
-      lastGroupMatchDate = date; // Track the last match date of the group stage
+      lastGroupMatchDate = date;
     });
 
     const quarterfinals = [];
@@ -235,59 +235,13 @@
 
     let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
 
-    // Calculate the start date for the quarterfinals
     const quarterfinalStartDate = addDays(lastGroupMatchDate, 3);
 
-    // Add quarterfinal fixtures with the calculated date
     quarterfinals.forEach((match, idx) => {
-      const displayQuarterfinalDate = addDays(quarterfinalStartDate, idx); // Get the date for each quarterfinal
+      const displayQuarterfinalDate = addDays(quarterfinalStartDate, idx);
       quarterfinalsHTML += `
         <div id="quarterfinal-${match.id}" class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="text-center text-gray-500 font-semibold">Quarterfinal ${idx + 1} - ${displayQuarterfinalDate}</div>
-          <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
-            <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
-          </div>
-          <div class="text-center text-green-600 text-xs font-medium winner">Winner: ${match.winner ?? "TBD"}</div>
-        </div>`;
-    });
-
-    // Generate Semifinal Fixtures from Quarterfinals
-    const semifinals = [];
-    const quarterfinalWinners = quarterfinals.filter(match => match.winner).map(match => match.winner);
-
-    if (quarterfinalWinners.length === 4) {
-      // Create Semifinal Matches
-      semifinals.push({
-        id: "sf-1",
-        team1: quarterfinalWinners[0],
-        team2: quarterfinalWinners[1],
-        team1Goal: null,
-        team2Goal: null,
-        winner: null,
-      });
-      semifinals.push({
-        id: "sf-2",
-        team1: quarterfinalWinners[2],
-        team2: quarterfinalWinners[3],
-        team1Goal: null,
-        team2Goal: null,
-        winner: null,
-      });
-    }
-
-    let semifinalsHTML = "<h3 class='font-bold text-lg mb-2'>Semifinal Fixtures</h3>";
-
-    // Calculate the start date for the semifinals
-    const semifinalStartDate = addDays(quarterfinalStartDate, 3);
-
-    // Add semifinal fixtures with the calculated date
-    semifinals.forEach((match, idx) => {
-      const displaySemifinalDate = addDays(semifinalStartDate, idx); // Get the date for each semifinal
-      semifinalsHTML += `
-        <div id="semifinal-${match.id}" class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-          <div class="text-center text-gray-500 font-semibold">Semifinal ${idx + 1} - ${displaySemifinalDate}</div>
           <div class="flex justify-between items-center px-2">
             <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
             <div class="text-base font-bold text-red-500">VS</div>
@@ -331,10 +285,16 @@
       </div>
     `).join('');
 
-    fixersContainer.innerHTML = fixersHTML + quarterfinalsHTML + semifinalsHTML;
+    fixersContainer.innerHTML = fixersHTML + quarterfinalsHTML;
     pointTablesContainer.innerHTML = allPointsHTML;
+
+    // Add quarterfinals to Firestore
+    await Promise.all(quarterfinals.map(async (match) => {
+      await addDoc(collection(db, "quarterfinals"), match);
+    }));
   }
 
+  // Additional function for updating semifinals
   async function updateSemifinalResults(matchId, team1Goals, team2Goals) {
     const matchIndex = semifinals.findIndex((match) => match.id === matchId);
     if (matchIndex !== -1) {
@@ -432,7 +392,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-   </script>
+  </script>
 
 </body>
 </html>
