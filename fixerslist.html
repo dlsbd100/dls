@@ -60,6 +60,12 @@
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
     </div>
+
+    <!-- Point Tables Section -->
+    <div id="pointTablesContainer" class="bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
+      <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
+      <!-- Group-wise point tables will appear here -->
+    </div>
   </main>
 
   <!-- Firebase + Logic -->
@@ -96,6 +102,7 @@
       else {
         loadTeams();
         loadFixers();
+        loadPointTables();
       }
     });
 
@@ -188,6 +195,56 @@
       });
 
       fixersContainer.innerHTML = html;
+    }
+
+    async function loadPointTables() {
+      const snapshot = await getDocs(collection(db, "fixers"));
+      const pointTableContainer = document.getElementById("pointTablesContainer");
+
+      let pointsTable = {};
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (!data.team1Goal || !data.team2Goal) return; // Only finished matches
+
+        if (!pointsTable[data.team1]) pointsTable[data.team1] = { points: 0, wins: 0, draws: 0, losses: 0 };
+        if (!pointsTable[data.team2]) pointsTable[data.team2] = { points: 0, wins: 0, draws: 0, losses: 0 };
+
+        // Update points based on match result
+        if (data.team1Goal > data.team2Goal) {
+          pointsTable[data.team1].points += 3;
+          pointsTable[data.team1].wins += 1;
+          pointsTable[data.team2].losses += 1;
+        } else if (data.team2Goal > data.team1Goal) {
+          pointsTable[data.team2].points += 3;
+          pointsTable[data.team2].wins += 1;
+          pointsTable[data.team1].losses += 1;
+        } else {
+          pointsTable[data.team1].points += 1;
+          pointsTable[data.team2].points += 1;
+          pointsTable[data.team1].draws += 1;
+          pointsTable[data.team2].draws += 1;
+        }
+      });
+
+      let html = "<table class='min-w-full table-auto'>";
+      html += "<thead><tr><th class='px-4 py-2'>Team</th><th class='px-4 py-2'>Points</th><th class='px-4 py-2'>Wins</th><th class='px-4 py-2'>Draws</th><th class='px-4 py-2'>Losses</th></tr></thead><tbody>";
+
+      Object.entries(pointsTable).forEach(([team, stats]) => {
+        html += `
+          <tr class="border-t">
+            <td class='px-4 py-2'>${team}</td>
+            <td class='px-4 py-2'>${stats.points}</td>
+            <td class='px-4 py-2'>${stats.wins}</td>
+            <td class='px-4 py-2'>${stats.draws}</td>
+            <td class='px-4 py-2'>${stats.losses}</td>
+          </tr>
+        `;
+      });
+
+      html += "</tbody></table>";
+
+      pointTableContainer.innerHTML = html;
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
