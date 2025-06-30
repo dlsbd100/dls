@@ -239,8 +239,8 @@
 
     let quarterfinalsHTML = "<h3 class='font-bold text-lg mb-2'>Quarterfinal Fixtures</h3>";
 
-    // Calculate the start date for the quarterfinals (1 day after the last group match date)
-    const quarterfinalStartDate = addDays(lastGroupMatchDate, 2); // 1 day gap + 1 day for the match
+    // Calculate the start date for the quarterfinals (2 days after the last group match date)
+    const quarterfinalStartDate = addDays(lastGroupMatchDate, 2); // 2 day gap for Quarterfinal 1
 
     // Add quarterfinal fixtures with the calculated date
     quarterfinals.forEach((match, idx) => {
@@ -392,7 +392,8 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-   </script>
+</script>
+
 
 </body>
 </html>
