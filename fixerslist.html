@@ -58,8 +58,8 @@
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
 
-      <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
-        <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables & Quarterfinals</h2>
+      <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[600px] overflow-y-auto">
+        <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables, Quarterfinals & Semifinals</h2>
       </div>
     </div>
   </main>
@@ -213,7 +213,7 @@
         groupIndex++;
       });
 
-      // Create group point tables
+      // Point tables
       pointTablesHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
         <div class="mb-4">
           <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
@@ -248,15 +248,17 @@
         </div>
       `).join('');
 
-      // Prepare quarterfinal teams (top 2 per group)
+      // Quarterfinal teams
       let quarterfinalTeams = [];
       allGroupsPoints.forEach(({ sortedTeams }) => {
         quarterfinalTeams.push(sortedTeams[0]?.team);
         quarterfinalTeams.push(sortedTeams[1]?.team);
       });
 
-      // Create quarterfinal fixtures
+      // Quarterfinal fixtures
       let knockoutHTML = "";
+      let semiFinalTeams = [];
+
       if (quarterfinalTeams.length >= 2) {
         knockoutHTML += `<div class="mt-4 font-semibold text-purple-700">Quarterfinal Fixtures</div>`;
         for (let i = 0; i < quarterfinalTeams.length; i += 2) {
@@ -266,6 +268,24 @@
                 <span class="font-semibold">${quarterfinalTeams[i]}</span>
                 <span class="font-bold text-red-500">VS</span>
                 <span class="font-semibold">${quarterfinalTeams[i + 1]}</span>
+              </div>
+            `;
+            // Placeholder: Assume first team is winner
+            semiFinalTeams.push(quarterfinalTeams[i]);
+          }
+        }
+      }
+
+      // Semifinal fixtures
+      if (semiFinalTeams.length >= 2) {
+        knockoutHTML += `<div class="mt-4 font-semibold text-pink-700">Semifinal Fixtures</div>`;
+        for (let i = 0; i < semiFinalTeams.length; i += 2) {
+          if (i + 1 < semiFinalTeams.length) {
+            knockoutHTML += `
+              <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1 flex justify-between">
+                <span class="font-semibold">${semiFinalTeams[i]}</span>
+                <span class="font-bold text-red-500">VS</span>
+                <span class="font-semibold">${semiFinalTeams[i + 1]}</span>
               </div>
             `;
           }
