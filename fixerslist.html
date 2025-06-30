@@ -65,7 +65,7 @@
     </div>
   </main>
 
-  <script type="module">
+   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
@@ -189,12 +189,15 @@
           }
         }
 
-        // Add serial number for each match (Match 1, Match 2, etc.)
+        // Update match display with serial number on the left side of the date
         fixersHTML += `
           <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-            <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
+            <div class="flex justify-between items-center">
+              <div class="text-sm font-semibold text-gray-600">Match ${idx + 1}</div>
+              <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
+            </div>
             <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-600">Match ${idx + 1}: ${match.team1} <span class="text-black">(${g1 ?? "-"})</span></div>
+              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${g1 ?? "-"})</span></div>
               <div class="text-base font-bold text-red-500">VS</div>
               <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
             </div>
@@ -390,7 +393,6 @@
     loadFixers();
   });
 </script>
-
 
 </body>
 </html>
