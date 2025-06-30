@@ -119,6 +119,7 @@
           }
 
           if (typeof g1 === "number" && typeof g2 === "number") {
+            let status = "Finished";
             if (g1 > g2) {
               points[match.team1].win++;
               points[match.team2].loss++;
@@ -134,6 +135,12 @@
               points[match.team2].draw++;
               globalPoints[match.team1].draw++;
               globalPoints[match.team2].draw++;
+            }
+
+            // Update status in Firestore
+            const docRef = doc(db, "fixers", match.id);
+            if (match.status !== status) {
+              updateDoc(docRef, { status });
             }
           }
         });
