@@ -59,8 +59,7 @@
       </div>
 
       <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
-        <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables & Knockouts</h2>
-        <!-- All point tables and knockouts will appear here -->
+        <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables & Quarterfinals</h2>
       </div>
     </div>
   </main>
@@ -249,24 +248,24 @@
         </div>
       `).join('');
 
-      // Prepare knockout teams (top 2 per group)
-      let knockoutTeams = [];
+      // Prepare quarterfinal teams (top 2 per group)
+      let quarterfinalTeams = [];
       allGroupsPoints.forEach(({ sortedTeams }) => {
-        knockoutTeams.push(sortedTeams[0]?.team);
-        knockoutTeams.push(sortedTeams[1]?.team);
+        quarterfinalTeams.push(sortedTeams[0]?.team);
+        quarterfinalTeams.push(sortedTeams[1]?.team);
       });
 
-      // Create knockout fixtures
+      // Create quarterfinal fixtures
       let knockoutHTML = "";
-      if (knockoutTeams.length >= 2) {
-        knockoutHTML += `<div class="mt-4 font-semibold text-purple-700">Knockout Fixtures</div>`;
-        for (let i = 0; i < knockoutTeams.length; i += 2) {
-          if (i + 1 < knockoutTeams.length) {
+      if (quarterfinalTeams.length >= 2) {
+        knockoutHTML += `<div class="mt-4 font-semibold text-purple-700">Quarterfinal Fixtures</div>`;
+        for (let i = 0; i < quarterfinalTeams.length; i += 2) {
+          if (i + 1 < quarterfinalTeams.length) {
             knockoutHTML += `
               <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1 flex justify-between">
-                <span class="font-semibold">${knockoutTeams[i]}</span>
+                <span class="font-semibold">${quarterfinalTeams[i]}</span>
                 <span class="font-bold text-red-500">VS</span>
-                <span class="font-semibold">${knockoutTeams[i + 1]}</span>
+                <span class="font-semibold">${quarterfinalTeams[i + 1]}</span>
               </div>
             `;
           }
