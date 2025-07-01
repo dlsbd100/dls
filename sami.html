@@ -72,14 +72,14 @@
         }
 
         let html = "";
-        const groupNames = ['A', 'B', 'C', 'D']; // Group serials
-        pointTablesSnapshot.forEach((doc, index) => {
+        let groupCounter = 1; // Counter for group serials (A, B, C, etc.)
+        pointTablesSnapshot.forEach(doc => {
           const pointTable = doc.data();
           const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2); // Get top 2 teams
 
           html += `
             <div class="bg-gray-100 p-4 rounded">
-              <div class="font-semibold text-blue-700">Group ${groupNames[index]}</div>
+              <div class="font-semibold text-blue-700">Group- ${String.fromCharCode(64 + groupCounter)}</div> <!-- Group A, B, C, etc. -->
               <div class="space-y-2">
                 ${sortedTeams.map((team, index) => `
                   <div class="flex justify-between text-sm text-gray-600">
@@ -90,6 +90,8 @@
               </div>
             </div>
           `;
+
+          groupCounter++; // Increment the group serial
         });
 
         topTeamsContainer.innerHTML = html;
