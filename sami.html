@@ -74,12 +74,38 @@
                 <div>${team2.team}</div>
               </div>
               <div class="text-sm text-center text-gray-500 mt-2">Quarterfinal Match</div>
+              <button id="startMatch${i}" class="bg-blue-500 text-white rounded py-2 px-4 mt-4">Start Match</button>
             </div>
           `;
         }
 
         html += "</div>";
         quarterfinalsContainer.innerHTML = html;
+        
+        // Attach event listeners to start match buttons
+        for (let i = 0; i < quarterfinalTeams.length; i += 2) {
+          document.getElementById(`startMatch${i}`).addEventListener('click', () => {
+            startQuarterfinalMatch(i);
+          });
+        }
+      }
+
+      async function startQuarterfinalMatch(matchIndex) {
+        const team1 = document.querySelectorAll('#quarterfinalsContainer .border')[matchIndex].querySelectorAll('.flex > div')[0].textContent;
+        const team2 = document.querySelectorAll('#quarterfinalsContainer .border')[matchIndex].querySelectorAll('.flex > div')[2].textContent;
+
+        // Create a new fixer for this match
+        await addDoc(collection(db, "fixers"), {
+          team1,
+          team2,
+          date: new Date().toISOString().split("T")[0], // Set to current date for now
+          team1Goal: null,
+          team2Goal: null,
+          status: "Pending"
+        });
+
+        // You can also create a match preview or proceed to actual match screen.
+        alert(`Quarterfinal match between ${team1} and ${team2} has been scheduled!`);
       }
 
       // Load the point tables to generate the quarterfinal matches
