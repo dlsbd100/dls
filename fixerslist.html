@@ -59,7 +59,7 @@
       <div id="fixersContainer" class="space-y-6 max-h-[600px] overflow-y-auto">
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
-      
+
       <!-- Points Table Display -->
       <div id="pointsTableContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
         <h2 class="text-lg font-semibold text-green-700 mb-3">Points Table</h2>
@@ -187,35 +187,49 @@
       });
 
       const pointsTableContainer = document.getElementById("pointsTableContainer");
-      let html = `<table class="min-w-full table-auto border-collapse">
-        <thead>
-          <tr>
-            <th class="border px-3 py-2 text-left">Team</th>
-            <th class="border px-3 py-2 text-left">Played</th>
-            <th class="border px-3 py-2 text-left">Won</th>
-            <th class="border px-3 py-2 text-left">Draw</th>
-            <th class="border px-3 py-2 text-left">Lost</th>
-            <th class="border px-3 py-2 text-left">Goals</th>
-            <th class="border px-3 py-2 text-left">Points</th>
-          </tr>
-        </thead>
-        <tbody>`;
-      
-      for (const [team, stats] of Object.entries(points)) {
-        html += `
-          <tr>
-            <td class="border px-3 py-2">${team}</td>
-            <td class="border px-3 py-2">${stats.win + stats.loss + stats.draw}</td>
-            <td class="border px-3 py-2">${stats.win}</td>
-            <td class="border px-3 py-2">${stats.draw}</td>
-            <td class="border px-3 py-2">${stats.loss}</td>
-            <td class="border px-3 py-2">${stats.goals}</td>
-            <td class="border px-3 py-2">${stats.points}</td>
-          </tr>`;
-      }
+      const sortedTeams = Object.entries(points).map(([team, stats]) => ({
+        team,
+        played: stats.win + stats.loss + stats.draw,
+        win: stats.win,
+        loss: stats.loss,
+        draw: stats.draw,
+        goals: stats.goals,
+        points: stats.points
+      })).sort((a, b) => b.points - a.points || b.goals - a.goals);
 
-      html += `</tbody></table>`;
-      pointsTableContainer.innerHTML = html;
+      let html = sortedTeams.map((team, i) => `
+        <tr>
+          <td class="px-2 py-1 border text-center">${i + 1}</td>
+          <td class="px-2 py-1 border">${team.team}</td>
+          <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
+          <td class="px-2 py-1 border text-center">${team.win}</td>
+          <td class="px-2 py-1 border text-center">${team.loss}</td>
+          <td class="px-2 py-1 border text-center">${team.draw}</td>
+          <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
+          <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
+        </tr>
+      `).join('');
+
+      pointsTableContainer.innerHTML = `
+        <div class="font-semibold mb-1 text-blue-700">Overall Points Table</div>
+        <table class="text-sm w-full table-auto border border-gray-200">
+          <thead>
+            <tr class="bg-gray-200">
+              <th class="px-2 py-1 border text-center">#</th>
+              <th class="px-2 py-1 border">Team</th>
+              <th class="px-2 py-1 border text-center">Played</th>
+              <th class="px-2 py-1 border text-center">Win</th>
+              <th class="px-2 py-1 border text-center">Loss</th>
+              <th class="px-2 py-1 border text-center">Draw</th>
+              <th class="px-2 py-1 border text-center">Goals</th>
+              <th class="px-2 py-1 border text-center">Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${html}
+          </tbody>
+        </table>
+      `;
     }
 
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
