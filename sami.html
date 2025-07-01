@@ -40,6 +40,14 @@
       </div>
     </div>
 
+    <!-- Quarterfinal Fixers Section -->
+    <div class="bg-white shadow rounded p-4 mt-6">
+      <div class="text-xl font-semibold text-green-700 mb-4">Quarterfinal Fixers</div>
+      <div id="quarterfinalsContainer" class="space-y-2">
+        <!-- Quarterfinal matches will be displayed here -->
+      </div>
+    </div>
+
   </main>
 
   <!-- Firebase + Logic -->
@@ -67,6 +75,7 @@
         window.location.href = "login.html";
       } else {
         loadPlayers();
+        loadQuarterfinals();
       }
     });
 
@@ -94,6 +103,48 @@
       } catch (e) {
         console.error("Error loading players:", e);
         document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="1" class="text-center text-red-600">${e.message}</td></tr>`;
+      }
+    }
+
+    async function loadQuarterfinals() {
+      try {
+        const pointTablesSnapshot = await getDocs(collection(db, "pointTables"));
+        const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+
+        if (pointTablesSnapshot.empty) {
+          quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+          return;
+        }
+
+        let quarterfinalsHtml = "";
+
+        // Extract top 2 teams from each group for the quarterfinals
+        pointTablesSnapshot.forEach(doc => {
+          const pointTable = doc.data();
+          const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points || b.goals - a.goals);
+          
+          // Get the top 2 teams
+          const top2Teams = sortedTeams.slice(0, 2);
+          quarterfinalsHtml += `
+            <div class="mb-4">
+              <h3 class="font-semibold text-blue-700">Group ${pointTable.groupName}</h3>
+              <ul class="space-y-2">
+                ${top2Teams.map(team => `
+                  <li class="flex justify-between items-center text-gray-600">
+                    <span>${team.team}</span>
+                    <span class="font-bold text-red-600">Points: ${team.points}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          `;
+        });
+
+        quarterfinalsContainer.innerHTML = quarterfinalsHtml;
+
+      } catch (e) {
+        console.error("Error loading quarterfinals:", e);
+        document.getElementById("quarterfinalsContainer").innerHTML = `<p class="text-center text-red-600">${e.message}</p>`;
       }
     }
   </script>
