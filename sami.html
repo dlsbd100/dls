@@ -30,11 +30,13 @@
         <table class="w-full text-xs border border-gray-300 rounded overflow-hidden min-w-[600px]">
           <thead class="bg-gray-100 sticky top-0 z-10">
             <tr>
+              <th class="p-2 border w-32">Group</th>
               <th class="p-2 border w-32">Team</th>
+              <th class="p-2 border w-32">Points</th>
             </tr>
           </thead>
           <tbody id="playersTableBody">
-            <tr><td colspan="1" class="p-3 text-center text-gray-500">Loading players...</td></tr>
+            <tr><td colspan="3" class="p-3 text-center text-gray-500">Loading players...</td></tr>
           </tbody>
         </table>
       </div>
@@ -46,7 +48,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -66,34 +68,55 @@
       if (!user) {
         window.location.href = "login.html";
       } else {
-        loadPlayers();
+        loadTopTeams();
       }
     });
 
-    async function loadPlayers() {
+    async function loadTopTeams() {
       try {
+        // Query to get all teams sorted by group and points
         const playersSnapshot = await getDocs(collection(db, "playersform"));
         const playersTableBody = document.getElementById("playersTableBody");
 
         if (playersSnapshot.empty) {
-          playersTableBody.innerHTML = `<tr><td colspan="1" class="text-center p-3">No players found.</td></tr>`;
+          playersTableBody.innerHTML = `<tr><td colspan="3" class="text-center p-3">No players found.</td></tr>`;
           return;
         }
 
-        let html = "";
+        // Group teams by their groups
+        let groups = {};
+
         playersSnapshot.forEach(doc => {
           const p = doc.data();
-          html += `
-            <tr class="border-t hover:bg-gray-50">
-              <td class="p-2 border">${p.team || "N/A"}</td>
-            </tr>`;
+          const group = p.group || "Unknown"; // Assuming players have a 'group' field
+          const points = p.points || 0; // Assuming players have a 'points' field
+
+          if (!groups[group]) {
+            groups[group] = [];
+          }
+          groups[group].push({ team: p.team, points });
         });
+
+        let html = "";
+
+        // Loop through each group, sort by points, and show top 2 teams
+        for (let group in groups) {
+          const sortedTeams = groups[group].sort((a, b) => b.points - a.points).slice(0, 2);
+          sortedTeams.forEach(team => {
+            html += `
+              <tr class="border-t hover:bg-gray-50">
+                <td class="p-2 border">${group}</td>
+                <td class="p-2 border">${team.team || "N/A"}</td>
+                <td class="p-2 border">${team.points}</td>
+              </tr>`;
+          });
+        }
 
         playersTableBody.innerHTML = html;
 
       } catch (e) {
         console.error("Error loading players:", e);
-        document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="1" class="text-center text-red-600">${e.message}</td></tr>`;
+        document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="3" class="text-center text-red-600">${e.message}</td></tr>`;
       }
     }
   </script>
