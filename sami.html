@@ -54,7 +54,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -136,6 +136,12 @@
                   </li>
                 `).join('')}
               </ul>
+              <div class="flex gap-4 mt-3">
+                <button onclick="addQuarterfinalMatch('${top2Teams[0].team}', '${top2Teams[1].team}')"
+                  class="bg-blue-600 text-white text-xs px-3 py-2 rounded hover:bg-blue-700">
+                  Add Match
+                </button>
+              </div>
             </div>
           `;
         });
@@ -145,6 +151,28 @@
       } catch (e) {
         console.error("Error loading quarterfinals:", e);
         document.getElementById("quarterfinalsContainer").innerHTML = `<p class="text-center text-red-600">${e.message}</p>`;
+      }
+    }
+
+    async function addQuarterfinalMatch(team1, team2) {
+      try {
+        const matchDate = new Date().toISOString().split('T')[0];  // Set current date as match date
+
+        await addDoc(collection(db, "fixers"), {
+          team1,
+          team2,
+          date: matchDate,
+          team1Goal: null,
+          team2Goal: null,
+          status: "Pending"
+        });
+
+        // Reload the quarterfinals to reflect the new match
+        loadQuarterfinals();
+
+        alert(`${team1} vs ${team2} added to the quarterfinals!`);
+      } catch (e) {
+        console.error("Error adding quarterfinal match:", e);
       }
     }
   </script>
