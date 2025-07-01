@@ -157,30 +157,41 @@
         groupIndex++;
       });
 
-      // Generate Quarterfinals based on top 2 from each group
-      const quarterFinals = generateQuarterFinals(allGroupsPoints);
+      // Generate quarterfinals: top 2 teams from each group
+      const topTeams = allGroupsPoints.flatMap(g => g.sortedTeams.slice(0, 2));
+      const quarterFinals = [];
+
+      for (let i = 0; i < topTeams.length; i += 2) {
+        if (topTeams[i + 1]) {
+          quarterFinals.push({
+            date: `2025-08-${10 + i}`, // mock future date
+            team1: topTeams[i].team,
+            team2: topTeams[i + 1].team,
+            team1Goal: null,
+            team2Goal: null,
+          });
+        }
+      }
 
       fixersHTML += `<div class="bg-yellow-100 px-3 py-2 rounded font-semibold text-yellow-800 mb-2 mt-4">Quarterfinal Fixtures</div>`;
-      quarterFinals.forEach((match, i) => {
-        const g1 = match.team1Goal ?? "-";
-        const g2 = match.team2Goal ?? "-";
-        let winner = "TBD";
+      quarterFinals.forEach((match) => {
+        const g1 = match.team1Goal;
+        const g2 = match.team2Goal;
+        let winner = "None";
 
-        if (typeof match.team1Goal === "number" && typeof match.team2Goal === "number") {
-          winner = match.team1Goal > match.team2Goal
-            ? match.team1
-            : match.team2Goal > match.team1Goal
-            ? match.team2
-            : "Draw";
+        if (typeof g1 === "number" && typeof g2 === "number") {
+          if (g1 > g2) winner = match.team1;
+          else if (g2 > g1) winner = match.team2;
+          else winner = "Draw";
         }
 
         fixersHTML += `
           <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-            <div class="text-center text-[13px] text-gray-500 font-semibold">Quarterfinal ${i + 1}</div>
+            <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date}</div>
             <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${g1})</span></div>
+              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${g1 ?? "-"})</span></div>
               <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2})</span></div>
+              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
             </div>
             <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
           </div>`;
@@ -222,21 +233,6 @@
 
       fixersContainer.innerHTML = fixersHTML;
       pointTablesContainer.innerHTML = allPointsHTML;
-    }
-
-    function generateQuarterFinals(groups) {
-      const topTeams = groups.map(g => g.sortedTeams.slice(0, 2));
-      const qfs = [];
-
-      for (let i = 0; i < topTeams.length / 2; i++) {
-        const group1 = topTeams[i];
-        const group2 = topTeams[topTeams.length - 1 - i];
-
-        qfs.push({ team1: group1[0].team, team2: group2[1].team });
-        qfs.push({ team1: group2[0].team, team2: group1[1].team });
-      }
-
-      return qfs;
     }
 
     function addDays(dateStr, days) {
