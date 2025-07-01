@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fixers - Admin Panel</title>
@@ -32,12 +35,6 @@
       <div id="pointTablesContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
         <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
         <!-- All point tables will appear here together -->
-      </div>
-
-      <!-- Quarterfinals Container -->
-      <div id="quarterfinalsContainer" class="mt-6 bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
-        <h2 class="text-lg font-semibold text-blue-700 mb-3">Quarterfinals</h2>
-        <!-- Quarterfinal matches will appear here -->
       </div>
     </div>
   </main>
@@ -80,7 +77,6 @@
       const snapshot = await getDocs(collection(db, "fixers"));
       const fixersContainer = document.getElementById("fixersContainer");
       const pointTablesContainer = document.getElementById("pointTablesContainer");
-      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
       if (snapshot.empty) {
         fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
@@ -172,10 +168,6 @@
         groupIndex++;
       });
 
-      // Generate Quarterfinals
-      const quarterfinalsHTML = generateQuarterfinals(allGroupsPoints);
-      quarterfinalsContainer.innerHTML = quarterfinalsHTML;
-
       // Update the UI with fixers and point tables
       allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
         <div class="mb-4">
@@ -213,43 +205,6 @@
 
       fixersContainer.innerHTML = fixersHTML;
       pointTablesContainer.innerHTML = allPointsHTML;
-    }
-
-    // Generate quarterfinals matchups with goals
-    function generateQuarterfinals(allGroupsPoints) {
-      let quarterfinalsHTML = '';
-      const topTeams = allGroupsPoints.reduce((acc, group) => {
-        const top2Teams = group.sortedTeams.slice(0, 2); // Get top 2 teams
-        acc.push(...top2Teams);
-        return acc;
-      }, []);
-
-      for (let i = 0; i < topTeams.length; i += 2) {
-        const team1 = topTeams[i];
-        const team2 = topTeams[i + 1];
-
-        const displayQuarterfinalDate = addDays(new Date().toISOString(), i); // For simplicity, generating new date for each
-
-        quarterfinalsHTML += `
-          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-            <div class="text-center text-gray-500 font-semibold">Quarterfinal ${i / 2 + 1} - ${displayQuarterfinalDate}</div>
-            <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-600">${team1.team} <span class="text-black">(${team1.goals ?? "-"})</span></div>
-              <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${team2.team} <span class="text-black">(${team2.goals ?? "-"})</span></div>
-            </div>
-            <div class="text-center text-green-600 text-xs font-medium winner">Winner: TBD</div>
-          </div>`;
-      }
-
-      return quarterfinalsHTML;
-    }
-
-    // Add helper function for date manipulation
-    function addDays(dateStr, days) {
-      const d = new Date(dateStr);
-      d.setDate(d.getDate() + days);
-      return d.toISOString().split("T")[0];
     }
   </script>
 </body>
