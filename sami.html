@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Team List</title>
   <script type="module">
+    // Firebase Configuration
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
       authDomain: "dlstournament-31ac1.firebaseapp.com",
@@ -21,22 +21,24 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Function to load teams from the 'playersform' collection
+    // Function to load teams
     async function loadTeams() {
       const snapshot = await getDocs(collection(db, "playersform"));
       const teams = new Set();
-      
+
       snapshot.forEach(doc => {
         const data = doc.data();
+        console.log(data);  // Check if 'team' field exists
         if (data.team) teams.add(data.team);
       });
 
       const teamList = Array.from(teams);
+      console.log(teamList);  // Log the team list
       document.getElementById("teamList").innerHTML = teamList.map(t => `<li class="text-lg text-gray-800">${t}</li>`).join("");
     }
 
     // Load teams when the page is loaded
-    window.onload = loadTeams;
+    document.addEventListener("DOMContentLoaded", loadTeams);
   </script>
   <style>
     body {
