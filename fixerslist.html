@@ -157,7 +157,11 @@
         groupIndex++;
       });
 
-      
+      // Quarterfinal fixtures (dummy data here, you can load from Firestore too)
+      const quarterFinals = [
+        { team1: "A1", team2: "B2", team1Goal: null, team2Goal: null, date: "2025-07-05" },
+        { team1: "B1", team2: "A2", team1Goal: null, team2Goal: null, date: "2025-07-06" },
+      ];
 
       fixersHTML += `<div class="bg-yellow-100 px-3 py-2 rounded font-semibold text-yellow-800 mb-2 mt-4">Quarterfinal Fixtures</div>`;
       quarterFinals.forEach((match) => {
