@@ -34,8 +34,8 @@
     <!-- Quarterfinal Fixtures Section -->
     <div class="bg-white shadow rounded p-4">
       <div class="text-xl font-semibold text-blue-700 mb-4">Quarterfinal Fixtures</div>
-      <div id="quarterfinalFixtures" class="space-y-4">
-        <div class="p-3 text-center text-gray-500">Loading quarterfinal fixtures...</div>
+      <div id="quarterfinalsContainer" class="space-y-4">
+        <div class="p-3 text-center text-gray-500">Generating fixtures...</div>
       </div>
     </div>
 
@@ -79,16 +79,14 @@
           return;
         }
 
-        let html = "";
-        let groupCounter = 1; // Counter for group serials (A, B, C, etc.)
         let topTeams = [];
-        
+        let groupCounter = 1; // Counter for group serials (A, B, C, etc.)
         pointTablesSnapshot.forEach(doc => {
           const pointTable = doc.data();
           const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2); // Get top 2 teams
-          topTeams.push(...sortedTeams);
+          topTeams.push(...sortedTeams); // Push the top 2 teams from each group into the array
 
-          html += `
+          topTeamsContainer.innerHTML += `
             <div class="bg-gray-100 p-4 rounded">
               <div class="font-semibold text-blue-700">Group- ${String.fromCharCode(64 + groupCounter)}</div> <!-- Group A, B, C, etc. -->
               <div class="space-y-2">
@@ -101,14 +99,11 @@
               </div>
             </div>
           `;
-
           groupCounter++; // Increment the group serial
         });
 
-        topTeamsContainer.innerHTML = html;
-
         // Generate Quarterfinal Fixtures
-        generateQuarterfinalFixtures(topTeams);
+        generateQuarterfinals(topTeams);
 
       } catch (e) {
         console.error("Error loading top teams:", e);
@@ -116,26 +111,26 @@
       }
     }
 
-    function generateQuarterfinalFixtures(teams) {
-      const quarterfinalFixturesContainer = document.getElementById("quarterfinalFixtures");
+    function generateQuarterfinals(teams) {
+      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
       if (teams.length < 8) {
-        quarterfinalFixturesContainer.innerHTML = `<div class="text-center text-gray-500 p-3">Not enough teams to generate quarterfinals.</div>`;
+        quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">Not enough teams for quarterfinals.</div>`;
         return;
       }
 
-      let fixturesHtml = "<div class='text-xl font-semibold text-blue-700 mb-4'>Quarterfinal Matches</div>";
+      const fixtures = [
+        { match: `Team 1: ${teams[0].team} vs Team 2: ${teams[7].team}` },
+        { match: `Team 3: ${teams[1].team} vs Team 4: ${teams[6].team}` },
+        { match: `Team 5: ${teams[2].team} vs Team 6: ${teams[5].team}` },
+        { match: `Team 7: ${teams[3].team} vs Team 8: ${teams[4].team}` },
+      ];
 
-      // Generate quarterfinal fixtures by pairing top teams
-      for (let i = 0; i < 4; i++) {
-        fixturesHtml += `
-          <div class="flex justify-between text-gray-600">
-            <span>Match ${i + 1}: ${teams[i * 2].team} vs ${teams[i * 2 + 1].team}</span>
-          </div>
-        `;
-      }
-
-      quarterfinalFixturesContainer.innerHTML = fixturesHtml;
+      quarterfinalsContainer.innerHTML = fixtures.map(fixture => `
+        <div class="bg-gray-100 p-4 rounded">
+          <div class="font-semibold text-blue-700">${fixture.match}</div>
+        </div>
+      `).join('');
     }
 
   </script>
