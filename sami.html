@@ -162,7 +162,9 @@
               team1: top2Teams[i].team,
               team2: top2Teams[j].team,
               date: new Date().toISOString().split("T")[0], // Placeholder date, can be customized
-              status: "Pending"
+              status: "Pending",
+              team1Goal: null,
+              team2Goal: null
             };
             quarterfinalsMatches.push(match);
           }
@@ -183,8 +185,35 @@
         showConfirmButton: false
       });
 
-      loadPointTables();
+      loadQuarterfinalMatches();
     });
+
+    async function loadQuarterfinalMatches() {
+      const fixersSnapshot = await getDocs(collection(db, "fixers"));
+      const fixersContainer = document.getElementById("quarterfinalsContainer");
+      let matchCardsHTML = "";
+
+      fixersSnapshot.forEach(doc => {
+        const match = doc.data();
+        matchCardsHTML += `
+          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+            <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date}</div>
+            <div class="flex justify-between items-center px-2">
+              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
+              <div class="text-base font-bold text-red-500">VS</div>
+              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
+            </div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${match.winner || "Pending"}</div>
+            <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
+          </div>
+        `;
+      });
+
+      fixersContainer.innerHTML = matchCardsHTML;
+    }
+
+    // Load existing quarterfinal matches on page load
+    loadQuarterfinalMatches();
 
   </script>
 
