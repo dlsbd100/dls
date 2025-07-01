@@ -157,80 +157,6 @@
         groupIndex++;
       });
 
-      // Generate Quarterfinal Fixtures automatically from top 2 teams of each group
-      let quarterFinalsHTML = `<div class="bg-yellow-100 px-3 py-2 rounded font-semibold text-yellow-800 mb-2 mt-4">Quarterfinal Fixtures</div>`;
-      const quarterfinalMatches = [];
-
-      // We assume groups A, B, C, D, ... in order.
-      // For 4 groups (A-D), typical QF matches:
-      // QF1: A1 vs B2
-      // QF2: B1 vs A2
-      // QF3: C1 vs D2
-      // QF4: D1 vs C2
-      // Adapt dynamically depending on number of groups:
-      
-      // If less than 2 groups, no QF
-      if (allGroupsPoints.length >= 2) {
-        for (let i = 0; i < allGroupsPoints.length; i += 2) {
-          const group1 = allGroupsPoints[i];
-          const group2 = allGroupsPoints[i + 1];
-          if (!group2) break;
-
-          const g1Name = group1.groupName;
-          const g2Name = group2.groupName;
-
-          const g1Teams = group1.sortedTeams;
-          const g2Teams = group2.sortedTeams;
-
-          if (g1Teams.length < 2 || g2Teams.length < 2) continue;
-
-          // Match 1: G1 top 1 vs G2 top 2
-          quarterfinalMatches.push({
-            team1: g1Teams[0].team,
-            team2: g2Teams[1].team,
-            team1Goal: null,
-            team2Goal: null,
-            date: "", // You can set date if you want
-          });
-
-          // Match 2: G2 top 1 vs G1 top 2
-          quarterfinalMatches.push({
-            team1: g2Teams[0].team,
-            team2: g1Teams[1].team,
-            team1Goal: null,
-            team2Goal: null,
-            date: "",
-          });
-        }
-      }
-
-      // Render quarterfinalMatches
-      quarterfinalMatches.forEach((match, idx) => {
-        const g1 = match.team1Goal;
-        const g2 = match.team2Goal;
-        let winner = "None";
-
-        if (typeof g1 === "number" && typeof g2 === "number") {
-          if (g1 > g2) winner = match.team1;
-          else if (g2 > g1) winner = match.team2;
-          else winner = "Draw";
-        }
-
-        quarterFinalsHTML += `
-          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-            <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date || "TBD"}</div>
-            <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${g1 ?? "-"})</span></div>
-              <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2 ?? "-"})</span></div>
-            </div>
-            <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-          </div>`;
-      });
-
-      // Add quarterfinals section to the fixer container after groups
-      fixersHTML += quarterFinalsHTML;
-
       allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
         <div class="mb-4">
           <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
@@ -276,4 +202,4 @@
     }
   </script>
 </body>
-  </html>
+</html>
