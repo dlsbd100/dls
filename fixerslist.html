@@ -218,37 +218,26 @@
     // Generate quarterfinals matchups
     function generateQuarterfinals(allGroupsPoints) {
       let quarterfinalsHTML = '';
-      const quarterfinals = [];
+      const topTeams = allGroupsPoints.reduce((acc, group) => {
+        const top2Teams = group.sortedTeams.slice(0, 2); // Get top 2 teams
+        acc.push(...top2Teams);
+        return acc;
+      }, []);
 
-      allGroupsPoints.forEach(group => {
-        const top2Teams = group.sortedTeams.slice(0, 2);
-        if (top2Teams.length === 2) {
-          quarterfinals.push({
-            id: `qf-${group.groupName}`,
-            team1: top2Teams[0].team,
-            team2: top2Teams[1].team,
-            team1Goal: null,
-            team2Goal: null,
-            winner: null,
-          });
-        }
-      });
+      for (let i = 0; i < topTeams.length; i += 2) {
+        const team1 = topTeams[i];
+        const team2 = topTeams[i + 1];
 
-      const quarterfinalStartDate = addDays(lastGroupMatchDate, 3);
-
-      quarterfinals.forEach((match, idx) => {
-        const displayQuarterfinalDate = addDays(quarterfinalStartDate, idx);
         quarterfinalsHTML += `
-          <div id="quarterfinal-${match.id}" class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-            <div class="text-center text-gray-500 font-semibold">Quarterfinal ${idx + 1} - ${displayQuarterfinalDate}</div>
+          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+            <div class="text-center text-[13px] text-gray-500 font-semibold">Quarterfinal ${i / 2 + 1}</div>
             <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
+              <div class="text-sm font-semibold text-gray-600">${team1.team}</div>
               <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
+              <div class="text-sm font-semibold text-gray-600">${team2.team}</div>
             </div>
-            <div class="text-center text-green-600 text-xs font-medium winner">Winner: ${match.winner ?? "TBD"}</div>
           </div>`;
-      });
+      }
 
       return quarterfinalsHTML;
     }
