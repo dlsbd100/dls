@@ -43,9 +43,6 @@
     <!-- Quarterfinal Fixers -->
     <div class="bg-white shadow rounded p-4">
       <div class="text-xl font-semibold text-blue-700 mb-4">Quarterfinal Fixers</div>
-      <button id="createQuarterfinalsBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700">
-        Create Quarterfinal Fixers
-      </button>
       <div id="quarterfinalsContainer" class="mt-4">
         <!-- Quarterfinal matches will be displayed here -->
       </div>
@@ -145,15 +142,16 @@
       });
 
       document.getElementById("quarterfinalsContainer").innerHTML = allPointTablesHTML;
+
+      // Automatically generate quarterfinal fixers
+      createQuarterfinals(pointTables);
     }
 
-    document.getElementById("createQuarterfinalsBtn").addEventListener("click", async () => {
-      const snapshot = await getDocs(collection(db, "pointTables"));
+    async function createQuarterfinals(pointTables) {
       const quarterfinalsMatches = [];
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const top2Teams = data.teams.slice(0, 2); // Top 2 teams from each group
+      pointTables.forEach(pointTable => {
+        const top2Teams = pointTable.teams.slice(0, 2); // Top 2 teams from each group
 
         // Creating the quarterfinals based on the top 2 teams
         for (let i = 0; i < top2Teams.length; i++) {
@@ -176,17 +174,9 @@
         await addDoc(collection(db, "fixers"), match);
       }
 
-      Swal.fire({
-        icon: 'success',
-        title: `Quarterfinal matches created.`,
-        position: 'top-end',
-        toast: true,
-        timer: 3000,
-        showConfirmButton: false
-      });
-
+      // Load and display quarterfinal matches
       loadQuarterfinalMatches();
-    });
+    }
 
     async function loadQuarterfinalMatches() {
       const fixersSnapshot = await getDocs(collection(db, "fixers"));
