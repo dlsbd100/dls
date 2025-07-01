@@ -250,7 +250,7 @@
   }
 
   async function savePointTable(groupName, teams) {
-    // Automatically create the point table in Firestore
+    // Automatically create the point table in Firestore for each group
     await addDoc(collection(db, "pointTables"), {
       groupName,
       teams: teams.map(t => ({
@@ -263,7 +263,7 @@
         points: t.points
       })),
     });
-    console.log("Point table saved successfully.");
+    console.log("Point table for " + groupName + " saved successfully.");
   }
 
   document.getElementById("addFixerBtn").addEventListener("click", async () => {
@@ -303,20 +303,20 @@
           added++;
         }
       }
+
+      // Save point table for each group after matches
+      await savePointTable(`Group ${String.fromCharCode(65 + g)}`, groupTeams.map(team => ({
+        team,
+        played: 0,
+        win: 0,
+        loss: 0,
+        draw: 0,
+        goals: 0,
+        points: 0
+      })));
     }
 
     Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-
-    // Save point table after matches are created
-    await savePointTable(`Group ${String.fromCharCode(65 + groupCount - 1)}`, selectedTeams.map(team => ({
-      team,
-      played: 0,
-      win: 0,
-      loss: 0,
-      draw: 0,
-      goals: 0,
-      points: 0
-    })));
 
     document.getElementById("teamSelector").selectedIndex = -1;
     document.getElementById("groupCount").value = "0";
@@ -349,6 +349,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-  </script>
+</script>
+
 </body>
 </html>
