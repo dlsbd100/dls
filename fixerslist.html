@@ -249,10 +249,11 @@
     pointTablesContainer.innerHTML = allPointsHTML;
   }
 
-  async function savePointTable(groupName, team, played, win, loss, draw, goals, points) {
+  async function savePointTable(groupName, teams) {
+    // Automatically create the point table in Firestore
     await addDoc(collection(db, "pointTables"), {
       groupName,
-      teams: team.map(t => ({
+      teams: teams.map(t => ({
         team: t.team,
         played: t.played,
         win: t.win,
@@ -305,6 +306,17 @@
     }
 
     Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+
+    // Save point table after matches are created
+    await savePointTable(`Group ${String.fromCharCode(65 + groupCount - 1)}`, selectedTeams.map(team => ({
+      team,
+      played: 0,
+      win: 0,
+      loss: 0,
+      draw: 0,
+      goals: 0,
+      points: 0
+    })));
 
     document.getElementById("teamSelector").selectedIndex = -1;
     document.getElementById("groupCount").value = "0";
