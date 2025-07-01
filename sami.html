@@ -18,7 +18,7 @@
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-      import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+      import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -32,84 +32,67 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
-      async function loadPointTables() {
-        const snapshot = await getDocs(collection(db, "pointTables"));
+      async function loadFixers() {
+        const snapshot = await getDocs(collection(db, "fixers"));
         const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
         if (snapshot.empty) {
-          quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+          quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
           return;
         }
 
-        const pointTables = [];
-        snapshot.forEach(doc => pointTables.push(doc.data()));
-
-        // For each group, sort teams and pick top 2
-        const quarterfinalTeams = [];
-
-        pointTables.forEach(pointTable => {
-          pointTable.teams.sort((a, b) => {
-            if (b.points === a.points) {
-              return b.goals - a.goals; // If points are equal, sort by goals
-            }
-            return b.points - a.points; // Otherwise, sort by points
-          });
-
-          // Get top 2 teams from each group
-          const topTwo = pointTable.teams.slice(0, 2);
-          quarterfinalTeams.push(...topTwo);
+        // Collect the fixers data
+        const fixers = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          fixers.push(data);
         });
 
-        // Now generate the quarterfinal matches
+        // Generate quarterfinal matches
         let html = "<div class='mb-4'>";
-        for (let i = 0; i < quarterfinalTeams.length; i += 2) {
-          const team1 = quarterfinalTeams[i];
-          const team2 = quarterfinalTeams[i + 1];
+        
+        fixers.forEach((fix, index) => {
+          // Generate matchups
+          const team1 = fix.team1;
+          const team2 = fix.team2;
+          const matchDate = fix.date;
 
           html += `
             <div class="border p-4 rounded shadow-sm mb-4 bg-white">
               <div class="flex justify-between items-center text-lg font-semibold">
-                <div>${team1.team}</div>
+                <div>${team1}</div>
                 <div>VS</div>
-                <div>${team2.team}</div>
+                <div>${team2}</div>
               </div>
-              <div class="text-sm text-center text-gray-500 mt-2">Quarterfinal Match</div>
-              <button id="startMatch${i}" class="bg-blue-500 text-white rounded py-2 px-4 mt-4">Start Match</button>
+              <div class="text-sm text-center text-gray-500 mt-2">Match Date: ${matchDate}</div>
+              <button id="startMatch${index}" class="bg-blue-500 text-white rounded py-2 px-4 mt-4">Start Match</button>
             </div>
           `;
-        }
+        });
 
         html += "</div>";
         quarterfinalsContainer.innerHTML = html;
-        
+
         // Attach event listeners to start match buttons
-        for (let i = 0; i < quarterfinalTeams.length; i += 2) {
-          document.getElementById(`startMatch${i}`).addEventListener('click', () => {
-            startQuarterfinalMatch(i);
+        fixers.forEach((fix, index) => {
+          document.getElementById(`startMatch${index}`).addEventListener('click', () => {
+            startQuarterfinalMatch(index);
           });
-        }
+        });
       }
 
       async function startQuarterfinalMatch(matchIndex) {
-        const team1 = document.querySelectorAll('#quarterfinalsContainer .border')[matchIndex].querySelectorAll('.flex > div')[0].textContent;
-        const team2 = document.querySelectorAll('#quarterfinalsContainer .border')[matchIndex].querySelectorAll('.flex > div')[2].textContent;
+        const snapshot = await getDocs(collection(db, "fixers"));
+        const fix = snapshot.docs[matchIndex].data();
+        const team1 = fix.team1;
+        const team2 = fix.team2;
 
-        // Create a new fixer for this match
-        await addDoc(collection(db, "fixers"), {
-          team1,
-          team2,
-          date: new Date().toISOString().split("T")[0], // Set to current date for now
-          team1Goal: null,
-          team2Goal: null,
-          status: "Pending"
-        });
-
-        // You can also create a match preview or proceed to actual match screen.
+        // You can add logic here to mark the match as started or perform other actions
         alert(`Quarterfinal match between ${team1} and ${team2} has been scheduled!`);
       }
 
-      // Load the point tables to generate the quarterfinal matches
-      loadPointTables();
+      // Load the fixers to generate the quarterfinal matches
+      loadFixers();
     </script>
 </body>
 </html>
