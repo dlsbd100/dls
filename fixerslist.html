@@ -228,6 +228,11 @@
         const team1 = topTeams[i];
         const team2 = topTeams[i + 1];
 
+        let winner = "None";
+        // Simulate winner for quarterfinals
+        // For now, assuming the first team in each pair wins
+        winner = team1.team;
+
         quarterfinalsHTML += `
           <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
             <div class="text-center text-[13px] text-gray-500 font-semibold">Quarterfinal ${i / 2 + 1}</div>
@@ -236,6 +241,7 @@
               <div class="text-base font-bold text-red-500">VS</div>
               <div class="text-sm font-semibold text-gray-600">${team2.team}</div>
             </div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
           </div>`;
       }
 
