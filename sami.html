@@ -72,37 +72,9 @@
       if (!user) {
         window.location.href = "login.html";
       } else {
-        loadPlayers();
         loadTopTeams(); // Loading top 2 teams after players
       }
     });
-
-    async function loadPlayers() {
-      try {
-        const playersSnapshot = await getDocs(collection(db, "playersform"));
-        const playersTableBody = document.getElementById("playersTableBody");
-
-        if (playersSnapshot.empty) {
-          playersTableBody.innerHTML = `<div class="text-center p-3 text-gray-500">No players found.</div>`;
-          return;
-        }
-
-        let html = "";
-        playersSnapshot.forEach(doc => {
-          const p = doc.data();
-          html += `
-            <div class="border-t hover:bg-gray-50 flex">
-              <div class="p-2 border w-32">${p.team || "N/A"}</div>
-            </div>`;
-        });
-
-        playersTableBody.innerHTML = html;
-
-      } catch (e) {
-        console.error("Error loading players:", e);
-        document.getElementById("playersTableBody").innerHTML = `<div class="text-center text-red-600 p-3">${e.message}</div>`;
-      }
-    }
 
     async function loadTopTeams() {
       try {
