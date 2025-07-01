@@ -2,11 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team List</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Team List - Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white shadow-md relative">
+    <div class="max-w-7xl mx-auto px-4 py-3 relative flex items-center justify-center">
+      <p onclick="window.location.href='admin.html'" class="absolute left-4 text-gray-700 cursor-pointer">
+        <i class="fas fa-arrow-left text-2xl"></i>
+      </p>
+      <h1 class="text-xl font-bold text-gray-800">Team List</h1>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="p-4 md:p-6 space-y-6 overflow-auto flex-grow">
+
+    <!-- Team List Section -->
+    <div class="bg-white shadow rounded p-4">
+      <div class="text-xl font-semibold text-blue-700 mb-4">Team List</div>
+      <div class="overflow-x-auto max-h-[600px]">
+        <table class="w-full text-xs border border-gray-300 rounded overflow-hidden min-w-[600px]">
+          <thead class="bg-gray-100 sticky top-0 z-10">
+            <tr>
+              <th class="p-2 border">Team Name</th>
+              <th class="p-2 border">Region</th>
+              <th class="p-2 border">Matches Played</th>
+              <th class="p-2 border">Wins</th>
+              <th class="p-2 border">Points</th>
+            </tr>
+          </thead>
+          <tbody id="teamTableBody">
+            <tr><td colspan="5" class="p-3 text-center text-gray-500">Loading teams...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Firebase + Logic -->
   <script type="module">
-    // Firebase Configuration
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -16,67 +59,52 @@
       storageBucket: "dlstournament-31ac1.appspot.com",
       messagingSenderId: "874377019055",
       appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
+      measurementId: "G-0DGFJEV6GL"
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Function to load teams
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        loadTeams();
+      }
+    });
+
     async function loadTeams() {
-      const snapshot = await getDocs(collection(db, "playersform"));
-      const teams = new Set();
+      try {
+        const teamsSnapshot = await getDocs(collection(db, "teamsform"));
+        const teamTableBody = document.getElementById("teamTableBody");
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        console.log(data);  // Check if 'team' field exists
-        if (data.team) teams.add(data.team);
-      });
+        if (teamsSnapshot.empty) {
+          teamTableBody.innerHTML = `<tr><td colspan="5" class="text-center p-3">No teams found.</td></tr>`;
+          return;
+        }
 
-      const teamList = Array.from(teams);
-      console.log(teamList);  // Log the team list
-      document.getElementById("teamList").innerHTML = teamList.map(t => `<li class="text-lg text-gray-800">${t}</li>`).join("");
+        let html = "";
+        teamsSnapshot.forEach(doc => {
+          const t = doc.data();
+          html += `
+            <tr class="border-t hover:bg-gray-50">
+              <td class="p-2 border">${t.teamName || "N/A"}</td>
+              <td class="p-2 border">${t.region || "N/A"}</td>
+              <td class="p-2 border">${t.matchesPlayed ?? "N/A"}</td>
+              <td class="p-2 border">${t.wins ?? "N/A"}</td>
+              <td class="p-2 border">${t.points ?? "N/A"}</td>
+            </tr>`;
+        });
+
+        teamTableBody.innerHTML = html;
+
+      } catch (e) {
+        console.error("Error loading teams:", e);
+        document.getElementById("teamTableBody").innerHTML = `<tr><td colspan="5" class="text-center text-red-600">${e.message}</td></tr>`;
+      }
     }
-
-    // Load teams when the page is loaded
-    document.addEventListener("DOMContentLoaded", loadTeams);
   </script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f0f4f8;
-    }
-    .container {
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 20px;
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #333;
-    }
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-    li {
-      background-color: #e9ecef;
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 5px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Team List</h1>
-    <ul id="teamList"></ul>
-  </div>
+
 </body>
 </html>
