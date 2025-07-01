@@ -75,9 +75,10 @@
     collection,
     getDocs,
     addDoc,
-    deleteDoc,
     updateDoc,
-    doc
+    doc,
+    getDoc,
+    setDoc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -331,19 +332,6 @@
     pointTablesContainer.innerHTML = allPointsHTML;
   }
 
-  async function savePointTable(groupName, team, played, win, loss, draw, goals, points) {
-    await addDoc(collection(db, "pointTables"), {
-      groupName,
-      team,
-      played,
-      win,
-      loss,
-      draw,
-      goals,
-      points
-    });
-  }
-
   document.getElementById("addFixerBtn").addEventListener("click", async () => {
     const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
     const baseDate = document.getElementById("fixerDate").value;
@@ -416,6 +404,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
+
   </script>
 </body>
 </html>
