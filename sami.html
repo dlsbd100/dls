@@ -38,6 +38,22 @@
       </div>
     </div>
 
+    <!-- Point Tables Section -->
+    <div class="bg-white shadow rounded p-4 mt-6">
+      <div class="text-xl font-semibold text-blue-700 mb-4">Point Tables</div>
+      <div class="overflow-x-auto max-h-[600px]">
+        <div class="w-full text-xs border border-gray-300 rounded overflow-hidden min-w-[600px]">
+          <div class="bg-gray-100 sticky top-0 z-10 flex">
+            <div class="p-2 w-32 text-gray-600">Group</div>
+            <div class="p-2 w-32 text-gray-600">Top 2 Teams</div>
+          </div>
+          <div id="pointTablesBody">
+            <div class="p-3 text-center text-gray-500">Loading point tables...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- Firebase + Logic -->
@@ -65,6 +81,7 @@
         window.location.href = "login.html";
       } else {
         loadPlayers();
+        loadPointTables();
       }
     });
 
@@ -92,6 +109,38 @@
       } catch (e) {
         console.error("Error loading players:", e);
         document.getElementById("playersTableBody").innerHTML = `<div class="text-center text-red-600 p-3">${e.message}</div>`;
+      }
+    }
+
+    async function loadPointTables() {
+      try {
+        const pointTablesSnapshot = await getDocs(collection(db, "pointTables"));
+        const pointTablesBody = document.getElementById("pointTablesBody");
+
+        if (pointTablesSnapshot.empty) {
+          pointTablesBody.innerHTML = `<div class="text-center p-3 text-gray-500">No point tables found.</div>`;
+          return;
+        }
+
+        let html = "";
+        pointTablesSnapshot.forEach(doc => {
+          const data = doc.data();
+          // Assuming data has a structure like { group: "A", teams: [{name: "Team 1", points: 10}, {name: "Team 2", points: 9}] }
+          const top2Teams = data.teams.sort((a, b) => b.points - a.points).slice(0, 2); // Sort by points and get top 2 teams
+
+          const top2TeamsNames = top2Teams.map(team => team.name).join(", ");
+          html += `
+            <div class="border-t hover:bg-gray-50 flex">
+              <div class="p-2 border w-32">${data.group || "N/A"}</div>
+              <div class="p-2 border w-32">${top2TeamsNames || "N/A"}</div>
+            </div>`;
+        });
+
+        pointTablesBody.innerHTML = html;
+
+      } catch (e) {
+        console.error("Error loading point tables:", e);
+        document.getElementById("pointTablesBody").innerHTML = `<div class="text-center text-red-600 p-3">${e.message}</div>`;
       }
     }
   </script>
