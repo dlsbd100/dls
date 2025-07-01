@@ -157,30 +157,35 @@
         groupIndex++;
       });
 
-      // Quarterfinal Fixtures Generation
-      const topTeams = allGroupsPoints.map(g => g.sortedTeams.slice(0, 2)); // Top 2 from each group
-      const quarterFinalPairs = [
-        [topTeams[0][0], topTeams[1][1]],
-        [topTeams[1][0], topTeams[0][1]],
-        [topTeams[2]?.[0], topTeams[3]?.[1]],
-        [topTeams[3]?.[0], topTeams[2]?.[1]],
-      ].filter(pair => pair[0] && pair[1]); // Ignore undefined pairs if groups < 4
+      // Generate Quarterfinals based on top 2 from each group
+      const quarterFinals = generateQuarterFinals(allGroupsPoints);
 
       fixersHTML += `<div class="bg-yellow-100 px-3 py-2 rounded font-semibold text-yellow-800 mb-2 mt-4">Quarterfinal Fixtures</div>`;
-      quarterFinalPairs.forEach((match, i) => {
+      quarterFinals.forEach((match, i) => {
+        const g1 = match.team1Goal ?? "-";
+        const g2 = match.team2Goal ?? "-";
+        let winner = "TBD";
+
+        if (typeof match.team1Goal === "number" && typeof match.team2Goal === "number") {
+          winner = match.team1Goal > match.team2Goal
+            ? match.team1
+            : match.team2Goal > match.team1Goal
+            ? match.team2
+            : "Draw";
+        }
+
         fixersHTML += `
           <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-            <div class="text-center text-[13px] text-gray-500 font-semibold">Match ${i + 1}</div>
+            <div class="text-center text-[13px] text-gray-500 font-semibold">Quarterfinal ${i + 1}</div>
             <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-600">${match[0].team} <span class="text-black">(-)</span></div>
+              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${g1})</span></div>
               <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${match[1].team} <span class="text-black">(-)</span></div>
+              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${g2})</span></div>
             </div>
-            <div class="text-center text-green-600 text-xs font-medium">Winner: -</div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
           </div>`;
       });
 
-      // Point Tables
       allPointsHTML = allGroupsPoints.map(({ groupName, sortedTeams }) => `
         <div class="mb-4">
           <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupName}</div>
@@ -217,6 +222,21 @@
 
       fixersContainer.innerHTML = fixersHTML;
       pointTablesContainer.innerHTML = allPointsHTML;
+    }
+
+    function generateQuarterFinals(groups) {
+      const topTeams = groups.map(g => g.sortedTeams.slice(0, 2));
+      const qfs = [];
+
+      for (let i = 0; i < topTeams.length / 2; i++) {
+        const group1 = topTeams[i];
+        const group2 = topTeams[topTeams.length - 1 - i];
+
+        qfs.push({ team1: group1[0].team, team2: group2[1].team });
+        qfs.push({ team1: group2[0].team, team2: group1[1].team });
+      }
+
+      return qfs;
     }
 
     function addDays(dateStr, days) {
