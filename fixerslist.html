@@ -227,6 +227,7 @@
       for (let i = 0; i < topTeams.length; i += 2) {
         const team1 = topTeams[i];
         const team2 = topTeams[i + 1];
+        const winner = getWinner(team1, team2);  // Determine the winner
 
         quarterfinalsHTML += `
           <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
@@ -236,10 +237,18 @@
               <div class="text-base font-bold text-red-500">VS</div>
               <div class="text-sm font-semibold text-gray-600">${team2.team}</div>
             </div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
           </div>`;
       }
 
       return quarterfinalsHTML;
+    }
+
+    // Helper function to determine winner based on points
+    function getWinner(team1, team2) {
+      if (team1.points > team2.points) return team1.team;
+      if (team2.points > team1.points) return team2.team;
+      return "Draw";  // If points are equal, it's a draw
     }
 
     // Add helper function for date manipulation
