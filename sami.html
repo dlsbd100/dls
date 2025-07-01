@@ -30,7 +30,7 @@
         <table class="w-full text-xs border border-gray-300 rounded overflow-hidden min-w-[600px]">
           <thead class="bg-gray-100 sticky top-0 z-10">
             <tr>
-              <th class="p-2 border">Team Name</th>
+              <th class="p-2 border">Sudo Team Name</th> <!-- This is where the Sudo team name will display -->
               <th class="p-2 border">Region</th>
               <th class="p-2 border">Matches Played</th>
               <th class="p-2 border">Wins</th>
@@ -52,6 +52,7 @@
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
       authDomain: "dlstournament-31ac1.firebaseapp.com",
@@ -62,10 +63,12 @@
       measurementId: "G-0DGFJEV6GL"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // Redirect to login if not authenticated
     onAuthStateChanged(auth, user => {
       if (!user) {
         window.location.href = "login.html";
@@ -74,22 +77,26 @@
       }
     });
 
+    // Load teams data from Firestore
     async function loadTeams() {
       try {
+        // Fetch teams from Firestore
         const teamsSnapshot = await getDocs(collection(db, "teamsform"));
         const teamTableBody = document.getElementById("teamTableBody");
 
+        // Check if no teams are found
         if (teamsSnapshot.empty) {
           teamTableBody.innerHTML = `<tr><td colspan="5" class="text-center p-3">No teams found.</td></tr>`;
           return;
         }
 
+        // Generate HTML for each team
         let html = "";
         teamsSnapshot.forEach(doc => {
           const t = doc.data();
           html += `
             <tr class="border-t hover:bg-gray-50">
-              <td class="p-2 border">${t.teamName || "N/A"}</td>
+              <td class="p-2 border">${t.sudoTeamName || "N/A"}</td> <!-- Display Sudo Team Name -->
               <td class="p-2 border">${t.region || "N/A"}</td>
               <td class="p-2 border">${t.matchesPlayed ?? "N/A"}</td>
               <td class="p-2 border">${t.wins ?? "N/A"}</td>
@@ -97,9 +104,11 @@
             </tr>`;
         });
 
+        // Populate the table body with team data
         teamTableBody.innerHTML = html;
 
       } catch (e) {
+        // Handle any errors
         console.error("Error loading teams:", e);
         document.getElementById("teamTableBody").innerHTML = `<tr><td colspan="5" class="text-center text-red-600">${e.message}</td></tr>`;
       }
