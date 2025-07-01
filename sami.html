@@ -30,13 +30,12 @@
         <table class="w-full text-xs border border-gray-300 rounded overflow-hidden min-w-[600px]">
           <thead class="bg-gray-100 sticky top-0 z-10">
             <tr>
-              <th class="p-2 border w-32">Team</th>
-              <th class="p-2 border">Points</th>
-              <th class="p-2 border">Group</th>
+              <th class="p-2 border w-32">Group</th>
+              <th class="p-2 border w-32">Top 2 Teams</th>
             </tr>
           </thead>
           <tbody id="playersTableBody">
-            <tr><td colspan="3" class="p-3 text-center text-gray-500">Loading players...</td></tr>
+            <tr><td colspan="2" class="p-3 text-center text-gray-500">Loading players...</td></tr>
           </tbody>
         </table>
       </div>
@@ -74,49 +73,37 @@
 
     async function loadPlayers() {
       try {
-        const playersSnapshot = await getDocs(collection(db, "playersform"));
+        const pointTableSnapshot = await getDocs(collection(db, "pointTables"));
         const playersTableBody = document.getElementById("playersTableBody");
 
-        if (playersSnapshot.empty) {
-          playersTableBody.innerHTML = `<tr><td colspan="3" class="text-center p-3">No players found.</td></tr>`;
+        if (pointTableSnapshot.empty) {
+          playersTableBody.innerHTML = `<tr><td colspan="2" class="text-center p-3">No point tables found.</td></tr>`;
           return;
         }
 
-        let players = [];
-        playersSnapshot.forEach(doc => {
-          const p = doc.data();
-          players.push(p);
-        });
-
-        // Grouping by 'group' and sorting by 'points'
-        let groupedPlayers = {};
-        players.forEach(player => {
-          const group = player.group || "N/A";
-          if (!groupedPlayers[group]) {
-            groupedPlayers[group] = [];
-          }
-          groupedPlayers[group].push(player);
-        });
-
-        // Sorting and selecting the top 2 players from each group
         let html = "";
-        Object.keys(groupedPlayers).forEach(group => {
-          const sortedPlayers = groupedPlayers[group].sort((a, b) => b.points - a.points).slice(0, 2);
-          sortedPlayers.forEach(player => {
-            html += `
-              <tr class="border-t hover:bg-gray-50">
-                <td class="p-2 border">${player.team || "N/A"}</td>
-                <td class="p-2 border">${player.points || 0}</td>
-                <td class="p-2 border">${group}</td>
-              </tr>`;
-          });
+        pointTableSnapshot.forEach(doc => {
+          const group = doc.id;
+          const teams = doc.data().teams || [];
+
+          // Sort teams based on points (assumes each team has a 'points' field)
+          teams.sort((a, b) => b.points - a.points);
+
+          // Take top 2 teams
+          const top2Teams = teams.slice(0, 2).map(team => team.name).join(", ") || "N/A";
+
+          html += `
+            <tr class="border-t hover:bg-gray-50">
+              <td class="p-2 border">${group}</td>
+              <td class="p-2 border">${top2Teams}</td>
+            </tr>`;
         });
 
         playersTableBody.innerHTML = html;
 
       } catch (e) {
         console.error("Error loading players:", e);
-        document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="3" class="text-center text-red-600">${e.message}</td></tr>`;
+        document.getElementById("playersTableBody").innerHTML = `<tr><td colspan="2" class="text-center text-red-600">${e.message}</td></tr>`;
       }
     }
   </script>
