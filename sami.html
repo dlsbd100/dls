@@ -72,17 +72,18 @@
         }
 
         let html = "";
-        pointTablesSnapshot.forEach(doc => {
+        const groupNames = ['A', 'B', 'C', 'D']; // Group serials
+        pointTablesSnapshot.forEach((doc, index) => {
           const pointTable = doc.data();
           const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2); // Get top 2 teams
 
           html += `
             <div class="bg-gray-100 p-4 rounded">
-              <div class="font-semibold text-blue-700">${pointTable.groupName}</div>
+              <div class="font-semibold text-blue-700">Group ${groupNames[index]}</div>
               <div class="space-y-2">
-                ${sortedTeams.map(team => `
+                ${sortedTeams.map((team, index) => `
                   <div class="flex justify-between text-sm text-gray-600">
-                    <span>${team.team}</span>
+                    <span>${index + 1}. ${team.team}</span>
                     <span class="font-semibold">${team.points} Points</span>
                   </div>
                 `).join('')}
