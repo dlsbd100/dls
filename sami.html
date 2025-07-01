@@ -1,190 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fixers Info - Admin Panel</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quarterfinal Fixers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
-
-  <!-- Header -->
-  <header class="bg-white shadow-md relative">
-    <div class="max-w-4xl mx-auto px-4 py-3 relative flex items-center justify-center">
-      <p onclick="window.location.href='admin.html'" class="absolute left-4 text-gray-700 cursor-pointer">
-        <i class="fas fa-arrow-left text-2xl"></i>
-      </p>
-      <h1 class="text-xl font-bold text-gray-800">Fixers List</h1>
-    </div>
-  </header>
-
-  <!-- Main -->
-  <main class="max-w-4xl mx-auto p-4 space-y-6">
-    <!-- Start Fixers Info Section -->
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
-      <div class="text-xl font-semibold text-green-700">Football Match Fixers</div>
-      <div class="flex flex-col gap-1">
-        <div class="flex items-center gap-2 flex-wrap">
-          <select id="teamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-26 h-9 overflow-y-auto" size="8"></select>
-          <label class="text-sm text-gray-600 flex items-center gap-2 pl-1">
-            <input type="checkbox" id="selectAllTeams" class="accent-green-600" />
-            Select All Teams
-          </label>
-          <input type="date" id="fixerDate" class="border border-gray-300 rounded p-2 text-sm h-9" />
-          <select id="groupCount" class="border border-gray-300 rounded p-2 text-sm h-9">
-            <option disabled selected>Select Group</option>
-            <option value="1">1 Group</option>
-            <option value="2">2 Groups</option>
-            <option value="3">3 Groups</option>
-            <option value="4">4 Groups</option>
-            <option value="5">5 Groups</option>
-            <option value="6">6 Groups</option>
-            <option value="7">7 Groups</option>
-            <option value="8">8 Groups</option>
-          </select>
-          <button id="addFixerBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 whitespace-nowrap">
-            <i class="fas fa-plus mr-1"></i> Add Fixers
-          </button>
-          <button id="deleteAllBtn" class="bg-red-600 text-white text-sm px-3 py-2 rounded hover:bg-red-700 whitespace-nowrap">
-            <i class="fas fa-trash mr-1"></i> Delete All Fixers
-          </button>
+<body class="bg-gray-50 text-gray-800">
+    <div class="container mx-auto px-4 py-6">
+        <h1 class="text-2xl font-semibold mb-4">Quarterfinal Fixers</h1>
+        
+        <!-- Quarterfinal Matches -->
+        <div id="quarterfinalsContainer">
+            <!-- Matches will be injected here -->
         </div>
-      </div>
     </div>
-    <!-- End Fixers Info Section -->
-  </main>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import {
-      getFirestore,
-      collection,
-      getDocs,
-      addDoc,
-      deleteDoc,
-      updateDoc,
-      doc,
-      writeBatch
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+      import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
-      authDomain: "dlstournament-31ac1.firebaseapp.com",
-      projectId: "dlstournament-31ac1",
-      storageBucket: "dlstournament-31ac1.appspot.com",
-      messagingSenderId: "874377019055",
-      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
-    };
+      const firebaseConfig = {
+        apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
+        authDomain: "dlstournament-31ac1.firebaseapp.com",
+        projectId: "dlstournament-31ac1",
+        storageBucket: "dlstournament-31ac1.appspot.com",
+        messagingSenderId: "874377019055",
+        appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
+      };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
 
-    let teamList = [];
+      async function loadPointTables() {
+        const snapshot = await getDocs(collection(db, "pointTables"));
+        const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
-    onAuthStateChanged(auth, (user) => {
-      if (!user) window.location.href = "login.html";
-      else {
-        loadTeams();
-      }
-    });
-
-    async function loadTeams() {
-      const snapshot = await getDocs(collection(db, "playersform"));
-      const teams = new Set();
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.team) teams.add(data.team);
-      });
-      teamList = Array.from(teams);
-      const selector = document.getElementById("teamSelector");
-      selector.innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
-    }
-
-    async function addFixers() {
-      const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
-      const baseDate = document.getElementById("fixerDate").value;
-      const groupCount = parseInt(document.getElementById("groupCount").value);
-
-      if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
-        Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-        return;
-      }
-
-      if (selectedTeams.length !== groupCount * 4) {
-        Swal.fire({ icon: 'error', title: `Select ${groupCount * 4} teams.`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
-        return;
-      }
-
-      const start = new Date(baseDate);
-      let added = 0;
-
-      for (let g = 0; g < groupCount; g++) {
-        const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
-        const matchDate = new Date(start);
-        matchDate.setDate(start.getDate() + g);
-        const dateStr = matchDate.toISOString().split("T")[0];
-
-        for (let i = 0; i < groupTeams.length; i++) {
-          for (let j = i + 1; j < groupTeams.length; j++) {
-            await addDoc(collection(db, "fixers"), {
-              team1: groupTeams[i],
-              team2: groupTeams[j],
-              date: dateStr,
-              team1Goal: null,
-              team2Goal: null
-            });
-            added++;
-          }
+        if (snapshot.empty) {
+          quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+          return;
         }
+
+        const pointTables = [];
+        snapshot.forEach(doc => pointTables.push(doc.data()));
+
+        // For each group, sort teams and pick top 2
+        const quarterfinalTeams = [];
+
+        pointTables.forEach(pointTable => {
+          pointTable.teams.sort((a, b) => {
+            if (b.points === a.points) {
+              return b.goals - a.goals; // If points are equal, sort by goals
+            }
+            return b.points - a.points; // Otherwise, sort by points
+          });
+
+          // Get top 2 teams from each group
+          const topTwo = pointTable.teams.slice(0, 2);
+          quarterfinalTeams.push(...topTwo);
+        });
+
+        // Now generate the quarterfinal matches
+        let html = "<div class='mb-4'>";
+        for (let i = 0; i < quarterfinalTeams.length; i += 2) {
+          const team1 = quarterfinalTeams[i];
+          const team2 = quarterfinalTeams[i + 1];
+
+          html += `
+            <div class="border p-4 rounded shadow-sm mb-4 bg-white">
+              <div class="flex justify-between items-center text-lg font-semibold">
+                <div>${team1.team}</div>
+                <div>VS</div>
+                <div>${team2.team}</div>
+              </div>
+              <div class="text-sm text-center text-gray-500 mt-2">Quarterfinal Match</div>
+            </div>
+          `;
+        }
+
+        html += "</div>";
+        quarterfinalsContainer.innerHTML = html;
       }
 
-      Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-
-      document.getElementById("teamSelector").selectedIndex = -1;
-      document.getElementById("groupCount").value = "1";
-      document.getElementById("fixerDate").value = "";
-      document.getElementById("selectAllTeams").checked = false;
-
-      loadTeams();  // Reload team list after adding fixers
-    }
-
-    async function deleteAllFixers() {
-      const confirm = await Swal.fire({
-        title: 'Are you sure?',
-        text: "All matches will be deleted!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, delete all!',
-      });
-
-      if (!confirm.isConfirmed) return;
-
-      const batch = writeBatch(db);  // Use batch to avoid multiple firestore calls
-
-      // Delete all matches in fixers collection
-      const snapshotFixers = await getDocs(collection(db, "fixers"));
-      snapshotFixers.forEach(doc => batch.delete(doc.ref));
-
-      // Commit the batch
-      await batch.commit();
-
-      Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-    }
-
-    // Event listeners for button actions
-    document.getElementById("addFixerBtn").addEventListener("click", addFixers);
-    document.getElementById("deleteAllBtn").addEventListener("click", deleteAllFixers);
-
-    // Select/Deselect All Teams
-    document.getElementById("selectAllTeams").addEventListener("change", (e) => {
-      const all = document.getElementById("teamSelector").options;
-      for (let o of all) o.selected = e.target.checked;
-    });
-  </script>
-
+      // Load the point tables to generate the quarterfinal matches
+      loadPointTables();
+    </script>
 </body>
 </html>
