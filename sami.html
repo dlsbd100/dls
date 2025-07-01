@@ -111,7 +111,7 @@
       }
     }
 
-    function generateQuarterfinals(teams) {
+    async function generateQuarterfinals(teams) {
       const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
       if (teams.length < 8) {
@@ -119,23 +119,36 @@
         return;
       }
 
-      const fixtures = [
-        { match: `${teams[0].team} vs ${teams[7].team}`, team1Goal: null, team2Goal: null, status: "Pending" },
-        { match: `${teams[1].team} vs ${teams[6].team}`, team1Goal: null, team2Goal: null, status: "Pending" },
-        { match: `${teams[2].team} vs ${teams[5].team}`, team1Goal: null, team2Goal: null, status: "Pending" },
-        { match: `${teams[3].team} vs ${teams[4].team}`, team1Goal: null, team2Goal: null, status: "Pending" },
-      ];
+      // Load fixtures from Firestore (fixers collection)
+      const fixersSnapshot = await getDocs(collection(db, "fixers"));
+      if (fixersSnapshot.empty) {
+        quarterfinalsContainer.innerHTML = `<div class="text-center text-red-600 p-3">No fixtures found in Firestore.</div>`;
+        return;
+      }
+
+      const fixtures = [];
+      fixersSnapshot.forEach(doc => {
+        const data = doc.data();
+        const fixture = {
+          match: `${data.team1} vs ${data.team2}`,
+          date: data.date,
+          team1Goal: data.team1Goal,
+          team2Goal: data.team2Goal,
+          status: data.status
+        };
+        fixtures.push(fixture);
+      });
 
       quarterfinalsContainer.innerHTML = fixtures.map(fixture => `
         <div class="bg-gray-100 p-4 rounded">
           <div class="font-semibold text-blue-700">${fixture.match}</div>
-          <div class="text-center text-xs text-gray-600">Date: ${new Date().toLocaleDateString()}</div>
+          <div class="text-center text-xs text-gray-600">Date: ${fixture.date}</div>
           <div class="flex justify-between items-center px-2 text-sm text-gray-600">
             <div class="text-sm font-semibold text-gray-600">${fixture.team1Goal ?? "-"}</div>
             <div class="text-base font-bold text-red-500">VS</div>
             <div class="text-sm font-semibold text-gray-600">${fixture.team2Goal ?? "-"}</div>
           </div>
-          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal && fixture.team2Goal ? (fixture.team1Goal > fixture.team2Goal ? teams[0].team : teams[1].team) : "None"}</div>
+          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal && fixture.team2Goal ? (fixture.team1Goal > fixture.team2Goal ? fixture.team1 : fixture.team2) : "None"}</div>
           <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
         </div>
       `).join('');
