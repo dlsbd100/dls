@@ -131,7 +131,7 @@
     }
 
     const fixers = [];
-    let groupIndex = 0;
+    let groupIndex = 0; 
 
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
@@ -146,16 +146,14 @@
         data.status = status;
       }
 
-      // If match is finished, update the points
-      if (status === "Finished" && !data.pointsUpdated) {
+      if (status === "Finished" && (data.team1Goal !== null && data.team2Goal !== null)) {
         const team1Points = g1 > g2 ? 3 : (g1 === g2 ? 1 : 0);
         const team2Points = g2 > g1 ? 3 : (g1 === g2 ? 1 : 0);
 
-        await updatePointsInFirestore(data.team1, team1Points, g1, g2);
-        await updatePointsInFirestore(data.team2, team2Points, g2, g1);
-
-        // Mark points as updated for this match to prevent re-counting on refresh
-        await updateDoc(docRef, { pointsUpdated: true });
+        if (data.team1Goal !== g1 || data.team2Goal !== g2) {
+          await updatePointsInFirestore(data.team1, team1Points, g1, g2);
+          await updatePointsInFirestore(data.team2, team2Points, g2, g1);
+        }
       }
 
       fixers.push(data);
@@ -329,8 +327,7 @@
             date: dateStr,
             team1Goal: null,
             team2Goal: null,
-            status: "Pending",
-            pointsUpdated: false // Set to false initially
+            status: "Pending"
           });
           added++;
         }
@@ -390,7 +387,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-           </script>
+        </script>
 
 </body>
 </html>
