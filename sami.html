@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Players List</title>
+  <title>Top Team List</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
@@ -16,7 +16,7 @@
       <p onclick="window.location.href='admin.html'" class="absolute left-4 text-gray-700 cursor-pointer">
         <i class="fas fa-arrow-left text-2xl"></i>
       </p>
-      <h1 class="text-xl font-bold text-gray-800">Players List</h1>
+      <h1 class="text-xl font-bold text-gray-800">Top Team List</h1>
     </div>
   </header>
 
@@ -80,9 +80,9 @@
             <div class="bg-gray-100 p-4 rounded">
               <div class="font-semibold text-blue-700">${pointTable.groupName}</div>
               <div class="space-y-2">
-                ${sortedTeams.map(team => `
+                ${sortedTeams.map((team, index) => `
                   <div class="flex justify-between text-sm text-gray-600">
-                    <span>${team.team}</span>
+                    <span>${index + 1}. ${team.team}</span>
                     <span class="font-semibold">${team.points} Points</span>
                   </div>
                 `).join('')}
