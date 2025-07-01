@@ -186,6 +186,10 @@
             points1 = 1;
             points2 = 1;
           }
+
+          // Update the point table for the teams based on match result
+          updatePointTable(match.team1, points1, match.team1Goal, match.team2Goal);
+          updatePointTable(match.team2, points2, match.team2Goal, match.team1Goal);
         }
 
         html += `
@@ -205,6 +209,30 @@
     });
 
     fixersContainer.innerHTML = html;
+  }
+
+  async function updatePointTable(teamName, points, teamGoals, opponentGoals) {
+    const snapshot = await getDocs(collection(db, "pointTables"));
+    const pointTableDoc = snapshot.docs.find(doc => doc.data().teams.some(t => t.team === teamName));
+    
+    if (!pointTableDoc) return;
+
+    const pointTable = pointTableDoc.data();
+    const team = pointTable.teams.find(t => t.team === teamName);
+    
+    if (team) {
+      // Update team's stats in the point table
+      team.played += 1;
+      team.goals += teamGoals;
+      team.loss += (teamGoals < opponentGoals ? 1 : 0);
+      team.win += (teamGoals > opponentGoals ? 1 : 0);
+      team.draw += (teamGoals === opponentGoals ? 1 : 0);
+      team.points = team.win * 3 + team.draw;
+
+      await updateDoc(doc(db, "pointTables", pointTableDoc.id), {
+        teams: pointTable.teams
+      });
+    }
   }
 
   async function loadPointTables() {
