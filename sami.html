@@ -120,15 +120,23 @@
       }
 
       const fixtures = [
-        { match: `${teams[0].team} vs ${teams[7].team}` },
-        { match: `${teams[1].team} vs ${teams[6].team}` },
-        { match: `${teams[2].team} vs ${teams[5].team}` },
-        { match: `${teams[3].team} vs ${teams[4].team}` },
+        { match: `${teams[0].team} vs ${teams[7].team}`, team1Goal: null, team2Goal: null, status: "Pending" },
+        { match: `${teams[1].team} vs ${teams[6].team}`, team1Goal: null, team2Goal: null, status: "Pending" },
+        { match: `${teams[2].team} vs ${teams[5].team}`, team1Goal: null, team2Goal: null, status: "Pending" },
+        { match: `${teams[3].team} vs ${teams[4].team}`, team1Goal: null, team2Goal: null, status: "Pending" },
       ];
 
       quarterfinalsContainer.innerHTML = fixtures.map(fixture => `
         <div class="bg-gray-100 p-4 rounded">
           <div class="font-semibold text-blue-700">${fixture.match}</div>
+          <div class="text-center text-xs text-gray-600">Date: ${new Date().toLocaleDateString()}</div>
+          <div class="flex justify-between items-center px-2 text-sm text-gray-600">
+            <div class="text-sm font-semibold text-gray-600">${fixture.team1Goal ?? "-"}</div>
+            <div class="text-base font-bold text-red-500">VS</div>
+            <div class="text-sm font-semibold text-gray-600">${fixture.team2Goal ?? "-"}</div>
+          </div>
+          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal && fixture.team2Goal ? (fixture.team1Goal > fixture.team2Goal ? teams[0].team : teams[1].team) : "None"}</div>
+          <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
         </div>
       `).join('');
     }
