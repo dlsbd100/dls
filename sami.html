@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quarterfinal Fixers</title>
+    <title>Teams from Players Form</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
     <div class="container mx-auto px-4 py-6">
-        <h1 class="text-2xl font-semibold mb-4">Quarterfinal Fixers</h1>
+        <h1 class="text-2xl font-semibold mb-4">Teams from Players Form</h1>
         
-        <!-- Quarterfinal Matches -->
-        <div id="quarterfinalsContainer">
-            <!-- Matches will be injected here -->
+        <!-- Teams List -->
+        <div id="teamsContainer">
+            <!-- Teams will be injected here -->
         </div>
     </div>
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-      import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+      import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -32,67 +32,45 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
-      async function loadFixers() {
-        const snapshot = await getDocs(collection(db, "fixers"));
-        const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+      // Function to load team names from the playersform collection
+      async function loadTeams() {
+        try {
+          const snapshot = await getDocs(collection(db, "playersform"));
+          const teamsContainer = document.getElementById("teamsContainer");
 
-        if (snapshot.empty) {
-          quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
-          return;
-        }
+          if (snapshot.empty) {
+            teamsContainer.innerHTML = `<p class="text-gray-500 text-center">No teams found in players form.</p>`;
+            return;
+          }
 
-        // Collect the fixers data
-        const fixers = [];
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          fixers.push(data);
-        });
-
-        // Generate quarterfinal matches
-        let html = "<div class='mb-4'>";
-        
-        fixers.forEach((fix, index) => {
-          // Generate matchups
-          const team1 = fix.team1;
-          const team2 = fix.team2;
-          const matchDate = fix.date;
-
-          html += `
-            <div class="border p-4 rounded shadow-sm mb-4 bg-white">
-              <div class="flex justify-between items-center text-lg font-semibold">
-                <div>${team1}</div>
-                <div>VS</div>
-                <div>${team2}</div>
-              </div>
-              <div class="text-sm text-center text-gray-500 mt-2">Match Date: ${matchDate}</div>
-              <button id="startMatch${index}" class="bg-blue-500 text-white rounded py-2 px-4 mt-4">Start Match</button>
-            </div>
-          `;
-        });
-
-        html += "</div>";
-        quarterfinalsContainer.innerHTML = html;
-
-        // Attach event listeners to start match buttons
-        fixers.forEach((fix, index) => {
-          document.getElementById(`startMatch${index}`).addEventListener('click', () => {
-            startQuarterfinalMatch(index);
+          const teams = new Set(); // Use a Set to ensure unique team names
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.team) {
+              teams.add(data.team); // Add the team name to the set
+            }
           });
-        });
+
+          // Create a list of unique teams
+          let html = "<div class='space-y-4'>";
+          teams.forEach(team => {
+            html += `
+              <div class="bg-white border p-4 rounded shadow-sm">
+                <div class="text-lg font-semibold">${team}</div>
+              </div>
+            `;
+          });
+          html += "</div>";
+
+          teamsContainer.innerHTML = html;
+
+        } catch (error) {
+          console.error("Error fetching teams:", error);
+        }
       }
 
-      async function startQuarterfinalMatch(matchIndex) {
-        const snapshot = await getDocs(collection(db, "fixers"));
-        const fix = snapshot.docs[matchIndex].data();
-        const team1 = fix.team1;
-        const team2 = fix.team2;
-
-        // You can add logic here to mark the match as started or perform other actions
-        alert(`Quarterfinal match between ${team1} and ${team2} has been scheduled!`);
-      }
-
-      // Load the fixers to generate the quarterfinal matches
-      loadFixers();
+      // Load the teams when the page is loaded
+      loadTeams();
     </script>
 </body>
 </html>
