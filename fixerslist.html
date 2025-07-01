@@ -232,10 +232,11 @@
           <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
             <div class="text-center text-[13px] text-gray-500 font-semibold">Quarterfinal ${i / 2 + 1}</div>
             <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-600">${team1.team}</div>
+              <div class="text-sm font-semibold text-gray-600">${team1.team} <span class="text-black">(${team1.goals ?? "-"})</span></div>
               <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${team2.team}</div>
+              <div class="text-sm font-semibold text-gray-600">${team2.team} <span class="text-black">(${team2.goals ?? "-"})</span></div>
             </div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${team1.goals > team2.goals ? team1.team : team2.team}</div>
           </div>`;
       }
 
