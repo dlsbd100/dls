@@ -45,7 +45,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -119,7 +119,7 @@
         return;
       }
 
-      // Load fixtures from Firestore (fixers collection)
+      // Fetch all fixtures from Firestore that are for quarterfinals
       const fixersSnapshot = await getDocs(collection(db, "fixers"));
       if (fixersSnapshot.empty) {
         quarterfinalsContainer.innerHTML = `<div class="text-center text-red-600 p-3">No fixtures found in Firestore.</div>`;
