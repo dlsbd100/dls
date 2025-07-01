@@ -131,7 +131,7 @@
     }
 
     const fixers = [];
-    let groupIndex = 0;
+    let groupIndex = 0; // Start the group index from 0 for Group A
 
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
@@ -141,12 +141,23 @@
       const g2 = data.team2Goal;
       let status = (typeof g1 === 'number' && typeof g2 === 'number') ? "Finished" : "Pending";
 
+      // Auto-update Firestore if status changed
       if (data.status !== status) {
         await updateDoc(docRef, { status });
         data.status = status;
       }
 
       fixers.push(data);
+
+      // Update point table logic here
+      if (status === 'Finished') {
+        const team1Points = g1 > g2 ? 3 : g1 < g2 ? 0 : 1;
+        const team2Points = g1 < g2 ? 3 : g1 > g2 ? 0 : 1;
+
+        // Update both teams' stats in point table
+        await updatePointTable(data.team1, team1Points, g1, g2);
+        await updatePointTable(data.team2, team2Points, g2, g1);
+      }
     }
 
     const fixersByDate = {};
@@ -160,36 +171,20 @@
     const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
 
     let html = "";
-    groupIndex = 0;
+    groupIndex = 0; // Reset group index to 0 for proper grouping
 
     sortedDates.forEach(date => {
-      const groupName = String.fromCharCode(65 + groupIndex);
+      const groupName = String.fromCharCode(65 + groupIndex); // Group A, B, C, D...
       html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
       const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
       matches.forEach((match, idx) => {
         let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
         let winner = "None";
-        let points1 = 0, points2 = 0;
-
         if (typeof match.team1Goal === "number" && typeof match.team2Goal === "number") {
-          if (match.team1Goal > match.team2Goal) {
-            winner = match.team1;
-            points1 = 3;
-            points2 = 0;
-          } else if (match.team2Goal > match.team1Goal) {
-            winner = match.team2;
-            points1 = 0;
-            points2 = 3;
-          } else {
-            winner = "Draw";
-            points1 = 1;
-            points2 = 1;
-          }
-
-          // Update the point table for the teams based on match result
-          updatePointTable(match.team1, points1, match.team1Goal, match.team2Goal);
-          updatePointTable(match.team2, points2, match.team2Goal, match.team1Goal);
+          if (match.team1Goal > match.team2Goal) winner = match.team1;
+          else if (match.team2Goal > match.team1Goal) winner = match.team2;
+          else winner = "Draw";
         }
 
         html += `
@@ -211,27 +206,30 @@
     fixersContainer.innerHTML = html;
   }
 
-  async function updatePointTable(teamName, points, teamGoals, opponentGoals) {
+  async function updatePointTable(teamName, points, goalsFor, goalsAgainst) {
     const snapshot = await getDocs(collection(db, "pointTables"));
-    const pointTableDoc = snapshot.docs.find(doc => doc.data().teams.some(t => t.team === teamName));
     
-    if (!pointTableDoc) return;
+    for (const docSnap of snapshot.docs) {
+      const pointTable = docSnap.data();
 
-    const pointTable = pointTableDoc.data();
-    const team = pointTable.teams.find(t => t.team === teamName);
-    
-    if (team) {
-      // Update team's stats in the point table
-      team.played += 1;
-      team.goals += teamGoals;
-      team.loss += (teamGoals < opponentGoals ? 1 : 0);
-      team.win += (teamGoals > opponentGoals ? 1 : 0);
-      team.draw += (teamGoals === opponentGoals ? 1 : 0);
-      team.points = team.win * 3 + team.draw;
+      // Find the team and update their stats
+      const teamIndex = pointTable.teams.findIndex(t => t.team === teamName);
+      if (teamIndex !== -1) {
+        const team = pointTable.teams[teamIndex];
+        team.played += 1;
+        team.goals += goalsFor;
+        if (points === 3) {
+          team.win += 1;
+        } else if (points === 1) {
+          team.draw += 1;
+        } else {
+          team.loss += 1;
+        }
+        team.points += points;
 
-      await updateDoc(doc(db, "pointTables", pointTableDoc.id), {
-        teams: pointTable.teams
-      });
+        // Update Firestore with the new values
+        await updateDoc(doc(db, "pointTables", docSnap.id), { teams: pointTable.teams });
+      }
     }
   }
 
@@ -290,6 +288,7 @@
   }
 
   async function savePointTable(groupName, teams) {
+    // Automatically create the point table in Firestore for each group
     await addDoc(collection(db, "pointTables"), {
       groupName,
       teams: teams.map(t => ({
@@ -343,6 +342,7 @@
         }
       }
 
+      // Save point table for each group after matches
       await savePointTable(`Group ${String.fromCharCode(65 + g)}`, groupTeams.map(team => ({
         team,
         played: 0,
@@ -387,7 +387,8 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-  </script>
+</script>
+
 
 </body>
 </html>
