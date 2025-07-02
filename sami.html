@@ -45,7 +45,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, query, orderBy, limit, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -65,7 +65,7 @@
       if (!user) {
         window.location.href = "login.html";
       } else {
-        loadTopTeams(); // Loading top 2 teams after players
+        loadTopTeams();
       }
     });
 
@@ -80,15 +80,17 @@
         }
 
         let topTeams = [];
-        let groupCounter = 1; // Counter for group serials (A, B, C, etc.)
+        let groupCounter = 1;
+        topTeamsContainer.innerHTML = ''; // Clear initial message
+
         pointTablesSnapshot.forEach(doc => {
           const pointTable = doc.data();
-          const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2); // Get top 2 teams
-          topTeams.push(...sortedTeams); // Push the top 2 teams from each group into the array
+          const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2);
+          topTeams.push(...sortedTeams);
 
           topTeamsContainer.innerHTML += `
             <div class="bg-gray-100 p-4 rounded">
-              <div class="font-semibold text-blue-700">Group- ${String.fromCharCode(64 + groupCounter)}</div> <!-- Group A, B, C, etc. -->
+              <div class="font-semibold text-blue-700">Group- ${String.fromCharCode(64 + groupCounter)}</div>
               <div class="space-y-2">
                 ${sortedTeams.map((team, index) => `
                   <div class="flex justify-between text-sm text-gray-600">
@@ -99,10 +101,9 @@
               </div>
             </div>
           `;
-          groupCounter++; // Increment the group serial
+          groupCounter++;
         });
 
-        // Generate Quarterfinal Fixtures
         generateQuarterfinals(topTeams);
 
       } catch (e) {
@@ -119,17 +120,15 @@
         return;
       }
 
-      // Get last match date from "fixers" collection
       const fixersQuery = query(collection(db, "fixers"), orderBy("date", "desc"), limit(1));
       const fixersSnapshot = await getDocs(fixersQuery);
-      let lastMatchDate = 'TBA'; // Default value if no match is found
+      let lastMatchDate = 'TBA';
 
       if (!fixersSnapshot.empty) {
         const lastMatch = fixersSnapshot.docs[0].data();
-        lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
+        lastMatchDate = lastMatch.date;
       }
 
-      // Fixtures for quarterfinals: top 2 teams from each group
       const fixtures = [
         { match: `${teams[0].team} vs ${teams[7].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
         { match: `${teams[1].team} vs ${teams[6].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
@@ -138,20 +137,45 @@
       ];
 
       quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
-        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-          <div class="flex justify-center gap-1">
-            <div class="text-sm font-semibold text-gray-600">Quarterfinal ${index + 1} -</div>
-            <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
-          </div>
-          <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[0]} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
-            <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[1]} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
+        <div class="border p-3 rounded shadow-sm text-sm bg-white space-y-2">
+          <div class="font-semibold text-gray-700">Quarterfinal ${index + 1}</div>
+          <div class="flex justify-between">
+            <span>${fixture.match.split(" vs ")[0]} (${fixture.team1Goal ?? "-"})</span>
+            <span class="text-red-600 font-bold">VS</span>
+            <span>${fixture.match.split(" vs ")[1]} (${fixture.team2Goal ?? "-"})</span>
           </div>
           <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.match.split(" vs ")[0] : fixture.match.split(" vs ")[1]) : "None"}</div>
-          <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
+          <div class="flex flex-col md:flex-row gap-2 items-center justify-between">
+            <input type="date" class="border rounded px-2 py-1 text-sm" id="date-${index}" value="${fixture.date !== 'TBA' ? fixture.date : ''}" />
+            <select class="border rounded px-2 py-1 text-sm" id="status-${index}">
+              <option value="Pending" ${fixture.status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option value="Completed" ${fixture.status === 'Completed' ? 'selected' : ''}>Completed</option>
+            </select>
+            <button onclick="updateFixture(${index}, '${fixture.match.split(" vs ")[0]}', '${fixture.match.split(" vs ")[1]}')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Update</button>
+          </div>
         </div>
       `).join('');
+    }
+
+    window.updateFixture = async function(index, team1, team2) {
+      const date = document.getElementById(`date-${index}`).value;
+      const status = document.getElementById(`status-${index}`).value;
+
+      try {
+        const fixtureDocId = `QF${index + 1}_${team1.replace(/\s+/g, "_")}_vs_${team2.replace(/\s+/g, "_")}`;
+        await setDoc(doc(db, "fixers", fixtureDocId), {
+          match: `${team1} vs ${team2}`,
+          date,
+          status,
+          team1Goal: null,
+          team2Goal: null,
+          stage: "Quarterfinal"
+        });
+        alert("Fixture updated successfully!");
+      } catch (error) {
+        console.error("Error updating fixture:", error);
+        alert("Failed to update fixture.");
+      }
     }
 
   </script>
