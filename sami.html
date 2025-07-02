@@ -39,6 +39,14 @@
       </div>
     </div>
 
+    <!-- Semifinal Fixtures Section -->
+    <div class="bg-white shadow rounded p-4">
+      <div class="text-xl font-semibold text-blue-700 mb-4">Semifinal Fixtures</div>
+      <div id="semifinalsContainer" class="space-y-4">
+        <div class="p-3 text-center text-gray-500">Loading semifinals...</div>
+      </div>
+    </div>
+
   </main>
 
   <!-- Firebase + Logic -->
@@ -141,6 +149,41 @@
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="flex justify-center gap-1">
             <div class="text-sm font-semibold text-gray-600">Quarterfinal ${index + 1} -</div>
+            <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
+          </div>
+          <div class="flex justify-between items-center px-2">
+            <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[0]} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
+            <div class="text-base font-bold text-red-500">VS</div>
+            <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[1]} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
+          </div>
+          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.match.split(" vs ")[0] : fixture.match.split(" vs ")[1]) : "None"}</div>
+          <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
+        </div>
+      `).join('');
+
+      // Now generate Semifinals based on winners of quarterfinals
+      const winners = [teams[0], teams[7], teams[1], teams[6], teams[2], teams[5], teams[3], teams[4]]; // Assuming the winners are in the same order as teams
+      generateSemifinals(winners);
+    }
+
+    function generateSemifinals(winners) {
+      const semifinalsContainer = document.getElementById("semifinalsContainer");
+
+      if (winners.length < 4) {
+        semifinalsContainer.innerHTML = `<div class="text-center text-gray-500">Not enough teams for semifinals.</div>`;
+        return;
+      }
+
+      // Fixtures for semifinals: 4 winning teams from quarterfinals
+      const semifinalFixtures = [
+        { match: `${winners[0].team} vs ${winners[3].team}`, date: 'TBA', status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${winners[1].team} vs ${winners[2].team}`, date: 'TBA', status: 'Pending', team1Goal: null, team2Goal: null },
+      ];
+
+      semifinalsContainer.innerHTML = semifinalFixtures.map((fixture, index) => `
+        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+          <div class="flex justify-center gap-1">
+            <div class="text-sm font-semibold text-gray-600">Semifinal ${index + 1} -</div>
             <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
           </div>
           <div class="flex justify-between items-center px-2">
