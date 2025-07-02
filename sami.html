@@ -7,8 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  <!-- SweetAlert2 -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
@@ -35,14 +33,7 @@
 
     <!-- Quarterfinal Fixtures Section -->
     <div class="bg-white shadow rounded p-4">
-      <div class="text-xl font-semibold text-blue-700 mb-4 flex items-center justify-between">
-        <span>Quarterfinal Fixtures</span>
-        <!-- Date Selector and Save Button -->
-        <div class="flex items-center space-x-2">
-          <input type="date" id="matchDateInput" class="border rounded px-2 py-1 text-sm" />
-          <button onclick="saveMatchDate()" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm">Save Date</button>
-        </div>
-      </div>
+      <div class="text-xl font-semibold text-blue-700 mb-4">Quarterfinal Fixtures</div>
       <div id="quarterfinalsContainer" class="space-y-4">
         <div class="p-3 text-center text-gray-500">Loading fixtures...</div>
       </div>
@@ -54,7 +45,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, query, orderBy, limit, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -74,7 +65,7 @@
       if (!user) {
         window.location.href = "login.html";
       } else {
-        loadTopTeams(); // Load top 2 teams after players
+        loadTopTeams(); // Loading top 2 teams after players
       }
     });
 
@@ -90,7 +81,6 @@
 
         let topTeams = [];
         let groupCounter = 1; // Counter for group serials (A, B, C, etc.)
-        topTeamsContainer.innerHTML = ''; // Clear before adding
         pointTablesSnapshot.forEach(doc => {
           const pointTable = doc.data();
           const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2); // Get top 2 teams
@@ -137,15 +127,6 @@
       if (!fixersSnapshot.empty) {
         const lastMatch = fixersSnapshot.docs[0].data();
         lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
-        // Set date input's value to this date (if valid)
-        const dateInput = document.getElementById("matchDateInput");
-        if (dateInput && lastMatchDate !== 'TBA') {
-          dateInput.value = lastMatchDate;
-        }
-      } else {
-        // Clear date input if no date saved yet
-        const dateInput = document.getElementById("matchDateInput");
-        if (dateInput) dateInput.value = "";
       }
 
       // Fixtures for quarterfinals: top 2 teams from each group
@@ -173,56 +154,6 @@
       `).join('');
     }
 
-    // Save selected date to Firestore fixers collection
-    async function saveMatchDate() {
-      const dateInput = document.getElementById("matchDateInput");
-      const selectedDate = dateInput.value; // format: YYYY-MM-DD
-
-      if (!selectedDate) {
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'warning',
-          title: 'Please select a valid date before saving.',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true
-        });
-        return;
-      }
-
-      try {
-        // Add a new document with the selected date to "fixers" collection
-        await addDoc(collection(db, "fixers"), {
-          date: selectedDate,
-          createdAt: new Date()
-        });
-
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: 'Match date saved successfully!',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true
-        });
-
-        // Reload quarterfinal fixtures to update date shown
-        loadTopTeams();
-
-      } catch (error) {
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'error',
-          title: `Failed to save date: ${error.message}`,
-          showConfirmButton: false,
-          timer: 4000,
-          timerProgressBar: true
-        });
-      }
-    }
   </script>
 
 </body>
