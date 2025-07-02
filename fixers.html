@@ -153,7 +153,7 @@
         </div>
       `).join('');
 
-      // Save fixtures to Firestore
+      // Save fixtures to Firestore (Automatically creates 'quarterfinals' collection)
       for (const fixture of fixtures) {
         try {
           await addDoc(collection(db, "quarterfinals"), fixture);
