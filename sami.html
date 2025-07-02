@@ -128,8 +128,14 @@
         { match: `${teams[3].team} vs ${teams[4].team}`, team1: teams[3].team, team2: teams[4].team, team1Goal: null, team2Goal: null, date: 'TBA', status: 'Pending' }
       ];
 
+      // Fetch last match date from "fixers" collection
+      const fixersSnapshot = await getDocs(collection(db, "fixers"));
+      const lastMatch = fixersSnapshot.docs[fixersSnapshot.size - 1]?.data();
+      const lastMatchDate = lastMatch?.date || 'TBA';
+
       // Save the generated fixtures to Firestore as documents
       for (const fixture of fixtures) {
+        fixture.date = lastMatchDate; // Set last match date for all quarterfinal fixtures
         await addDoc(collection(db, "quarterfinals"), fixture);
       }
 
@@ -156,7 +162,7 @@
 
       try {
         const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
-        
+
         if (quarterfinalsSnapshot.empty) {
           quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">No quarterfinal fixtures found.</div>`;
           return;
