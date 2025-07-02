@@ -127,9 +127,12 @@
         { match: `${teams[3].team} vs ${teams[4].team}`, date: '2023-07-10', status: 'Pending', team1Goal: null, team2Goal: null },
       ];
 
-      quarterfinalsContainer.innerHTML = fixtures.map(fixture => `
+      quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-          <div class="text-center text-[13px] text-gray-500 font-semibold">${fixture.date}</div>
+          <div class="flex justify-between">
+            <div class="text-sm font-semibold text-gray-600">${index + 1}. ${fixture.match.split(" vs ")[0]}</div>
+            <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
+          </div>
           <div class="flex justify-between items-center px-2">
             <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[0]} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
             <div class="text-base font-bold text-red-500">VS</div>
