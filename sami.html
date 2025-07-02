@@ -120,21 +120,12 @@
         return;
       }
 
-      // Fetch the last match date from the "fixers" collection
-      let lastMatchDate = 'TBA'; // Default if no match is found
-      const fixersQuery = query(collection(db, "fixers"), orderBy("date", "desc"), limit(1));
-      const fixersSnapshot = await getDocs(fixersQuery);
-      if (!fixersSnapshot.empty) {
-        const lastMatch = fixersSnapshot.docs[0].data();
-        lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
-      }
-
       // Generate Fixtures for Quarterfinals
       const fixtures = [
-        { match: `${teams[0].team} vs ${teams[7].team}`, team1: teams[0].team, team2: teams[7].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
-        { match: `${teams[1].team} vs ${teams[6].team}`, team1: teams[1].team, team2: teams[6].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
-        { match: `${teams[2].team} vs ${teams[5].team}`, team1: teams[2].team, team2: teams[5].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
-        { match: `${teams[3].team} vs ${teams[4].team}`, team1: teams[3].team, team2: teams[4].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' }
+        { match: `${teams[0].team} vs ${teams[7].team}`, team1: teams[0].team, team2: teams[7].team, team1Goal: null, team2Goal: null, date: 'TBA', status: 'Pending' },
+        { match: `${teams[1].team} vs ${teams[6].team}`, team1: teams[1].team, team2: teams[6].team, team1Goal: null, team2Goal: null, date: 'TBA', status: 'Pending' },
+        { match: `${teams[2].team} vs ${teams[5].team}`, team1: teams[2].team, team2: teams[5].team, team1Goal: null, team2Goal: null, date: 'TBA', status: 'Pending' },
+        { match: `${teams[3].team} vs ${teams[4].team}`, team1: teams[3].team, team2: teams[4].team, team1Goal: null, team2Goal: null, date: 'TBA', status: 'Pending' }
       ];
 
       // Save the generated fixtures to Firestore as documents
@@ -160,12 +151,12 @@
       `).join('');
     }
 
-    // Load Quarterfinal Fixtures from Firestore
     async function loadQuarterfinals() {
       const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
       try {
         const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
+        
         if (quarterfinalsSnapshot.empty) {
           quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">No quarterfinal fixtures found.</div>`;
           return;
@@ -177,7 +168,7 @@
           quarterfinalsContainer.innerHTML += `
             <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
               <div class="flex justify-center gap-1">
-               <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
+                <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
               </div>
               <div class="flex justify-between items-center px-2">
                 <div class="text-sm font-semibold text-gray-600">${fixture.team1} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
