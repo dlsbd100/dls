@@ -26,6 +26,11 @@
     <div id="fixers-list" class="space-y-6">
       <p class="text-center text-gray-400">লোড হচ্ছে...</p>
     </div>
+
+    <!-- Quarterfinal Fixers Section -->
+    <div id="quarterfinals-list" class="space-y-6 mt-8">
+      <p class="text-center text-gray-400">লোড হচ্ছে কোয়ার্টারফাইনাল ফিক্সার...</p>
+    </div>
   </main>
 
   <!-- Firebase & Logic -->
@@ -78,6 +83,7 @@
       if (user) {
         await loadTeamPhotos();
         loadFixers();
+        loadQuarterfinals(); // Load the quarterfinals
       }
     });
 
@@ -195,6 +201,46 @@
         });
       });
     }
+
+    // Function to Load Quarterfinals Fixers
+    async function loadQuarterfinals() {
+      const quarterfinalsRef = collection(db, "quarterfinals");
+      onSnapshot(query(quarterfinalsRef), (snapshot) => {
+        const quarterfinalsContainer = document.getElementById("quarterfinals-list");
+
+        if (snapshot.empty) {
+          quarterfinalsContainer.innerHTML = `<p class="text-center text-gray-400">কোনো কোয়ার্টারফাইনাল ফিক্সার নেই।</p>`;
+          return;
+        }
+
+        let html = "";
+
+        snapshot.forEach(docSnap => {
+          const match = docSnap.data();
+          const matchDate = match.date;
+          const team1 = match.team1;
+          const team2 = match.team2;
+
+          html += `
+            <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow space-y-2">
+              <div class="text-center text-gray-400 mb-1 text-md">${matchDate}</div>
+              <div class="flex justify-center items-center gap-3 font-semibold text-white">
+                <div class="flex flex-col items-center gap-1 flex-1 justify-end">
+                  <span>${team1}</span>
+                </div>
+                <div class="text-yellow-400 font-bold text-2xl select-none">VS</div>
+                <div class="flex flex-col items-center gap-1 flex-1 justify-start">
+                  <span>${team2}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        quarterfinalsContainer.innerHTML = html;
+      });
+    }
   </script>
+
 </body>
 </html>
