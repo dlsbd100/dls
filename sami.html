@@ -129,7 +129,7 @@
         lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
       }
 
-      // Generate Fixtures for Quarterfinals
+      // Generate Fixtures for Quarterfinals, with dates adjusted accordingly
       const fixtures = [
         { match: `${teams[0].team} vs ${teams[7].team}`, team1: teams[0].team, team2: teams[7].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
         { match: `${teams[1].team} vs ${teams[6].team}`, team1: teams[1].team, team2: teams[6].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
