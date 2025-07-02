@@ -222,12 +222,11 @@
       allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
     } else {
       allPointsHTML = pointTables.map((pointTable, index) => {
-        // Sorting teams by points first, then by goals
         pointTable.teams.sort((a, b) => {
           if (b.points === a.points) {
-            return b.goals - a.goals; // If points are equal, sort by goals
+            return b.goals - a.goals;
           }
-          return b.points - a.points; // Otherwise, sort by points
+          return b.points - a.points;
         });
 
         return `
@@ -267,6 +266,33 @@
     }
 
     pointTablesContainer.innerHTML = allPointsHTML;
+    generateQuarterfinals(pointTables);
+  }
+
+  async function generateQuarterfinals(pointTables) {
+    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+    let quarterfinals = [];
+
+    pointTables.forEach(group => {
+      const topTeams = group.teams.slice(0, 2);  // Top 2 teams from each group
+      quarterfinals.push(...topTeams);
+    });
+
+    let html = "<div class='mb-4'><div class='font-semibold mb-1 text-red-700'>Quarterfinals</div>";
+    for (let i = 0; i < quarterfinals.length; i += 2) {
+      html += `
+        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+          <div class="text-center text-[13px] text-gray-500 font-semibold">Match ${i / 2 + 1}</div>
+          <div class="flex justify-between items-center px-2">
+            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i].team} </div>
+            <div class="text-base font-bold text-red-500">VS</div>
+            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i + 1].team}</div>
+          </div>
+        </div>
+      `;
+    }
+    html += "</div>";
+    quarterfinalsContainer.innerHTML = html;
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
