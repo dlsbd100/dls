@@ -115,12 +115,6 @@
     document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
   }
 
-  function addDays(dateStr, days) {
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() + days);
-    return d.toISOString().split("T")[0];
-  }
-
   async function loadFixers() {
     const snapshot = await getDocs(collection(db, "fixers"));
     const fixersContainer = document.getElementById("fixersContainer");
@@ -397,7 +391,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-  </script>
+        </script>
 
 </body>
 </html>
