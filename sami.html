@@ -131,11 +131,11 @@
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="text-center text-[13px] text-gray-500 font-semibold">${fixture.date}</div>
           <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${fixture.team1} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
+            <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[0]} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
             <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${fixture.team2} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
+            <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[1]} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
           </div>
-          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.team1 : fixture.team2) : "None"}</div>
+          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.match.split(" vs ")[0] : fixture.match.split(" vs ")[1]) : "None"}</div>
           <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
         </div>
       `).join('');
