@@ -129,19 +129,12 @@
         lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
       }
 
-      // Function to add days to the given date
-      function addDays(dateStr, days) {
-        const date = new Date(dateStr);
-        date.setDate(date.getDate() + days);
-        return date.toISOString().split('T')[0]; // Returns date in YYYY-MM-DD format
-      }
-
-      // Quarterfinal fixtures: top 2 teams from each group
+      // Fixtures for quarterfinals: top 2 teams from each group
       const fixtures = [
-        { match: `${teams[0].team} vs ${teams[7].team}`, date: addDays(lastMatchDate, 3), status: 'Pending', team1Goal: null, team2Goal: null },
-        { match: `${teams[1].team} vs ${teams[6].team}`, date: addDays(lastMatchDate, 3), status: 'Pending', team1Goal: null, team2Goal: null },
-        { match: `${teams[2].team} vs ${teams[5].team}`, date: addDays(lastMatchDate, 3), status: 'Pending', team1Goal: null, team2Goal: null },
-        { match: `${teams[3].team} vs ${teams[4].team}`, date: addDays(lastMatchDate, 3), status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${teams[0].team} vs ${teams[7].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${teams[1].team} vs ${teams[6].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${teams[2].team} vs ${teams[5].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${teams[3].team} vs ${teams[4].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
       ];
 
       quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
