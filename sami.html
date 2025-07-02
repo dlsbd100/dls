@@ -129,24 +129,13 @@
         lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
       }
 
-      // Generate Fixtures for Quarterfinals with Incremented Dates
+      // Generate Fixtures for Quarterfinals
       const fixtures = [
         { match: `${teams[0].team} vs ${teams[7].team}`, team1: teams[0].team, team2: teams[7].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
-        { match: `${teams[1].team} vs ${teams[6].team}`, team1: teams[1].team, team2: teams[6].team, team1Goal: null, team2Goal: null, date: '', status: 'Pending' },
-        { match: `${teams[2].team} vs ${teams[5].team}`, team1: teams[2].team, team2: teams[5].team, team1Goal: null, team2Goal: null, date: '', status: 'Pending' },
-        { match: `${teams[3].team} vs ${teams[4].team}`, team1: teams[3].team, team2: teams[4].team, team1Goal: null, team2Goal: null, date: '', status: 'Pending' }
+        { match: `${teams[1].team} vs ${teams[6].team}`, team1: teams[1].team, team2: teams[6].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
+        { match: `${teams[2].team} vs ${teams[5].team}`, team1: teams[2].team, team2: teams[5].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
+        { match: `${teams[3].team} vs ${teams[4].team}`, team1: teams[3].team, team2: teams[4].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' }
       ];
-
-      // Increment the date for each fixture
-      const incrementDate = (dateStr) => {
-        const date = new Date(dateStr);
-        date.setDate(date.getDate() + 1); // Increment by 1 day
-        return date.toISOString().split('T')[0]; // Format the date
-      };
-
-      fixtures.forEach((fixture, index) => {
-        fixture.date = index === 0 ? lastMatchDate : incrementDate(fixtures[index - 1].date);
-      });
 
       // Save the generated fixtures to Firestore as documents
       for (const fixture of fixtures) {
