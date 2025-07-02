@@ -162,7 +162,9 @@
       `).join('');
 
       // Now generate Semifinals based on winners of quarterfinals
-      const winners = [teams[0], teams[7], teams[1], teams[6], teams[2], teams[5], teams[3], teams[4]]; // Assuming the winners are in the same order as teams
+      const winners = [
+        teams[0], teams[7], teams[1], teams[6], teams[2], teams[5], teams[3], teams[4]
+      ].filter(team => team.team !== "None"); // Filter out "None" winners
       generateSemifinals(winners);
     }
 
