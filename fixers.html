@@ -1,51 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Top Team List</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Match Fixers</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
+<body class="bg-black text-white min-h-screen">
 
   <!-- Header -->
-  <header class="bg-white shadow-md relative">
-    <div class="max-w-7xl mx-auto px-4 py-3 relative flex items-center justify-center">
-      <p onclick="window.location.href='admin.html'" class="absolute left-4 text-gray-700 cursor-pointer">
-        <i class="fas fa-arrow-left text-2xl"></i>
-      </p>
-      <h1 class="text-xl font-bold text-gray-800">Top Team List</h1>
+  <header class="bg-gradient-to-r from-black via-gray-900 to-black w-full max-w-md shadow-md py-2 px-3 mb-3 mx-auto border-b border-gray-700 flex items-center justify-between rounded-b-xl">
+    <div class="flex items-center gap-2">
+      <div class="bg-red-600 bg-opacity-50 border border-red-500 text-red-300 w-9 h-9 flex items-center justify-center font-bold rounded-full shadow">FX</div>
+      <h2 class="text-2xl font-bold bg-gradient-to-r from-red-400 via-yellow-300 to-red-400 bg-clip-text text-transparent">Fixers</h2>
+    </div>
+    <div class="flex items-center gap-1 bg-gradient-to-br from-red-500 via-yellow-700 to-red-500 text-black px-2 py-1 rounded-full shadow-lg border border-yellow-200 h-[29px]">
+      <i class="fa-solid fa-users text-white text-sm"></i>
     </div>
   </header>
 
-  <!-- Main -->
-  <main class="p-4 md:p-6 space-y-6 overflow-auto flex-grow">
-
-    <!-- Point Tables Section -->
-    <div class="bg-white shadow rounded p-4">
-      <div class="text-xl font-semibold text-blue-700 mb-4">Top 2 Teams from Each Group</div>
-      <div id="topTeamsContainer" class="space-y-4">
-        <div class="p-3 text-center text-gray-500">Loading top teams...</div>
-      </div>
+  <!-- Fixers List -->
+  <main class="max-w-3xl mx-auto px-4 mt-6 mb-20">
+    <div id="fixers-list" class="space-y-6">
+      <p class="text-center text-gray-400">লোড হচ্ছে...</p>
     </div>
-
-    <!-- Quarterfinal Fixtures Section -->
-    <div class="bg-white shadow rounded p-4">
-      <div class="text-xl font-semibold text-blue-700 mb-4">Quarterfinal Fixtures</div>
-      <div id="quarterfinalsContainer" class="space-y-4">
-        <div class="p-3 text-center text-gray-500">Loading fixtures...</div>
-      </div>
-    </div>
-
   </main>
 
-  <!-- Firebase + Logic -->
+  <!-- Firebase & Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -53,108 +40,161 @@
       projectId: "dlstournament-31ac1",
       storageBucket: "dlstournament-31ac1.appspot.com",
       messagingSenderId: "874377019055",
-      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
-      measurementId: "G-0DGFJEV6GL"
+      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    onAuthStateChanged(auth, user => {
-      if (!user) {
-        window.location.href = "login.html";
-      } else {
-        loadTopTeams(); // Loading top 2 teams after players
+    let teamPhotos = {};
+    let fixersDocs = {};
+
+    async function loadTeamPhotos() {
+      const snap = await getDocs(collection(db, "playersform"));
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (data.team && data.photoUrl) {
+          teamPhotos[data.team.trim().toLowerCase()] = data.photoUrl;
+        }
+      });
+    }
+
+    function addDays(dateStr, days) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split("T")[0];
+    }
+
+    function convertBanglaToEnglish(str) {
+      const map = {
+        '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
+        '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
+      };
+      return str.replace(/[০-৯]/g, digit => map[digit]);
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        await loadTeamPhotos();
+        loadFixers();
       }
     });
 
-    async function loadTopTeams() {
-      try {
-        const pointTablesSnapshot = await getDocs(collection(db, "pointTables"));
-        const topTeamsContainer = document.getElementById("topTeamsContainer");
+    function loadFixers() {
+      const fixersRef = collection(db, "fixers");
+      onSnapshot(query(fixersRef), (snapshot) => {
+        const fixersContainer = document.getElementById("fixers-list");
 
-        if (pointTablesSnapshot.empty) {
-          topTeamsContainer.innerHTML = `<div class="text-center p-3 text-gray-500">No point tables found.</div>`;
+        if (snapshot.empty) {
+          fixersContainer.innerHTML = `<p class="text-center text-gray-400">কোনো ফিক্সার নেই।</p>`;
           return;
         }
 
-        let topTeams = [];
-        let groupCounter = 1; // Counter for group serials (A, B, C, etc.)
-        pointTablesSnapshot.forEach(doc => {
-          const pointTable = doc.data();
-          const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2); // Get top 2 teams
-          topTeams.push(...sortedTeams); // Push the top 2 teams from each group into the array
+        const fixers = [];
+        fixersDocs = {};
 
-          topTeamsContainer.innerHTML += `
-            <div class="bg-gray-100 p-4 rounded">
-              <div class="font-semibold text-blue-700">Group- ${String.fromCharCode(64 + groupCounter)}</div> <!-- Group A, B, C, etc. -->
-              <div class="space-y-2">
-                ${sortedTeams.map((team, index) => `
-                  <div class="flex justify-between text-sm text-gray-600">
-                    <span>${index + 1}. ${team.team}</span>
-                    <span class="font-semibold">${team.points} Points</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `;
-          groupCounter++; // Increment the group serial
+        snapshot.forEach(docSnap => {
+          fixers.push(docSnap.data());
+          const d = docSnap.data();
+          const key = `${d.team1}__${d.team2}__${d.date}`;
+          fixersDocs[key] = docSnap.ref;
         });
 
-        // Generate Quarterfinal Fixtures
-        generateQuarterfinals(topTeams);
+        const fixersByDate = {};
+        fixers.forEach(fix => {
+          const key = fix.date;
+          if (!fixersByDate[key]) fixersByDate[key] = [];
+          fixersByDate[key].push(fix);
+        });
 
-      } catch (e) {
-        console.error("Error loading top teams:", e);
-        document.getElementById("topTeamsContainer").innerHTML = `<div class="text-center text-red-600 p-3">${e.message}</div>`;
-      }
+        const sortedDates = Object.keys(fixersByDate).sort();
+        const baseDate = sortedDates[0];
+        let html = "";
+
+        sortedDates.forEach((date, groupIndex) => {
+          const groupName = String.fromCharCode(65 + groupIndex);
+          html += `<div class="text-lg font-semibold text-yellow-400 mb-2">Group ${groupName}</div>`;
+
+          const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+
+          matches.forEach((match, idx) => {
+            const matchDate = addDays(baseDate, idx);
+            const team1Img = teamPhotos[match.team1.trim().toLowerCase()] || "";
+            const team2Img = teamPhotos[match.team2.trim().toLowerCase()] || "";
+
+            const key = `${match.team1}__${match.team2}__${match.date}`;
+            const t1GoalVal = (match.team1Goal ?? "").toString();
+            const t2GoalVal = (match.team2Goal ?? "").toString();
+
+            html += `
+              <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow space-y-2">
+                <div class="text-center text-gray-400 mb-1 text-md">${matchDate}</div>
+                <div class="flex justify-center items-center gap-3 font-semibold text-white">
+                  <div class="flex flex-col items-center gap-1 flex-1 justify-end">
+                    ${team1Img ? `<img src="${team1Img}" class="w-10 h-10 rounded-full" alt="${match.team1}" />` : ""}
+                    <span>${match.team1}</span>
+                    <input type="text" inputmode="numeric" placeholder="0" id="goal1-${key}" value="${t1GoalVal}" class="mt-1 w-16 text-black rounded px-1 py-0.5 text-center text-sm goal-input" />
+                  </div>
+
+                  <div class="text-yellow-400 font-bold text-2xl select-none">VS</div>
+
+                  <div class="flex flex-col items-center gap-1 flex-1 justify-start">
+                    ${team2Img ? `<img src="${team2Img}" class="w-10 h-10 rounded-full" alt="${match.team2}" />` : ""}
+                    <span>${match.team2}</span>
+                    <input type="text" inputmode="numeric" placeholder="0" id="goal2-${key}" value="${t2GoalVal}" class="mt-1 w-16 text-black rounded px-1 py-0.5 text-center text-sm goal-input" />
+                  </div>
+                </div>
+                <div class="text-center">
+                  <button data-key="${key}" class="update-goal-btn bg-yellow-400 text-black font-semibold px-3 py-1 rounded hover:bg-yellow-300 transition duration-200">Update</button>
+                </div>
+              </div>
+            `;
+          });
+        });
+
+        fixersContainer.innerHTML = html;
+
+        // Convert input to English digits only
+        document.querySelectorAll(".goal-input").forEach(input => {
+          input.addEventListener("input", () => {
+            input.value = convertBanglaToEnglish(input.value.replace(/[^০-৯0-9]/g, ''));
+          });
+        });
+
+        document.querySelectorAll(".update-goal-btn").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            const key = e.currentTarget.getAttribute("data-key");
+            const goal1Input = document.getElementById(`goal1-${key}`);
+            const goal2Input = document.getElementById(`goal2-${key}`);
+
+            let goal1 = convertBanglaToEnglish(goal1Input.value);
+            let goal2 = convertBanglaToEnglish(goal2Input.value);
+
+            goal1 = goal1 === "" ? null : Number(goal1);
+            goal2 = goal2 === "" ? null : Number(goal2);
+
+            if ((goal1 !== null && (isNaN(goal1) || goal1 < 0)) || (goal2 !== null && (isNaN(goal2) || goal2 < 0))) {
+              Swal.fire({ icon: "error", title: "Invalid goal value!", timer: 2000, toast: true, position: "top-end", showConfirmButton: false });
+              return;
+            }
+
+            const docRef = fixersDocs[key];
+            if (!docRef) {
+              Swal.fire({ icon: "error", title: "Document not found!", timer: 2000, toast: true, position: "top-end", showConfirmButton: false });
+              return;
+            }
+
+            await updateDoc(docRef, {
+              team1Goal: goal1,
+              team2Goal: goal2,
+            });
+
+            Swal.fire({ icon: "success", title: "Goal updated!", timer: 2000, toast: true, position: "top-end", showConfirmButton: false });
+          });
+        });
+      });
     }
-
-    async function generateQuarterfinals(teams) {
-      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
-
-      if (teams.length < 8) {
-        quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">Not enough teams for quarterfinals.</div>`;
-        return;
-      }
-
-      // Get last match date from "fixers" collection
-      const fixersQuery = query(collection(db, "fixers"), orderBy("date", "desc"), limit(1));
-      const fixersSnapshot = await getDocs(fixersQuery);
-      let lastMatchDate = 'TBA'; // Default value if no match is found
-
-      if (!fixersSnapshot.empty) {
-        const lastMatch = fixersSnapshot.docs[0].data();
-        lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
-      }
-
-      // Fixtures for quarterfinals: top 2 teams from each group
-      const fixtures = [
-        { match: `${teams[0].team} vs ${teams[7].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
-        { match: `${teams[1].team} vs ${teams[6].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
-        { match: `${teams[2].team} vs ${teams[5].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
-        { match: `${teams[3].team} vs ${teams[4].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
-      ];
-
-      quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
-        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-          <div class="flex justify-center gap-1">
-            <div class="text-sm font-semibold text-gray-600">Quarterfinal ${index + 1} -</div>
-            <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
-          </div>
-          <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[0]} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
-            <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[1]} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
-          </div>
-          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.match.split(" vs ")[0] : fixture.match.split(" vs ")[1]) : "None"}</div>
-          <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
-        </div>
-      `).join('');
-    }
-
   </script>
-
 </body>
 </html>
