@@ -22,7 +22,6 @@
 
   <!-- Main -->
   <main class="p-4 md:p-6 space-y-6 overflow-auto flex-grow">
-
     <!-- Point Tables Section -->
     <div class="bg-white shadow rounded p-4">
       <div class="text-xl font-semibold text-blue-700 mb-4">Top 2 Teams from Each Group</div>
@@ -39,6 +38,11 @@
       </div>
     </div>
 
+    <!-- Last Match Date Section -->
+    <div class="bg-white shadow rounded p-4">
+      <div class="text-xl font-semibold text-blue-700 mb-4">Last Match Date</div>
+      <div id="lastMatchDate" class="text-gray-600">Loading last match date...</div>
+    </div>
   </main>
 
   <!-- Firebase + Logic -->
@@ -67,8 +71,22 @@
       } else {
         loadTopTeams(); // Loading top 2 teams after players
         loadQuarterfinals(); // Loading quarterfinal fixtures
+        loadLastMatchDate(); // Loading last match date
       }
     });
+
+    async function loadLastMatchDate() {
+      const fixersCollection = collection(db, "fixers");
+      const fixersSnapshot = await getDocs(query(fixersCollection, orderBy("date", "desc"), limit(1)));
+      
+      if (!fixersSnapshot.empty) {
+        const lastMatch = fixersSnapshot.docs[0].data();
+        const lastMatchDate = lastMatch.date.toDate().toLocaleDateString(); // Convert Firestore Timestamp to Date
+        document.getElementById("lastMatchDate").textContent = `Last Match Date: ${lastMatchDate}`;
+      } else {
+        document.getElementById("lastMatchDate").textContent = "No matches found.";
+      }
+    }
 
     async function loadTopTeams() {
       try {
@@ -120,21 +138,12 @@
         return;
       }
 
-      // Fetch the last match date from the "fixers" collection
-      let lastMatchDate = 'TBA'; // Default if no match is found
-      const fixersQuery = query(collection(db, "fixers"), orderBy("date", "desc"), limit(1));
-      const fixersSnapshot = await getDocs(fixersQuery);
-      if (!fixersSnapshot.empty) {
-        const lastMatch = fixersSnapshot.docs[0].data();
-        lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
-      }
-
-      // Generate Fixtures for Quarterfinals, with dates adjusted accordingly
+      // Generate Fixtures for Quarterfinals
       const fixtures = [
-        { match: `${teams[0].team} vs ${teams[7].team}`, team1: teams[0].team, team2: teams[7].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
-        { match: `${teams[1].team} vs ${teams[6].team}`, team1: teams[1].team, team2: teams[6].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
-        { match: `${teams[2].team} vs ${teams[5].team}`, team1: teams[2].team, team2: teams[5].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
-        { match: `${teams[3].team} vs ${teams[4].team}`, team1: teams[3].team, team2: teams[4].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' }
+        { match: `${teams[0].team} vs ${teams[7].team}`, team1: teams[0].team, team2: teams[7].team, team1Goal: null, team2Goal: null, date: 'TBA', status: 'Pending' },
+        { match: `${teams[1].team} vs ${teams[6].team}`, team1: teams[1].team, team2: teams[6].team, team1Goal: null, team2Goal: null, date: 'TBA', status: 'Pending' },
+        { match: `${teams[2].team} vs ${teams[5].team}`, team1: teams[2].team, team2: teams[5].team, team1Goal: null, team2Goal: null, date: 'TBA', status: 'Pending' },
+        { match: `${teams[3].team} vs ${teams[4].team}`, team1: teams[3].team, team2: teams[4].team, team1Goal: null, team2Goal: null, date: 'TBA', status: 'Pending' }
       ];
 
       // Save the generated fixtures to Firestore as documents
@@ -160,12 +169,12 @@
       `).join('');
     }
 
-    // Load Quarterfinal Fixtures from Firestore
     async function loadQuarterfinals() {
       const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
       try {
         const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
+        
         if (quarterfinalsSnapshot.empty) {
           quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">No quarterfinal fixtures found.</div>`;
           return;
