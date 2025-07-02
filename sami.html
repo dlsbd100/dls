@@ -45,7 +45,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -119,35 +119,23 @@
         return;
       }
 
-      // Fetch all fixtures from Firestore that are for quarterfinals
-      const fixersSnapshot = await getDocs(collection(db, "fixers"));
-      if (fixersSnapshot.empty) {
-        quarterfinalsContainer.innerHTML = `<div class="text-center text-red-600 p-3">No fixtures found in Firestore.</div>`;
-        return;
-      }
-
-      const fixtures = [];
-      fixersSnapshot.forEach(doc => {
-        const data = doc.data();
-        const fixture = {
-          match: `${data.team1} vs ${data.team2}`,
-          date: data.date,
-          team1Goal: data.team1Goal || "-",  // If goal is undefined, show dash
-          team2Goal: data.team2Goal || "-",  // If goal is undefined, show dash
-          status: data.status
-        };
-        fixtures.push(fixture);
-      });
+      // Fixtures for quarterfinals: top 2 teams from each group
+      const fixtures = [
+        { match: `${teams[0].team} vs ${teams[7].team}`, date: '2023-07-10', status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${teams[1].team} vs ${teams[6].team}`, date: '2023-07-10', status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${teams[2].team} vs ${teams[5].team}`, date: '2023-07-10', status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${teams[3].team} vs ${teams[4].team}`, date: '2023-07-10', status: 'Pending', team1Goal: null, team2Goal: null },
+      ];
 
       quarterfinalsContainer.innerHTML = fixtures.map(fixture => `
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="text-center text-[13px] text-gray-500 font-semibold">${fixture.date}</div>
           <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${fixture.team1} <span class="text-black">${fixture.team1Goal}</span></div>
+            <div class="text-sm font-semibold text-gray-600">${fixture.team1} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
             <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${fixture.team2} <span class="text-black">${fixture.team2Goal}</span></div>
+            <div class="text-sm font-semibold text-gray-600">${fixture.team2} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
           </div>
-          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== "-" && fixture.team2Goal !== "-" ? (fixture.team1Goal > fixture.team2Goal ? fixture.team1 : fixture.team2) : "None"}</div>
+          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.team1 : fixture.team2) : "None"}</div>
           <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
         </div>
       `).join('');
