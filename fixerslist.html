@@ -328,6 +328,7 @@
       const matchDate = new Date(start);
       matchDate.setDate(start.getDate() + g);
       const dateStr = matchDate.toISOString().split("T")[0];
+      const groupName = `Group ${String.fromCharCode(65 + g)}`;
 
       for (let i = 0; i < groupTeams.length; i++) {
         for (let j = i + 1; j < groupTeams.length; j++) {
@@ -337,13 +338,14 @@
             date: dateStr,
             team1Goal: null,
             team2Goal: null,
-            status: "Pending"
+            status: "Pending",
+            groupName: groupName // Added groupName here
           });
           added++;
         }
       }
 
-      await savePointTable(`Group ${String.fromCharCode(65 + g)}`, groupTeams.map(team => ({
+      await savePointTable(groupName, groupTeams.map(team => ({
         team,
         played: 0,
         win: 0,
@@ -397,7 +399,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-  </script>
+   </script>
 
 </body>
 </html>
