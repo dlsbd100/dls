@@ -42,159 +42,159 @@
   </main>
 
   <!-- Firebase + Logic -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
-      authDomain: "dlstournament-31ac1.firebaseapp.com",
-      projectId: "dlstournament-31ac1",
-      storageBucket: "dlstournament-31ac1.appspot.com",
-      messagingSenderId: "874377019055",
-      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
-      measurementId: "G-0DGFJEV6GL"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
+    authDomain: "dlstournament-31ac1.firebaseapp.com",
+    projectId: "dlstournament-31ac1",
+    storageBucket: "dlstournament-31ac1.appspot.com",
+    messagingSenderId: "874377019055",
+    appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
+    measurementId: "G-0DGFJEV6GL"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-    onAuthStateChanged(auth, user => {
-      if (!user) {
-        window.location.href = "login.html";
-      } else {
-        loadTopTeams(); // Loading top 2 teams after players
-        loadQuarterfinals(); // Loading quarterfinal fixtures
-      }
-    });
-
-    async function loadTopTeams() {
-      try {
-        const pointTablesSnapshot = await getDocs(collection(db, "pointTables"));
-        const topTeamsContainer = document.getElementById("topTeamsContainer");
-
-        if (pointTablesSnapshot.empty) {
-          topTeamsContainer.innerHTML = `<div class="text-center p-3 text-gray-500">No point tables found.</div>`;
-          return;
-        }
-
-        let topTeams = [];
-        let groupCounter = 1; // Counter for group serials (A, B, C, etc.)
-        pointTablesSnapshot.forEach(doc => {
-          const pointTable = doc.data();
-          const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2); // Get top 2 teams
-          topTeams.push(...sortedTeams); // Push the top 2 teams from each group into the array
-
-          topTeamsContainer.innerHTML += `
-            <div class="bg-gray-100 p-4 rounded">
-              <div class="font-semibold text-blue-700">Group- ${String.fromCharCode(64 + groupCounter)}</div> <!-- Group A, B, C, etc. -->
-              <div class="space-y-2">
-                ${sortedTeams.map((team, index) => `
-                  <div class="flex justify-between text-sm text-gray-600">
-                    <span>${index + 1}. ${team.team}</span>
-                    <span class="font-semibold">${team.points} Points</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `;
-          groupCounter++; // Increment the group serial
-        });
-
-        // Generate Quarterfinal Fixtures and Save them to Firestore
-        generateQuarterfinals(topTeams);
-
-      } catch (e) {
-        console.error("Error loading top teams:", e);
-        document.getElementById("topTeamsContainer").innerHTML = `<div class="text-center text-red-600 p-3">${e.message}</div>`;
-      }
+  onAuthStateChanged(auth, user => {
+    if (!user) {
+      window.location.href = "login.html";
+    } else {
+      loadTopTeams(); // Loading top 2 teams after players
+      loadQuarterfinals(); // Loading quarterfinal fixtures
     }
+  });
 
-    async function generateQuarterfinals(teams) {
-      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+  async function loadTopTeams() {
+    try {
+      const pointTablesSnapshot = await getDocs(collection(db, "pointTables"));
+      const topTeamsContainer = document.getElementById("topTeamsContainer");
 
-      if (teams.length < 8) {
-        quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">Not enough teams for quarterfinals.</div>`;
+      if (pointTablesSnapshot.empty) {
+        topTeamsContainer.innerHTML = `<div class="text-center p-3 text-gray-500">No point tables found.</div>`;
         return;
       }
 
-      // Fetch the last match date from the "fixers" collection
-      let lastMatchDate = 'TBA'; // Default if no match is found
-      const fixersQuery = query(collection(db, "fixers"), orderBy("date", "desc"), limit(1));
-      const fixersSnapshot = await getDocs(fixersQuery);
-      if (!fixersSnapshot.empty) {
-        const lastMatch = fixersSnapshot.docs[0].data();
-        lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
-      }
+      let topTeams = [];
+      let groupCounter = 1; // Counter for group serials (A, B, C, etc.)
+      pointTablesSnapshot.forEach(doc => {
+        const pointTable = doc.data();
+        const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2); // Get top 2 teams
+        topTeams.push(...sortedTeams); // Push the top 2 teams from each group into the array
 
-      // Generate Fixtures for Quarterfinals
-      const fixtures = [
-        { match: `${teams[0].team} vs ${teams[7].team}`, team1: teams[0].team, team2: teams[7].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
-        { match: `${teams[1].team} vs ${teams[6].team}`, team1: teams[1].team, team2: teams[6].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
-        { match: `${teams[2].team} vs ${teams[5].team}`, team1: teams[2].team, team2: teams[5].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
-        { match: `${teams[3].team} vs ${teams[4].team}`, team1: teams[3].team, team2: teams[4].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' }
-      ];
-
-      // Save the generated fixtures to Firestore as documents
-      for (const fixture of fixtures) {
-        await addDoc(collection(db, "quarterfinals"), fixture);
-      }
-
-      // Display Fixtures on the UI
-      quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
-        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-          <div class="flex justify-center gap-1">
-            <div class="text-sm font-semibold text-gray-600">Quarterfinal ${index + 1} -</div>
-            <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
-          </div>
-          <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${fixture.team1} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
-            <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${fixture.team2} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
-          </div>
-          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.team1 : fixture.team2) : "None"}</div>
-          <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
-        </div>
-      `).join('');
-    }
-
-    // Load Quarterfinal Fixtures from Firestore
-    async function loadQuarterfinals() {
-      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
-
-      try {
-        const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
-        if (quarterfinalsSnapshot.empty) {
-          quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">No quarterfinal fixtures found.</div>`;
-          return;
-        }
-
-        quarterfinalsContainer.innerHTML = "";
-        quarterfinalsSnapshot.forEach(doc => {
-          const fixture = doc.data();
-          quarterfinalsContainer.innerHTML += `
-            <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-              <div class="flex justify-center gap-1">
-               <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
-              </div>
-              <div class="flex justify-between items-center px-2">
-                <div class="text-sm font-semibold text-gray-600">${fixture.team1} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
-                <div class="text-base font-bold text-red-500">VS</div>
-                <div class="text-sm font-semibold text-gray-600">${fixture.team2} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
-              </div>
-              <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.team1 : fixture.team2) : "None"}</div>
-              <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
+        topTeamsContainer.innerHTML += `
+          <div class="bg-gray-100 p-4 rounded">
+            <div class="font-semibold text-blue-700">Group- ${String.fromCharCode(64 + groupCounter)}</div> <!-- Group A, B, C, etc. -->
+            <div class="space-y-2">
+              ${sortedTeams.map((team, index) => `
+                <div class="flex justify-between text-sm text-gray-600">
+                  <span>${index + 1}. ${team.team}</span>
+                  <span class="font-semibold">${team.points} Points</span>
+                </div>
+              `).join('')}
             </div>
-          `;
-        });
-      } catch (e) {
-        console.error("Error loading quarterfinals:", e);
-        quarterfinalsContainer.innerHTML = `<div class="text-center text-red-600 p-3">${e.message}</div>`;
-      }
+          </div>
+        `;
+        groupCounter++; // Increment the group serial
+      });
+
+      // Generate Quarterfinal Fixtures and Save them to Firestore
+      generateQuarterfinals(topTeams);
+
+    } catch (e) {
+      console.error("Error loading top teams:", e);
+      document.getElementById("topTeamsContainer").innerHTML = `<div class="text-center text-red-600 p-3">${e.message}</div>`;
     }
-  </script>
+  }
+
+  async function generateQuarterfinals(teams) {
+    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+
+    if (teams.length < 8) {
+      quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">Not enough teams for quarterfinals.</div>`;
+      return;
+    }
+
+    // Fetch the last match date from the "fixers" collection
+    let lastMatchDate = 'TBA'; // Default if no match is found
+    const fixersQuery = query(collection(db, "fixers"), orderBy("date", "desc"), limit(1));
+    const fixersSnapshot = await getDocs(fixersQuery);
+    if (!fixersSnapshot.empty) {
+      const lastMatch = fixersSnapshot.docs[0].data();
+      lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
+    }
+
+    // Generate Fixtures for Quarterfinals
+    const fixtures = [
+      { match: `${teams[0].team} vs ${teams[7].team}`, team1: teams[0].team, team2: teams[7].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
+      { match: `${teams[1].team} vs ${teams[6].team}`, team1: teams[1].team, team2: teams[6].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
+      { match: `${teams[2].team} vs ${teams[5].team}`, team1: teams[2].team, team2: teams[5].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' },
+      { match: `${teams[3].team} vs ${teams[4].team}`, team1: teams[3].team, team2: teams[4].team, team1Goal: null, team2Goal: null, date: lastMatchDate, status: 'Pending' }
+    ];
+
+    // Save the generated fixtures to Firestore as documents
+    for (const fixture of fixtures) {
+      await addDoc(collection(db, "quarterfinals"), fixture);
+    }
+
+    // Display Fixtures on the UI with the index number added to the date
+    quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
+      <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+        <div class="flex justify-center gap-1">
+          <div class="text-sm font-semibold text-gray-600">Quarterfinal ${index + 1} -</div>
+          <div class="text-sm font-semibold text-gray-600">Match Date: ${fixture.date}</div> <!-- Show the index with the date -->
+        </div>
+        <div class="flex justify-between items-center px-2">
+          <div class="text-sm font-semibold text-gray-600">${fixture.team1} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
+          <div class="text-base font-bold text-red-500">VS</div>
+          <div class="text-sm font-semibold text-gray-600">${fixture.team2} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
+        </div>
+        <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.team1 : fixture.team2) : "None"}</div>
+        <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
+      </div>
+    `).join('');
+  }
+
+  // Load Quarterfinal Fixtures from Firestore
+  async function loadQuarterfinals() {
+    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+
+    try {
+      const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
+      if (quarterfinalsSnapshot.empty) {
+        quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">No quarterfinal fixtures found.</div>`;
+        return;
+      }
+
+      quarterfinalsContainer.innerHTML = "";
+      quarterfinalsSnapshot.forEach(doc => {
+        const fixture = doc.data();
+        quarterfinalsContainer.innerHTML += `
+          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+            <div class="flex justify-center gap-1">
+              <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
+            </div>
+            <div class="flex justify-between items-center px-2">
+              <div class="text-sm font-semibold text-gray-600">${fixture.team1} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
+              <div class="text-base font-bold text-red-500">VS</div>
+              <div class="text-sm font-semibold text-gray-600">${fixture.team2} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
+            </div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.team1 : fixture.team2) : "None"}</div>
+            <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
+          </div>
+        `;
+      });
+    } catch (e) {
+      console.error("Error loading quarterfinals:", e);
+      quarterfinalsContainer.innerHTML = `<div class="text-center text-red-600 p-3">${e.message}</div>`;
+    }
+  }
+</script>
 
 </body>
 </html>
