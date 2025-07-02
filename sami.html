@@ -22,6 +22,7 @@
 
   <!-- Main -->
   <main class="p-4 md:p-6 space-y-6 overflow-auto flex-grow">
+
     <!-- Point Tables Section -->
     <div class="bg-white shadow rounded p-4">
       <div class="text-xl font-semibold text-blue-700 mb-4">Top 2 Teams from Each Group</div>
@@ -38,11 +39,6 @@
       </div>
     </div>
 
-    <!-- Last Match Date Section -->
-    <div class="bg-white shadow rounded p-4">
-      <div class="text-xl font-semibold text-blue-700 mb-4">Last Match Date</div>
-      <div id="lastMatchDate" class="text-gray-600">Loading last match date...</div>
-    </div>
   </main>
 
   <!-- Firebase + Logic -->
@@ -71,22 +67,8 @@
       } else {
         loadTopTeams(); // Loading top 2 teams after players
         loadQuarterfinals(); // Loading quarterfinal fixtures
-        loadLastMatchDate(); // Loading last match date
       }
     });
-
-    async function loadLastMatchDate() {
-      const fixersCollection = collection(db, "fixers");
-      const fixersSnapshot = await getDocs(query(fixersCollection, orderBy("date", "desc"), limit(1)));
-      
-      if (!fixersSnapshot.empty) {
-        const lastMatch = fixersSnapshot.docs[0].data();
-        const lastMatchDate = lastMatch.date.toDate().toLocaleDateString(); // Convert Firestore Timestamp to Date
-        document.getElementById("lastMatchDate").textContent = `Last Match Date: ${lastMatchDate}`;
-      } else {
-        document.getElementById("lastMatchDate").textContent = "No matches found.";
-      }
-    }
 
     async function loadTopTeams() {
       try {
