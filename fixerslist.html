@@ -328,10 +328,10 @@
     quarterfinalsContainer.innerHTML = html;
 
     // Save Quarterfinal Fixers to Firestore
-    await saveQuarterfinalFixers(quarterfinals);
+    await saveQuarterfinalFixersToDB(quarterfinals);
   }
 
-  async function saveQuarterfinalFixers(quarterfinals) {
+  async function saveQuarterfinalFixersToDB(quarterfinals) {
     const promises = quarterfinals.map((team, index) => {
       if (index % 2 === 0) {
         const team1 = team;
@@ -339,7 +339,7 @@
         const matchDate = new Date();
         matchDate.setDate(matchDate.getDate() + Math.floor(index / 2)); // Adjust date for each match
 
-        return addDoc(collection(db, "fixers"), {
+        return addDoc(collection(db, "quarterfinalFixers"), {
           team1: team1.team,
           team2: team2.team,
           date: matchDate.toISOString().split("T")[0],
@@ -486,8 +486,6 @@
     loadFixers();
   });
 </script>
-
-
   
 </body>
   </html>
