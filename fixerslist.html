@@ -72,7 +72,7 @@
     </div>
   </main>
 
-   <script type="module">
+    <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
@@ -172,7 +172,7 @@
     });
 
     const sortedDates = Object.keys(fixersByDate).sort();
-    const baseDate = sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null; // Last match date
+    const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
 
     let html = "";
     groupIndex = 0;
@@ -208,35 +208,99 @@
     });
 
     fixersContainer.innerHTML = html;
-    generateQuarterfinals(fixers, baseDate); // Start quarterfinals from last match date
   }
 
-  async function generateQuarterfinals(fixers, baseDate) {
+  async function loadPointTables() {
+    const snapshot = await getDocs(collection(db, "pointTables"));
+    const pointTablesContainer = document.getElementById("pointTablesContainer");
+
+    if (snapshot.empty) {
+      pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+      return;
+    }
+
+    const pointTables = [];
+    snapshot.forEach(doc => pointTables.push(doc.data()));
+
+    let allPointsHTML = "";
+    if (pointTables.length === 0) {
+      allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+    } else {
+      allPointsHTML = pointTables.map((pointTable, index) => {
+        pointTable.teams.sort((a, b) => {
+          if (b.points === a.points) {
+            return b.goals - a.goals;
+          }
+          return b.points - a.points;
+        });
+
+        return `
+          <div class="mb-4">
+            <div class="font-semibold mb-1 text-blue-700">Point Table - Group ${String.fromCharCode(65 + index)}</div>
+            <table class="text-sm w-full table-auto border border-gray-200">
+              <thead>
+                <tr class="bg-gray-200">
+                  <th class="px-2 py-1 border">#</th>
+                  <th class="px-2 py-1 border">Team</th>
+                  <th class="px-2 py-1 border text-center">Played</th>
+                  <th class="px-2 py-1 border text-center">Win</th>
+                  <th class="px-2 py-1 border text-center">Loss</th>
+                  <th class="px-2 py-1 border text-center">Draw</th>
+                  <th class="px-2 py-1 border text-center">Goals</th>
+                  <th class="px-2 py-1 border text-center">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pointTable.teams.map((team, i) => `
+                  <tr>
+                    <td class="px-2 py-1 border text-center">${i + 1}</td>
+                    <td class="px-2 py-1 border">${team.team}</td>
+                    <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
+                    <td class="px-2 py-1 border text-center">${team.win}</td>
+                    <td class="px-2 py-1 border text-center">${team.loss}</td>
+                    <td class="px-2 py-1 border text-center">${team.draw}</td>
+                    <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
+                    <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }).join('');
+    }
+
+    pointTablesContainer.innerHTML = allPointsHTML;
+
+    generateQuarterfinals(pointTables);
+  }
+
+  async function generateQuarterfinals(pointTables) {
     const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
     let quarterfinals = [];
 
-    fixers.forEach(fixer => {
-      if (fixer.status === "Finished") {
-        quarterfinals.push(fixer);
-      }
+    pointTables.forEach(group => {
+      const topTeams = group.teams.slice(0, 2);  // Top 2 teams from each group
+      quarterfinals.push(...topTeams);
     });
 
     let html = "<div class='mb-4'><div class='font-semibold mb-1 text-red-700'>Quarterfinals</div>";
-    let matchDate = new Date(baseDate);
+    const baseDate = new Date(); // Set the starting date for the quarterfinals
+    let matchDate = baseDate;
 
     for (let i = 0; i < quarterfinals.length; i += 2) {
-      let team1Goals = quarterfinals[i].team1Goal || "-";
-      let team2Goals = quarterfinals[i + 1].team2Goal || "-";
+      let team1Goals = quarterfinals[i].goals || "-";
+      let team2Goals = quarterfinals[i + 1].goals || "-";
 
       let winner = "None";
       let status = "Pending";
 
       if (team1Goals !== "-" && team2Goals !== "-") {
         if (team1Goals > team2Goals) {
-          winner = quarterfinals[i].team1;
+          winner = quarterfinals[i].team;
           status = "Finished";
         } else if (team2Goals > team1Goals) {
-          winner = quarterfinals[i + 1].team2;
+          winner = quarterfinals[i + 1].team;
           status = "Finished";
         } else {
           winner = "Draw";
@@ -250,9 +314,9 @@
           <div class="text-center text-[13px] text-gray-500 font-semibold">Date: ${matchDate.toISOString().split("T")[0]}</div>
           <div class="text-center text-[13px] text-gray-500 font-semibold">Match ${i / 2 + 1}</div>
           <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i].team1} <span class="text-black">(${team1Goals})</span></div>
+            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i].team} <span class="text-black">(${team1Goals})</span></div>
             <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i + 1].team2} <span class="text-black">(${team2Goals})</span></div>
+            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i + 1].team} <span class="text-black">(${team2Goals})</span></div>
           </div>
           <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
           <div class="text-center text-blue-600 text-xs font-medium">Status: ${status}</div>
@@ -394,8 +458,6 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-  </script>
-
-
+   </script>
 </body>
 </html>
