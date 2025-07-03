@@ -279,16 +279,14 @@
     const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
     let quarterfinals = [];
 
-    // Collect the top 2 teams from each group
     pointTables.forEach(group => {
       const topTeams = group.teams.slice(0, 2);  // Top 2 teams from each group
       quarterfinals.push(...topTeams);
     });
 
-    // Get last match date of each group for quarterfinals starting date
     let html = "<div class='mb-4'><div class='font-semibold mb-1 text-red-700'>Quarterfinals</div>";
-    const lastMatchDate = getLastMatchDate(pointTables);
-    let matchDate = new Date(lastMatchDate);
+    const baseDate = new Date(); // Set the starting date for the quarterfinals
+    let matchDate = baseDate;
 
     for (let i = 0; i < quarterfinals.length; i += 2) {
       let team1Goals = quarterfinals[i].goals || "-";
@@ -324,28 +322,10 @@
           <div class="text-center text-blue-600 text-xs font-medium">Status: ${status}</div>
         </div>
       `;
-      matchDate.setDate(matchDate.getDate() + 1); // Increment date for next match
+      matchDate.setDate(matchDate.getDate() + 1); // Move to the next day
     }
     html += "</div>";
     quarterfinalsContainer.innerHTML = html;
-  }
-
-  function getLastMatchDate(pointTables) {
-    let lastDate = null;
-
-    pointTables.forEach(group => {
-      group.teams.forEach(team => {
-        const teamFixers = team.fixers || [];
-        teamFixers.forEach(fixer => {
-          const matchDate = new Date(fixer.date);
-          if (!lastDate || matchDate > lastDate) {
-            lastDate = matchDate;
-          }
-        });
-      });
-    });
-
-    return lastDate;
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
@@ -478,7 +458,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-    </script>
+   </script>
 
 </body>
 </html>
