@@ -76,9 +76,9 @@
     collection,
     getDocs,
     addDoc,
-    deleteDoc,
     updateDoc,
-    doc
+    doc,
+    setDoc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -100,8 +100,7 @@
     if (!user) window.location.href = "login.html";
     else {
       loadTeams();
-      loadFixers();
-      loadPointTables();
+      loadTournamentData(); // Load both fixers and point tables from the same collection
     }
   });
 
@@ -116,139 +115,83 @@
     document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
   }
 
-  function addDays(dateStr, days) {
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() + days);
-    return d.toISOString().split("T")[0];
-  }
-
-  async function loadFixers() {
-    const fixersContainer = document.getElementById("fixersContainer");
-
-    // Show loading state while fetching data
-    fixersContainer.innerHTML = `<p class="text-gray-500 text-center">Loading...</p>`;
-
+  async function loadTournamentData() {
+    const tournamentRef = doc(db, "tournamentData", "currentTournament"); // Reference to the single tournament data document
     try {
-      const snapshot = await getDocs(collection(db, "fixers"));
-      
-      if (snapshot.empty) {
-        fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
+      const tournamentSnapshot = await getDoc(tournamentRef);
+
+      if (!tournamentSnapshot.exists()) {
+        document.getElementById("fixersContainer").innerHTML = "<p>No data found for the current tournament.</p>";
         return;
       }
 
-      const fixers = [];
-      let groupIndex = 0;
+      const tournamentData = tournamentSnapshot.data();
+      const fixers = tournamentData.fixers || [];
+      const pointTables = tournamentData.pointTables || [];
 
-      for (const docSnap of snapshot.docs) {
-        const data = docSnap.data();
-        const docRef = doc(db, "fixers", docSnap.id);
-
-        const g1 = data.team1Goal;
-        const g2 = data.team2Goal;
-        let status = (typeof g1 === 'number' && typeof g2 === 'number') ? "Finished" : "Pending";
-
-        if (data.status !== status) {
-          await updateDoc(docRef, { status });
-          data.status = status;
-        }
-
-        if (status === "Finished" && !data.pointsUpdated) {
-          const team1Points = g1 > g2 ? 3 : (g1 === g2 ? 1 : 0);
-          const team2Points = g2 > g1 ? 3 : (g1 === g2 ? 1 : 0);
-
-          await updatePointsInFirestore(data.team1, team1Points, g1, g2);
-          await updatePointsInFirestore(data.team2, team2Points, g2, g1);
-
-          await updateDoc(docRef, { pointsUpdated: true });
-        }
-
-        fixers.push(data);
-      }
-
-      const fixersByDate = {};
-      fixers.forEach(fix => {
-        const key = fix.date;
-        if (!fixersByDate[key]) fixersByDate[key] = [];
-        fixersByDate[key].push(fix);
-      });
-
-      const sortedDates = Object.keys(fixersByDate).sort();
-      const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
-
-      let html = "";
-      groupIndex = 0;
-
-      sortedDates.forEach(date => {
-        const groupName = String.fromCharCode(65 + groupIndex);
-        html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
-        const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
-
-        matches.forEach((match, idx) => {
-          let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
-          let winner = "None";
-          if (typeof match.team1Goal === "number" && typeof match.team2Goal === "number") {
-            if (match.team1Goal > match.team2Goal) winner = match.team1;
-            else if (match.team2Goal > match.team1Goal) winner = match.team2;
-            else winner = "Draw";
-          }
-
-          html += `
-            <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-              <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
-              <div class="flex justify-between items-center px-2">
-                <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
-                <div class="text-base font-bold text-red-500">VS</div>
-                <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
-              </div>
-              <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-              <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
-            </div>`;
-        });
-
-        groupIndex++;
-      });
-
-      fixersContainer.innerHTML = html;
+      // Load fixers and point tables
+      displayFixers(fixers);
+      displayPointTables(pointTables);
     } catch (error) {
-      console.error("Error loading fixers:", error);
-      fixersContainer.innerHTML = `<p class="text-red-500 text-center">Failed to load fixers. Please try again later.</p>`;
+      console.error("Error loading tournament data:", error);
+      document.getElementById("fixersContainer").innerHTML = "<p class='text-red-500'>Failed to load tournament data. Please try again later.</p>";
     }
   }
 
-  async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
-    const snapshot = await getDocs(collection(db, "fixers"));
-    let teamUpdated = false;
-
-    for (const docSnap of snapshot.docs) {
-      const data = docSnap.data();
-      const groupTeams = data.teams;
-
-      for (let i = 0; i < groupTeams.length; i++) {
-        if (groupTeams[i].team === team) {
-          groupTeams[i].points += points;
-          groupTeams[i].played += 1;
-          groupTeams[i].goals += goalsFor;
-
-          if (points === 3) {
-            groupTeams[i].win += 1;
-          } else if (points === 1) {
-            groupTeams[i].draw += 1;
-          } else {
-            groupTeams[i].loss += 1;
-          }
-
-          await updateDoc(doc(db, "fixers", docSnap.id), { teams: groupTeams });
-          teamUpdated = true;
-          break;
-        }
-      }
-
-      if (teamUpdated) break;
+  function displayFixers(fixers) {
+    const fixersContainer = document.getElementById("fixersContainer");
+    if (fixers.length === 0) {
+      fixersContainer.innerHTML = "<p>No fixers available.</p>";
+      return;
     }
 
-    if (!teamUpdated) {
-      console.log(`Team ${team} not found in fixers`);
+    let html = "";
+    fixers.forEach(fixer => {
+      html += `
+        <div class="fixer">
+          <div>Match: ${fixer.team1} vs ${fixer.team2}</div>
+          <div>Date: ${fixer.date}</div>
+          <div>Status: ${fixer.status}</div>
+        </div>
+      `;
+    });
+
+    fixersContainer.innerHTML = html;
+  }
+
+  function displayPointTables(pointTables) {
+    const pointTablesContainer = document.getElementById("pointTablesContainer");
+    if (pointTables.length === 0) {
+      pointTablesContainer.innerHTML = "<p>No point tables available.</p>";
+      return;
     }
+
+    let html = "";
+    pointTables.forEach((pointTable, index) => {
+      html += `
+        <div class="point-table">
+          <h3>Group ${String.fromCharCode(65 + index)}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pointTable.teams.map(team => `
+                <tr>
+                  <td>${team.team}</td>
+                  <td>${team.points}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+
+    pointTablesContainer.innerHTML = html;
   }
 
   document.getElementById("addFixerBtn").addEventListener("click", async () => {
@@ -269,6 +212,7 @@
     const start = new Date(baseDate);
     let added = 0;
 
+    const fixers = [];
     for (let g = 0; g < groupCount; g++) {
       const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
       const matchDate = new Date(start);
@@ -278,7 +222,7 @@
 
       for (let i = 0; i < groupTeams.length; i++) {
         for (let j = i + 1; j < groupTeams.length; j++) {
-          await addDoc(collection(db, "fixers"), {
+          fixers.push({
             team1: groupTeams[i],
             team2: groupTeams[j],
             date: dateStr,
@@ -290,36 +234,30 @@
           added++;
         }
       }
-
-      await savePointTable(groupName, groupTeams.map(team => ({
-        team,
-        played: 0,
-        win: 0,
-        loss: 0,
-        draw: 0,
-        goals: 0,
-        points: 0
-      })));
     }
 
+    const pointTables = selectedTeams.map(team => ({
+      groupName: team,
+      teams: [{ team, points: 0 }]
+    }));
+
+    // Save both fixers and point tables to Firestore under a single document
+    await saveTournamentData(fixers, pointTables);
+
     Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-    loadFixers();
+    loadTournamentData();
   });
 
-  async function savePointTable(groupName, teams) {
-    await addDoc(collection(db, "fixers"), {  // Changed to fixers collection
-      groupName,
-      teams: teams.map(t => ({
-        team: t.team,
-        played: t.played,
-        win: t.win,
-        loss: t.loss,
-        draw: t.draw,
-        goals: t.goals,
-        points: t.points
-      })),
+  async function saveTournamentData(fixers, pointTables) {
+    const tournamentRef = doc(db, "tournamentData", "currentTournament");
+
+    // Save both fixers and point tables in one document
+    await setDoc(tournamentRef, {
+      fixers: fixers,
+      pointTables: pointTables
     });
-    console.log("Point table for " + groupName + " saved successfully.");
+
+    console.log("Tournament data saved successfully.");
   }
 
   document.getElementById("selectAllTeams").addEventListener("change", (e) => {
@@ -338,12 +276,14 @@
 
     if (!confirm.isConfirmed) return;
 
-    const snapshot = await getDocs(collection(db, "fixers"));
-    const deletions = snapshot.docs.map(docSnap => deleteDoc(doc(db, "fixers", docSnap.id)));
-    await Promise.all(deletions);
+    const tournamentRef = doc(db, "tournamentData", "currentTournament");
+    await updateDoc(tournamentRef, {
+      fixers: [],
+      pointTables: []
+    });
 
-    Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-    loadFixers();
+    Swal.fire({ icon: 'success', title: 'All data deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+    loadTournamentData();
   });
    </script>
 
