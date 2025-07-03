@@ -284,8 +284,6 @@
       quarterfinals.push(...topTeams);
     });
 
-    await saveQuarterfinalFixers(quarterfinals);
-
     let html = "<div class='mb-4'><div class='font-semibold mb-1 text-red-700'>Quarterfinals</div>";
     const baseDate = new Date(); // Set the starting date for the quarterfinals
     let matchDate = baseDate;
@@ -310,6 +308,7 @@
         }
       }
 
+      // Display match date for each quarterfinal
       html += `
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="text-center text-[13px] text-gray-500 font-semibold">Date: ${matchDate.toISOString().split("T")[0]}</div>
@@ -327,30 +326,24 @@
     }
     html += "</div>";
     quarterfinalsContainer.innerHTML = html;
+
+    // Now save these quarterfinals in Firestore
+    await saveQuarterfinals(quarterfinals);
   }
 
-  async function saveQuarterfinalFixers(quarterfinals) {
-    let added = 0;
-
+  async function saveQuarterfinals(quarterfinals) {
     for (let i = 0; i < quarterfinals.length; i += 2) {
-      const team1 = quarterfinals[i].team;
-      const team2 = quarterfinals[i + 1].team;
-      const matchDate = new Date();
-      matchDate.setDate(matchDate.getDate() + i);  // Set a date incrementally for each match
-
-      await addDoc(collection(db, "quarterfinalFixers"), {
-        team1: team1,
-        team2: team2,
-        date: matchDate.toISOString().split("T")[0],  // Format the date as YYYY-MM-DD
+      await addDoc(collection(db, "fixers"), {
+        team1: quarterfinals[i].team,
+        team2: quarterfinals[i + 1].team,
+        date: new Date().toISOString().split("T")[0],  // Use current date or calculate another date
         team1Goal: null,
         team2Goal: null,
         status: "Pending",
+        groupName: "Quarterfinals",
       });
-      added++;
     }
-
-    Swal.fire({ icon: 'success', title: `${added} quarterfinal matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-    loadQuarterfinals();  // To load and display the new quarterfinal fixtures
+    console.log("Quarterfinals fixers saved successfully.");
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
