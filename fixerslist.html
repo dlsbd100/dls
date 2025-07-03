@@ -82,8 +82,7 @@
     addDoc,
     deleteDoc,
     updateDoc,
-    doc,
-    writeBatch
+    doc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -285,6 +284,8 @@
       quarterfinals.push(...topTeams);
     });
 
+    await saveQuarterfinalFixers(quarterfinals);
+
     let html = "<div class='mb-4'><div class='font-semibold mb-1 text-red-700'>Quarterfinals</div>";
     const baseDate = new Date(); // Set the starting date for the quarterfinals
     let matchDate = baseDate;
@@ -309,7 +310,6 @@
         }
       }
 
-      // Display match date for each quarterfinal
       html += `
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="text-center text-[13px] text-gray-500 font-semibold">Date: ${matchDate.toISOString().split("T")[0]}</div>
@@ -327,28 +327,30 @@
     }
     html += "</div>";
     quarterfinalsContainer.innerHTML = html;
-
-    // Save the quarterfinals to Firestore
-    saveQuarterfinalsToFirestore(quarterfinals);
   }
 
-  async function saveQuarterfinalsToFirestore(quarterfinals) {
-    const batch = writeBatch(db);
-    
-    quarterfinals.forEach((match, idx) => {
-      const matchRef = doc(collection(db, "quarterfinals"));
-      batch.set(matchRef, {
-        team1: match.team1,
-        team2: match.team2,
-        date: new Date().toISOString().split("T")[0],
-        team1Goal: match.team1Goal || null,
-        team2Goal: match.team2Goal || null,
-        status: match.status || "Pending",
-      });
-    });
+  async function saveQuarterfinalFixers(quarterfinals) {
+    let added = 0;
 
-    await batch.commit();
-    console.log("Quarterfinal matches saved to Firestore.");
+    for (let i = 0; i < quarterfinals.length; i += 2) {
+      const team1 = quarterfinals[i].team;
+      const team2 = quarterfinals[i + 1].team;
+      const matchDate = new Date();
+      matchDate.setDate(matchDate.getDate() + i);  // Set a date incrementally for each match
+
+      await addDoc(collection(db, "quarterfinalFixers"), {
+        team1: team1,
+        team2: team2,
+        date: matchDate.toISOString().split("T")[0],  // Format the date as YYYY-MM-DD
+        team1Goal: null,
+        team2Goal: null,
+        status: "Pending",
+      });
+      added++;
+    }
+
+    Swal.fire({ icon: 'success', title: `${added} quarterfinal matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+    loadQuarterfinals();  // To load and display the new quarterfinal fixtures
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
@@ -481,6 +483,6 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-          </script>
+    </script>
 </body>
 </html>
