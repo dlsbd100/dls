@@ -202,9 +202,9 @@
       });
     }
 
-    // Function to Load Quarterfinals Fixers from fixers collection
+    // Function to Load Quarterfinals Fixers
     async function loadQuarterfinals() {
-      const quarterfinalsRef = collection(db, "fixers"); // Get from fixers collection
+      const quarterfinalsRef = collection(db, "quarterfinals");
       onSnapshot(query(quarterfinalsRef), (snapshot) => {
         const quarterfinalsContainer = document.getElementById("quarterfinals-list");
 
