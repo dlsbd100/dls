@@ -26,6 +26,14 @@
     <div id="fixers-list" class="space-y-6">
       <p class="text-center text-gray-400">লোড হচ্ছে...</p>
     </div>
+
+    <!-- Quarterfinals Section -->
+    <div id="quarterfinals-section" class="mt-8">
+      <h2 class="text-2xl font-semibold text-yellow-400 mb-4">Quarterfinals</h2>
+      <div id="quarterfinals-list" class="space-y-6">
+        <p class="text-center text-gray-400">Quarterfinal matches will appear here...</p>
+      </div>
+    </div>
   </main>
 
   <!-- Firebase & Logic -->
@@ -78,6 +86,7 @@
       if (user) {
         await loadTeamPhotos();
         loadFixers();
+        loadQuarterfinals();
       }
     });
 
@@ -193,6 +202,49 @@
             Swal.fire({ icon: "success", title: "Goal updated!", timer: 2000, toast: true, position: "top-end", showConfirmButton: false });
           });
         });
+      });
+    }
+
+    function loadQuarterfinals() {
+      const pointTablesRef = collection(db, "pointTables");
+      onSnapshot(query(pointTablesRef), (snapshot) => {
+        const quarterfinalsContainer = document.getElementById("quarterfinals-list");
+
+        if (snapshot.empty) {
+          quarterfinalsContainer.innerHTML = `<p class="text-center text-gray-400">কোয়ার্টারফাইনাল ম্যাচগুলি পাওয়া যায়নি।</p>`;
+          return;
+        }
+
+        const quarterfinals = [];
+
+        snapshot.forEach(docSnap => {
+          const groupData = docSnap.data();
+          const topTeams = groupData.teams.slice(0, 2); // Top 2 teams from each group
+          quarterfinals.push(...topTeams);
+        });
+
+        let html = "";
+        for (let i = 0; i < quarterfinals.length; i += 2) {
+          const team1 = quarterfinals[i];
+          const team2 = quarterfinals[i + 1];
+          
+          html += `
+            <div class="border border-gray-700 rounded-lg p-3 text-sm bg-gray-900 shadow space-y-2">
+              <div class="text-center text-gray-400 mb-1 text-md">Quarterfinal Match ${i / 2 + 1}</div>
+              <div class="flex justify-center items-center gap-3 font-semibold text-white">
+                <div class="flex flex-col items-center gap-1 flex-1 justify-end">
+                  <span>${team1.team}</span>
+                </div>
+                <div class="text-yellow-400 font-bold text-2xl select-none">VS</div>
+                <div class="flex flex-col items-center gap-1 flex-1 justify-start">
+                  <span>${team2.team}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        quarterfinalsContainer.innerHTML = html;
       });
     }
   </script>
