@@ -207,7 +207,7 @@
   }
 
   async function loadPointTables() {
-    const snapshot = await getDocs(collection(db, "pointTables"));
+    const snapshot = await getDocs(collection(db, "fixers"));
     const pointTablesContainer = document.getElementById("pointTablesContainer");
 
     if (snapshot.empty) {
@@ -270,7 +270,7 @@
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
-    const snapshot = await getDocs(collection(db, "pointTables"));
+    const snapshot = await getDocs(collection(db, "fixers"));
     let teamUpdated = false;
 
     for (const docSnap of snapshot.docs) {
@@ -291,7 +291,7 @@
             groupTeams[i].loss += 1;
           }
 
-          await updateDoc(doc(db, "pointTables", docSnap.id), { teams: groupTeams });
+          await updateDoc(doc(db, "fixers", docSnap.id), { teams: groupTeams });
           teamUpdated = true;
           break;
         }
@@ -301,7 +301,7 @@
     }
 
     if (!teamUpdated) {
-      console.log(`Team ${team} not found in point table`);
+      console.log(`Team ${team} not found in fixers`);
     }
   }
 
@@ -361,7 +361,7 @@
   });
 
   async function savePointTable(groupName, teams) {
-    await addDoc(collection(db, "pointTables"), {
+    await addDoc(collection(db, "fixers"), {  // Changed to fixers collection
       groupName,
       teams: teams.map(t => ({
         team: t.team,
@@ -399,6 +399,6 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-    </script>
+   </script>
 </body>
 </html>
