@@ -305,14 +305,9 @@
         }
       }
 
-      const groupName = String.fromCharCode(65 + Math.floor(i / 2)); // To display group name
-
-      // Display the last match date for the group
-      const lastMatchDate = quarterfinals[i].date; // Get the date of the last match in the group (for simplicity, you can use the first match date of each group)
-
       html += `
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-          <div class="text-center text-[13px] text-gray-500 font-semibold">Group ${groupName} - Last Match Date: ${lastMatchDate}</div>
+          <div class="text-center text-[13px] text-gray-500 font-semibold">Match ${i / 2 + 1}</div>
           <div class="flex justify-between items-center px-2">
             <div class="text-sm font-semibold text-gray-600">${quarterfinals[i].team} <span class="text-black">(${team1Goals})</span></div>
             <div class="text-base font-bold text-red-500">VS</div>
@@ -457,7 +452,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-    </script>
+   </script>
 
 </body>
 </html>
