@@ -326,25 +326,6 @@
     }
     html += "</div>";
     quarterfinalsContainer.innerHTML = html;
-
-    saveQuarterfinalFixers(quarterfinals, baseDate);
-  }
-
-  async function saveQuarterfinalFixers(quarterfinals, baseDate) {
-    for (let i = 0; i < quarterfinals.length; i += 2) {
-      const matchDate = new Date(baseDate);
-      matchDate.setDate(matchDate.getDate() + Math.floor(i / 2));
-
-      await addDoc(collection(db, "fixers"), {
-        team1: quarterfinals[i].team,
-        team2: quarterfinals[i + 1].team,
-        date: matchDate.toISOString().split("T")[0],
-        team1Goal: null,
-        team2Goal: null,
-        status: "Pending",
-        groupName: `Quarterfinals ${Math.floor(i / 2) + 1}`,
-      });
-    }
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
@@ -477,6 +458,6 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-    </script>
+          </script>
 </body>
 </html>
