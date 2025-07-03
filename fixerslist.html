@@ -106,6 +106,7 @@
       loadTeams();
       loadFixers();
       loadPointTables();
+      loadQuarterfinals(); // Load quarterfinals if already saved
     }
   });
 
@@ -118,12 +119,6 @@
     });
     teamList = Array.from(teams);
     document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
-  }
-
-  function addDays(dateStr, days) {
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() + days);
-    return d.toISOString().split("T")[0];
   }
 
   async function loadFixers() {
@@ -210,6 +205,12 @@
     fixersContainer.innerHTML = html;
   }
 
+  function addDays(dateStr, days) {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split("T")[0];
+  }
+
   async function loadPointTables() {
     const snapshot = await getDocs(collection(db, "pointTables"));
     const pointTablesContainer = document.getElementById("pointTablesContainer");
@@ -288,10 +289,11 @@
     const baseDate = new Date(); // Set the starting date for the quarterfinals
     let matchDate = baseDate;
 
+    const quarterfinalMatches = [];
+
     for (let i = 0; i < quarterfinals.length; i += 2) {
       let team1Goals = quarterfinals[i].goals || "-";
       let team2Goals = quarterfinals[i + 1].goals || "-";
-
       let winner = "None";
       let status = "Pending";
 
@@ -308,7 +310,18 @@
         }
       }
 
-      // Display match date for each quarterfinal
+      const match = {
+        team1: quarterfinals[i].team,
+        team2: quarterfinals[i + 1].team,
+        team1Goals: team1Goals,
+        team2Goals: team2Goals,
+        date: matchDate.toISOString().split("T")[0],
+        status: status,
+        winner: winner,
+      };
+
+      quarterfinalMatches.push(match);
+
       html += `
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="text-center text-[13px] text-gray-500 font-semibold">Date: ${matchDate.toISOString().split("T")[0]}</div>
@@ -326,6 +339,11 @@
     }
     html += "</div>";
     quarterfinalsContainer.innerHTML = html;
+
+    // Save quarterfinal matches to Firestore
+    for (const match of quarterfinalMatches) {
+      await addDoc(collection(db, "quarterfinals"), match);
+    }
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
