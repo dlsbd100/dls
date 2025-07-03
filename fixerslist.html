@@ -105,7 +105,6 @@
     else {
       loadTeams();
       loadFixers();
-      loadPointTables();
     }
   });
 
@@ -155,6 +154,7 @@
         const team1Points = g1 > g2 ? 3 : (g1 === g2 ? 1 : 0);
         const team2Points = g2 > g1 ? 3 : (g1 === g2 ? 1 : 0);
 
+        // Update points in the fixers collection
         await updatePointsInFixers(data.team1, team1Points, g1, g2, docRef);
         await updatePointsInFixers(data.team2, team2Points, g2, g1, docRef);
 
@@ -208,6 +208,7 @@
     });
 
     fixersContainer.innerHTML = html;
+    loadPointTables();  // Load point tables from fixers collection
   }
 
   async function loadPointTables() {
@@ -330,41 +331,10 @@
           added++;
         }
       }
-
-      await saveFixerPointTable(groupName, groupTeams.map(team => ({
-        team,
-        played: 0,
-        win: 0,
-        loss: 0,
-        draw: 0,
-        goals: 0,
-        points: 0
-      })));
     }
 
     Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
-  });
-
-  async function saveFixerPointTable(groupName, teams) {
-    await addDoc(collection(db, "fixers"), {
-      groupName,
-      teams: teams.map(t => ({
-        team: t.team,
-        played: t.played,
-        win: t.win,
-        loss: t.loss,
-        draw: t.draw,
-        goals: t.goals,
-        points: t.points
-      })),
-    });
-    console.log("Fixer point table for " + groupName + " saved successfully.");
-  }
-
-  document.getElementById("selectAllTeams").addEventListener("change", (e) => {
-    const options = document.getElementById("teamSelector").options;
-    for (let option of options) option.selected = e.target.checked;
   });
 
   document.getElementById("deleteAllBtn").addEventListener("click", async () => {
@@ -385,6 +355,6 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-    </script>
+                                              </script>
 </body>
     </html>
