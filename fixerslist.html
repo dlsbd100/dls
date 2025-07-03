@@ -72,7 +72,7 @@
     </div>
   </main>
 
-  <script type="module">
+   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
@@ -82,7 +82,8 @@
     addDoc,
     deleteDoc,
     updateDoc,
-    doc
+    doc,
+    writeBatch
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -288,6 +289,8 @@
     const baseDate = new Date(); // Set the starting date for the quarterfinals
     let matchDate = baseDate;
 
+    const batch = writeBatch(db);
+
     for (let i = 0; i < quarterfinals.length; i += 2) {
       let team1Goals = quarterfinals[i].goals || "-";
       let team2Goals = quarterfinals[i + 1].goals || "-";
@@ -323,31 +326,24 @@
         </div>
       `;
       matchDate.setDate(matchDate.getDate() + 1); // Move to the next day
-    }
-    html += "</div>";
-    quarterfinalsContainer.innerHTML = html;
 
-    saveQuarterfinals(quarterfinals); // Save to Firestore
-  }
-
-  async function saveQuarterfinals(quarterfinals) {
-    const batch = writeBatch(db);
-
-    for (let i = 0; i < quarterfinals.length; i += 2) {
       const matchData = {
         team1: quarterfinals[i].team,
         team2: quarterfinals[i + 1].team,
-        date: new Date().toISOString().split("T")[0],  // Current date for simplicity
+        date: matchDate.toISOString().split("T")[0],
         team1Goal: null,
         team2Goal: null,
         status: "Pending",
         groupName: "Quarterfinals",
       };
 
-      await batch.set(doc(collection(db, "fixers")), matchData);
+      batch.set(doc(collection(db, "fixers")), matchData);
     }
 
     await batch.commit();
+
+    html += "</div>";
+    quarterfinalsContainer.innerHTML = html;
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
@@ -482,6 +478,6 @@
   });
 </script>
 
-
+  
 </body>
 </html>
