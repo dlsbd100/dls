@@ -23,8 +23,17 @@
 
   <!-- Fixers List -->
   <main class="max-w-3xl mx-auto px-4 mt-6 mb-20">
+    <!-- Fixers Section -->
     <div id="fixers-list" class="space-y-6">
       <p class="text-center text-gray-400">লোড হচ্ছে...</p>
+    </div>
+
+    <!-- Point Tables Section -->
+    <div id="pointTablesContainer" class="mt-6">
+      <h2 class="text-2xl text-yellow-400 font-bold mb-3">Point Tables</h2>
+      <div class="bg-black text-white rounded-lg p-4">
+        <p class="text-center text-gray-400">পয়েন্ট টেবিল লোড হচ্ছে...</p>
+      </div>
     </div>
   </main>
 
@@ -78,6 +87,7 @@
       if (user) {
         await loadTeamPhotos();
         loadFixers();
+        loadPointTables();  // Load Point Tables
       }
     });
 
@@ -194,6 +204,67 @@
           });
         });
       });
+    }
+
+    // Load point tables function
+    async function loadPointTables() {
+      const pointTablesContainer = document.getElementById("pointTablesContainer");
+      const pointTablesRef = collection(db, "fixers");
+      const snapshot = await getDocs(pointTablesRef);
+
+      if (snapshot.empty) {
+        pointTablesContainer.innerHTML = `<p class="text-center text-gray-400">পয়েন্ট টেবিল লোড হচ্ছে...</p>`;
+        return;
+      }
+
+      // Calculate point tables based on match results (same logic as before)
+      const pointTables = {};
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const key = `${data.team1}__${data.team2}__${data.date}`;
+
+        if (!pointTables[data.team1]) pointTables[data.team1] = { win: 0, loss: 0, draw: 0, goals: 0, played: 0 };
+        if (!pointTables[data.team2]) pointTables[data.team2] = { win: 0, loss: 0, draw: 0, goals: 0, played: 0 };
+
+        const t1Goal = data.team1Goal ?? 0;
+        const t2Goal = data.team2Goal ?? 0;
+
+        pointTables[data.team1].played++;
+        pointTables[data.team2].played++;
+
+        pointTables[data.team1].goals += t1Goal;
+        pointTables[data.team2].goals += t2Goal;
+
+        if (t1Goal > t2Goal) {
+          pointTables[data.team1].win++;
+          pointTables[data.team2].loss++;
+        } else if (t2Goal > t1Goal) {
+          pointTables[data.team2].win++;
+          pointTables[data.team1].loss++;
+        } else {
+          pointTables[data.team1].draw++;
+          pointTables[data.team2].draw++;
+        }
+      });
+
+      // Render the point tables
+      let html = `<div class="bg-gray-900 p-4 rounded-lg shadow-md">`;
+
+      Object.entries(pointTables).forEach(([team, stats]) => {
+        html += `
+          <div class="flex justify-between py-2 border-b border-gray-700">
+            <span>${team}</span>
+            <span>${stats.win}W ${stats.draw}D ${stats.loss}L</span>
+            <span>Goals: ${stats.goals}</span>
+            <span>Points: ${stats.win * 3 + stats.draw}</span>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+
+      pointTablesContainer.innerHTML = html;
     }
   </script>
 </body>
