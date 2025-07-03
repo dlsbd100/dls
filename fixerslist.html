@@ -82,7 +82,8 @@
     addDoc,
     deleteDoc,
     updateDoc,
-    doc
+    doc,
+    getDoc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -245,7 +246,7 @@
                 </tr>
               </thead>
               <tbody>
-                ${fixer.teams.map((team, i) => `
+                ${fixer.teams ? fixer.teams.map((team, i) => `
                   <tr>
                     <td class="px-2 py-1 border text-center">${i + 1}</td>
                     <td class="px-2 py-1 border">${team.team}</td>
@@ -256,7 +257,7 @@
                     <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
                     <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
                   </tr>
-                `).join('')}
+                `).join('') : ''}
               </tbody>
             </table>
           </div>
@@ -355,6 +356,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-                                              </script>
+</script>
+
 </body>
-    </html>
+</html>
