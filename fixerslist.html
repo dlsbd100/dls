@@ -80,8 +80,8 @@
     collection,
     getDocs,
     addDoc,
-    deleteDoc,
     updateDoc,
+    deleteDoc,
     doc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -164,47 +164,30 @@
       fixers.push(data);
     }
 
-    const fixersByDate = {};
+    const fixersByGroup = {};
     fixers.forEach(fix => {
-      const key = fix.date;
-      if (!fixersByDate[key]) fixersByDate[key] = [];
-      fixersByDate[key].push(fix);
+      const groupName = fix.groupName;
+      if (!fixersByGroup[groupName]) fixersByGroup[groupName] = [];
+      fixersByGroup[groupName].push(fix);
     });
 
-    const sortedDates = Object.keys(fixersByDate).sort();
-    const baseDate = sortedDates.length > 0 ? sortedDates[0] : null;
-
     let html = "";
-    groupIndex = 0;
-
-    sortedDates.forEach(date => {
-      const groupName = String.fromCharCode(65 + groupIndex);
-      html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
-      const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
-
-      matches.forEach((match, idx) => {
-        let displayDate = baseDate ? addDays(baseDate, idx) : match.date;
-        let winner = "None";
-        if (typeof match.team1Goal === "number" && typeof match.team2Goal === "number") {
-          if (match.team1Goal > match.team2Goal) winner = match.team1;
-          else if (match.team2Goal > match.team1Goal) winner = match.team2;
-          else winner = "Draw";
-        }
-
+    Object.keys(fixersByGroup).forEach(groupName => {
+      const groupFixers = fixersByGroup[groupName];
+      html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">${groupName}</div>`;
+      groupFixers.forEach(fix => {
         html += `
           <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-            <div class="text-center text-[13px] text-gray-500 font-semibold">${displayDate}</div>
+            <div class="text-center text-[13px] text-gray-500 font-semibold">${fix.date}</div>
             <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
+              <div class="text-sm font-semibold text-gray-600">${fix.team1} <span class="text-black">(${fix.team1Goal ?? "-"})</span></div>
               <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
+              <div class="text-sm font-semibold text-gray-600">${fix.team2} <span class="text-black">(${fix.team2Goal ?? "-"})</span></div>
             </div>
-            <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-            <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${fix.status}</div>
+            <div class="text-center text-blue-600 text-xs font-medium">Status: ${fix.status}</div>
           </div>`;
       });
-
-      groupIndex++;
     });
 
     fixersContainer.innerHTML = html;
@@ -223,136 +206,45 @@
     snapshot.forEach(doc => pointTables.push(doc.data()));
 
     let allPointsHTML = "";
-    if (pointTables.length === 0) {
-      allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-    } else {
-      allPointsHTML = pointTables.map((pointTable, index) => {
-        pointTable.teams.sort((a, b) => {
-          if (b.points === a.points) {
-            return b.goals - a.goals;
-          }
-          return b.points - a.points;
-        });
+    pointTables.forEach((pointTable, index) => {
+      pointTable.teams.sort((a, b) => b.points - a.points);
 
-        return `
-          <div class="mb-4">
-            <div class="font-semibold mb-1 text-blue-700">Point Table - Group ${String.fromCharCode(65 + index)}</div>
-            <table class="text-sm w-full table-auto border border-gray-200">
-              <thead>
-                <tr class="bg-gray-200">
-                  <th class="px-2 py-1 border">#</th>
-                  <th class="px-2 py-1 border">Team</th>
-                  <th class="px-2 py-1 border text-center">Played</th>
-                  <th class="px-2 py-1 border text-center">Win</th>
-                  <th class="px-2 py-1 border text-center">Loss</th>
-                  <th class="px-2 py-1 border text-center">Draw</th>
-                  <th class="px-2 py-1 border text-center">Goals</th>
-                  <th class="px-2 py-1 border text-center">Points</th>
+      allPointsHTML += `
+        <div class="mb-4">
+          <div class="font-semibold mb-1 text-blue-700">Point Table - ${pointTable.groupName}</div>
+          <table class="text-sm w-full table-auto border border-gray-200">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="px-2 py-1 border">#</th>
+                <th class="px-2 py-1 border">Team</th>
+                <th class="px-2 py-1 border text-center">Played</th>
+                <th class="px-2 py-1 border text-center">Win</th>
+                <th class="px-2 py-1 border text-center">Loss</th>
+                <th class="px-2 py-1 border text-center">Draw</th>
+                <th class="px-2 py-1 border text-center">Goals</th>
+                <th class="px-2 py-1 border text-center">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pointTable.teams.map((team, i) => `
+                <tr>
+                  <td class="px-2 py-1 border text-center">${i + 1}</td>
+                  <td class="px-2 py-1 border">${team.team}</td>
+                  <td class="px-2 py-1 border text-center">${team.played}</td>
+                  <td class="px-2 py-1 border text-center">${team.win}</td>
+                  <td class="px-2 py-1 border text-center">${team.loss}</td>
+                  <td class="px-2 py-1 border text-center">${team.draw}</td>
+                  <td class="px-2 py-1 border text-center">${team.goals}</td>
+                  <td class="px-2 py-1 border text-center">${team.points}</td>
                 </tr>
-              </thead>
-              <tbody>
-                ${pointTable.teams.map((team, i) => `
-                  <tr>
-                    <td class="px-2 py-1 border text-center">${i + 1}</td>
-                    <td class="px-2 py-1 border">${team.team}</td>
-                    <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
-                    <td class="px-2 py-1 border text-center">${team.win}</td>
-                    <td class="px-2 py-1 border text-center">${team.loss}</td>
-                    <td class="px-2 py-1 border text-center">${team.draw}</td>
-                    <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
-                    <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }).join('');
-    }
-
-    pointTablesContainer.innerHTML = allPointsHTML;
-
-    generateQuarterfinals(pointTables);
-  }
-
-  async function generateQuarterfinals(pointTables) {
-    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
-    let quarterfinals = [];
-
-    pointTables.forEach(group => {
-      const topTeams = group.teams.slice(0, 2);  // Top 2 teams from each group
-      quarterfinals.push(...topTeams);
-    });
-
-    let html = "<div class='mb-4'><div class='font-semibold mb-1 text-red-700'>Quarterfinals</div>";
-    const baseDate = new Date(); // Set the starting date for the quarterfinals
-    let matchDate = baseDate;
-
-    for (let i = 0; i < quarterfinals.length; i += 2) {
-      let team1Goals = quarterfinals[i].goals || "-";
-      let team2Goals = quarterfinals[i + 1].goals || "-";
-
-      let winner = "None";
-      let status = "Pending";
-
-      if (team1Goals !== "-" && team2Goals !== "-") {
-        if (team1Goals > team2Goals) {
-          winner = quarterfinals[i].team;
-          status = "Finished";
-        } else if (team2Goals > team1Goals) {
-          winner = quarterfinals[i + 1].team;
-          status = "Finished";
-        } else {
-          winner = "Draw";
-          status = "Finished";
-        }
-      }
-
-      // Display match date for each quarterfinal
-      html += `
-        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-          <div class="text-center text-[13px] text-gray-500 font-semibold">Date: ${matchDate.toISOString().split("T")[0]}</div>
-          <div class="text-center text-[13px] text-gray-500 font-semibold">Match ${i / 2 + 1}</div>
-          <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i].team} <span class="text-black">(${team1Goals})</span></div>
-            <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i + 1].team} <span class="text-black">(${team2Goals})</span></div>
-          </div>
-          <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-          <div class="text-center text-blue-600 text-xs font-medium">Status: ${status}</div>
+              `).join('')}
+            </tbody>
+          </table>
         </div>
       `;
-      matchDate.setDate(matchDate.getDate() + 1); // Move to the next day
-    }
-    html += "</div>";
-    quarterfinalsContainer.innerHTML = html;
-
-    // Save Quarterfinal Fixers to Firestore
-    await saveQuarterfinalFixers(quarterfinals);
-  }
-
-  async function saveQuarterfinalFixers(quarterfinals) {
-    const promises = quarterfinals.map((team, index) => {
-      if (index % 2 === 0) {
-        const team1 = team;
-        const team2 = quarterfinals[index + 1];
-        const matchDate = new Date();
-        matchDate.setDate(matchDate.getDate() + Math.floor(index / 2)); // Adjust date for each match
-
-        return addDoc(collection(db, "fixers"), {
-          team1: team1.team,
-          team2: team2.team,
-          date: matchDate.toISOString().split("T")[0],
-          team1Goal: null,
-          team2Goal: null,
-          status: "Pending",
-          groupName: "Quarterfinals"
-        });
-      }
     });
 
-    await Promise.all(promises);
-    console.log("Quarterfinal fixers saved.");
+    pointTablesContainer.innerHTML = allPointsHTML;
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
@@ -369,13 +261,9 @@
           groupTeams[i].played += 1;
           groupTeams[i].goals += goalsFor;
 
-          if (points === 3) {
-            groupTeams[i].win += 1;
-          } else if (points === 1) {
-            groupTeams[i].draw += 1;
-          } else {
-            groupTeams[i].loss += 1;
-          }
+          if (points === 3) groupTeams[i].win += 1;
+          else if (points === 1) groupTeams[i].draw += 1;
+          else groupTeams[i].loss += 1;
 
           await updateDoc(doc(db, "pointTables", docSnap.id), { teams: groupTeams });
           teamUpdated = true;
@@ -384,10 +272,6 @@
       }
 
       if (teamUpdated) break;
-    }
-
-    if (!teamUpdated) {
-      console.log(`Team ${team} not found in point table`);
     }
   }
 
@@ -485,7 +369,8 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-        </script>
+</script>
+
   
 </body>
 </html>
