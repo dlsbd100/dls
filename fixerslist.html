@@ -306,7 +306,7 @@
               team1Goal: null,
               team2Goal: null,
               status: "Pending",
-              groupName: groupName
+              groupName: groupName // Added groupName here
             });
             added++;
           }
@@ -319,7 +319,7 @@
 
     document.getElementById("addPointTableBtn").addEventListener("click", async () => {
       const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
-      const groupCount = parseInt(document.getElementById("groupCountPointTable").value);
+      const groupCount = parseInt(document.getElementById("groupCount").value);
 
       if (selectedTeams.length < 4 || isNaN(groupCount)) {
         Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
@@ -354,6 +354,7 @@
         added++;
       }
 
+      // Save point tables to Firebase
       for (const group of groups) {
         await addDoc(collection(db, "pointTables"), group);
       }
