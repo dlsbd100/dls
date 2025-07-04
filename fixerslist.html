@@ -310,12 +310,15 @@
     }
   });
 
-  // Adding new point table with check for previously used group
-  document.getElementById("addPointTableBtn").addEventListener("click", async () => {
-    const selectedTeams = Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).map(opt => opt.value);
-    const selectedGroup = document.getElementById("pointTableGroupSelector").value;
+  // Adding new fixer
+  document.getElementById("addFixerBtn").addEventListener("click", async () => {
+    const team1 = document.getElementById("team1Selector").value;
+    const team2 = document.getElementById("team2Selector").value;
+    const team1Goal = document.getElementById("team1Goal").value;
+    const team2Goal = document.getElementById("team2Goal").value;
+    const date = document.getElementById("fixDate").value;
 
-    if (selectedTeams.length < 4 || !selectedGroup) {
+    if (!team1 || !team2 || !team1Goal || !team2Goal || !date) {
       Swal.fire({
         icon: 'warning',
         title: 'Please fill out all fields.',
@@ -327,51 +330,28 @@
       return;
     }
 
-    // Check if the selected group is already used
-    const snapshot = await getDocs(collection(db, "pointTables"));
-    const existingGroups = snapshot.docs.map(doc => doc.data().groupName);
-    if (existingGroups.includes(selectedGroup)) {
-      Swal.fire({
-        icon: 'error',
-        title: `Group ${selectedGroup} is already used!`,
-        position: 'top-end',
-        toast: true,
-        timer: 4000,
-        showConfirmButton: false
-      });
-      return;
-    }
-
-    const pointTable = {
-      groupName: selectedGroup,
-      teams: selectedTeams.map(team => ({
-        team,
-        played: 0,
-        win: 0,
-        loss: 0,
-        draw: 0,
-        goals: 0,
-        points: 0
-      }))
+    const fixer = {
+      team1,
+      team2,
+      team1Goal: parseInt(team1Goal),
+      team2Goal: parseInt(team2Goal),
+      date,
+      status: "Pending",
     };
 
-    // Save point table to Firebase
-    await addDoc(collection(db, "pointTables"), pointTable);
+    // Save fixer to Firebase
+    await addDoc(collection(db, "fixers"), fixer);
 
     Swal.fire({
       icon: 'success',
-      title: 'Point table added.',
+      title: 'Fixer added.',
       position: 'top-end',
       toast: true,
       timer: 3000,
       showConfirmButton: false
     });
-    loadPointTables();
-  });
 
-  document.getElementById("selectAllPointTableTeams").addEventListener("change", (e) => {
-    const options = document.getElementById("pointTableTeamSelector").options;
-    for (let option of options) option.selected = e.target.checked;
+    loadFixers();
   });
 
   document.getElementById("deleteAllBtn").addEventListener("click", async () => {
