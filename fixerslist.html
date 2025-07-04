@@ -326,6 +326,28 @@
     }
     html += "</div>";
     quarterfinalsContainer.innerHTML = html;
+
+    // Save quarterfinals in Firestore
+    await saveQuarterfinals(quarterfinals);
+  }
+
+  async function saveQuarterfinals(quarterfinals) {
+    const batch = db.batch();
+    quarterfinals.forEach((match, index) => {
+      const docRef = doc(collection(db, "quarterfinals"));
+      batch.set(docRef, {
+        team1: match.team,
+        team2: quarterfinals[index + 1] ? quarterfinals[index + 1].team : null, // Add second team if available
+        date: new Date().toISOString().split("T")[0], // Current date, or you can specify the match date
+        team1Goal: null,
+        team2Goal: null,
+        status: "Pending",
+        winner: "None",
+      });
+    });
+
+    await batch.commit();
+    console.log("Quarterfinals saved.");
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
@@ -458,7 +480,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-   </script>
+    </script>
   
 </body>
   </html>
