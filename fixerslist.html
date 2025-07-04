@@ -63,9 +63,16 @@
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
 
+      <!-- Point Tables -->
       <div id="pointTablesContainer" class="bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
         <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
         <!-- Group-wise point tables will appear here -->
+      </div>
+
+      <!-- Group Selection for Point Table -->
+      <div id="groupSelection" class="space-y-4">
+        <h3 class="text-lg font-semibold text-gray-700">Assign Teams to Groups</h3>
+        <div id="groupAssignments"></div>
       </div>
     </div>
   </main>
@@ -251,51 +258,6 @@
 
       pointTablesContainer.innerHTML = allPointsHTML;
     }
-
-    document.getElementById("addFixerBtn").addEventListener("click", async () => {
-      const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
-      const baseDate = document.getElementById("fixerDate").value;
-      const groupCount = parseInt(document.getElementById("groupCount").value);
-
-      if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
-        Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-        return;
-      }
-
-      if (selectedTeams.length !== groupCount * 4) {
-        Swal.fire({ icon: 'error', title: `Select ${groupCount * 4} teams.`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
-        return;
-      }
-
-      const start = new Date(baseDate);
-      let added = 0;
-
-      for (let g = 0; g < groupCount; g++) {
-        const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
-        const matchDate = new Date(start);
-        matchDate.setDate(start.getDate() + g);
-        const dateStr = matchDate.toISOString().split("T")[0];
-        const groupName = `Group ${String.fromCharCode(65 + g)}`;
-
-        for (let i = 0; i < groupTeams.length; i++) {
-          for (let j = i + 1; j < groupTeams.length; j++) {
-            await addDoc(collection(db, "fixers"), {
-              team1: groupTeams[i],
-              team2: groupTeams[j],
-              date: dateStr,
-              team1Goal: null,
-              team2Goal: null,
-              status: "Pending",
-              groupName: groupName // Added groupName here
-            });
-            added++;
-          }
-        }
-      }
-
-      Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-      loadFixers();
-    });
 
     document.getElementById("addPointTableBtn").addEventListener("click", async () => {
       const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
