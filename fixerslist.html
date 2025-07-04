@@ -279,15 +279,7 @@
     pointTablesContainer.innerHTML = allPointsHTML;
   }
 
-  // Select All Teams checkbox functionality
-  document.getElementById("selectAllTeams").addEventListener("change", (e) => {
-    const options = document.getElementById("teamSelector").options;
-    for (let option of options) {
-      option.selected = e.target.checked;
-    }
-  });
-
-  // Add Fixer functionality
+  // Adding point table and match fixers
   document.getElementById("addFixerBtn").addEventListener("click", async () => {
     const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
     const baseDate = document.getElementById("fixerDate").value;
@@ -333,7 +325,6 @@
     loadFixers();
   });
 
-  // Add Point Table functionality
   document.getElementById("addPointTableBtn").addEventListener("click", async () => {
     const selectedTeams = Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).map(opt => opt.value);
     const selectedGroup = document.getElementById("pointTableGroupSelector").value;
@@ -389,13 +380,14 @@
     loadPointTables();
   });
 
-  // Select All Point Table Teams checkbox functionality
-  document.getElementById("selectAllPointTableTeams").addEventListener("change", (e) => {
-    const options = document.getElementById("pointTableTeamSelector").options;
-    for (let option of options) option.selected = e.target.checked;
+  // Select All Teams checkbox functionality
+  document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+    const options = document.getElementById("teamSelector").options;
+    for (let option of options) {
+      option.selected = e.target.checked;
+    }
   });
 
-  // Delete All Fixers functionality
   document.getElementById("deleteAllBtn").addEventListener("click", async () => {
     const confirm = await Swal.fire({
       title: 'Are you sure?',
@@ -414,7 +406,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-    </script>
+                     </script>
   
 </body>
 </html>
