@@ -67,22 +67,17 @@
           <i class="fas fa-plus mr-1"></i> Add Point Table
         </button>
 
-        <!-- Team Selector and Group Selector for Point Table -->
+        <!-- Group Selector for Point Table -->
         <div class="flex gap-4 mb-4">
-          <select id="pointTableTeamSelector" multiple class="border border-gray-300 rounded p-2 text-sm w-26 h-9 overflow-y-auto" size="8"></select>
-          <label class="text-sm text-gray-600 flex items-center gap-2 pl-1">
-            <input type="checkbox" id="selectAllPointTableTeams" class="accent-green-600" />
-            Select All Teams
-          </label>
-          <select id="pointTableGroupSelector" class="border border-gray-300 rounded p-2 text-sm h-9">
-            <option value="A">Group A</option>
-            <option value="B">Group B</option>
-            <option value="C">Group C</option>
-            <option value="D">Group D</option>
-            <option value="E">Group E</option>
-            <option value="F">Group F</option>
-            <option value="G">Group G</option>
-            <option value="H">Group H</option>
+          <select id="groupCountPointTable" class="border border-gray-300 rounded p-2 text-sm h-9">
+            <option value="1">1 Group</option>
+            <option value="2">2 Groups</option>
+            <option value="3">3 Groups</option>
+            <option value="4">4 Groups</option>
+            <option value="5">5 Groups</option>
+            <option value="6">6 Groups</option>
+            <option value="7">7 Groups</option>
+            <option value="8">8 Groups</option>
           </select>
         </div>
 
@@ -141,7 +136,6 @@
       });
       teamList = Array.from(teams);
       document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
-      document.getElementById("pointTableTeamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     }
 
     async function loadFixers() {
@@ -312,7 +306,7 @@
               team1Goal: null,
               team2Goal: null,
               status: "Pending",
-              groupName: groupName // Added groupName here
+              groupName: groupName
             });
             added++;
           }
@@ -324,62 +318,52 @@
     });
 
     document.getElementById("addPointTableBtn").addEventListener("click", async () => {
-      const selectedTeams = Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).map(opt => opt.value);
-      const selectedGroup = document.getElementById("pointTableGroupSelector").value;
+      const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
+      const groupCount = parseInt(document.getElementById("groupCountPointTable").value);
 
-      if (selectedTeams.length < 4 || !selectedGroup) {
-        Swal.fire({ 
-          icon: 'warning', 
-          title: 'Please fill out all fields.',
-          position: 'top-end', 
-          toast: true, 
-          timer: 3000, 
-          showConfirmButton: false 
-        });
+      if (selectedTeams.length < 4 || isNaN(groupCount)) {
+        Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
         return;
       }
 
-      if (selectedTeams.length !== 4) {
-        Swal.fire({ 
-          icon: 'error', 
-          title: 'Select exactly 4 teams.',
-          position: 'top-end', 
-          toast: true, 
-          timer: 4000, 
-          showConfirmButton: false 
-        });
+      if (selectedTeams.length !== groupCount * 4) {
+        Swal.fire({ icon: 'error', title: `Select ${groupCount * 4} teams.`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
         return;
       }
 
-      const pointTable = {
-        groupName: selectedGroup,
-        teams: selectedTeams.map(team => ({
-          team,
-          played: 0,
-          win: 0,
-          loss: 0,
-          draw: 0,
-          goals: 0,
-          points: 0
-        }))
-      };
+      const groups = [];
+      let added = 0;
 
-      // Save point table to Firebase
-      await addDoc(collection(db, "pointTables"), pointTable);
+      for (let g = 0; g < groupCount; g++) {
+        const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
+        const groupName = `Group ${String.fromCharCode(65 + g)}`;
 
-      Swal.fire({ 
-        icon: 'success', 
-        title: 'Point table added.',
-        position: 'top-end', 
-        toast: true, 
-        timer: 3000, 
-        showConfirmButton: false 
-      });
+        groups.push({
+          groupName,
+          teams: groupTeams.map(team => ({
+            team,
+            played: 0,
+            win: 0,
+            loss: 0,
+            draw: 0,
+            goals: 0,
+            points: 0
+          }))
+        });
+
+        added++;
+      }
+
+      for (const group of groups) {
+        await addDoc(collection(db, "pointTables"), group);
+      }
+
+      Swal.fire({ icon: 'success', title: `${added} point tables added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
       loadPointTables();
     });
 
-    document.getElementById("selectAllPointTableTeams").addEventListener("change", (e) => {
-      const options = document.getElementById("pointTableTeamSelector").options;
+    document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+      const options = document.getElementById("teamSelector").options;
       for (let option of options) option.selected = e.target.checked;
     });
 
