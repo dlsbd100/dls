@@ -96,7 +96,7 @@
     </div>
   </main>
 
-   <script type="module">
+    <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
@@ -335,6 +335,11 @@
     // Save point table to Firebase
     await addDoc(collection(db, "pointTables"), pointTable);
 
+    // Remove the selected teams from the selector
+    Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).forEach(option => {
+      option.remove();
+    });
+
     Swal.fire({
       icon: 'success',
       title: 'Point table added.',
@@ -370,6 +375,7 @@
     loadFixers();
   });
 </script>
+
 
 
 </body>
