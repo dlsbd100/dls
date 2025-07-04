@@ -60,14 +60,15 @@
         <p class="text-gray-500 text-center">Loading fixers...</p>
       </div>
 
-      <div id="pointTablesContainer" class="bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
+      <div>
+         <button id="addPointTableBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 whitespace-nowrap">
+              <i class="fas fa-plus mr-1"></i> Add Fixers
+         </button>
+        
+        <div id="pointTablesContainer" class="bg-white shadow rounded p-4 max-h-[400px] overflow-y-auto">
         <h2 class="text-lg font-semibold text-green-700 mb-3">Point Tables</h2>
         <!-- Group-wise point tables will appear here -->
       </div>
-
-      <div id="quarterfinalsContainer" class="bg-white shadow rounded p-4 mt-6">
-        <h2 class="text-lg font-semibold text-red-700 mb-3">Quarterfinals</h2>
-        <!-- Quarterfinals will be generated here -->
       </div>
     </div>
   </main>
@@ -271,34 +272,6 @@
       }
 
       pointTablesContainer.innerHTML = allPointsHTML;
-
-      generateQuarterfinals(pointTables);
-    }
-
-    async function generateQuarterfinals(pointTables) {
-      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
-      let quarterfinals = [];
-
-      pointTables.forEach(group => {
-        const topTeams = group.teams.slice(0, 2);  // Top 2 teams from each group
-        quarterfinals.push(...topTeams);
-      });
-
-      let html = "<div class='mb-4'><div class='font-semibold mb-1 text-red-700'>Quarterfinals</div>";
-      for (let i = 0; i < quarterfinals.length; i += 2) {
-        html += `
-          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-            <div class="text-center text-[13px] text-gray-500 font-semibold">Match ${i / 2 + 1}</div>
-            <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-600">${quarterfinals[i].team}</div>
-              <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${quarterfinals[i + 1].team}</div>
-            </div>
-          </div>
-        `;
-      }
-      html += "</div>";
-      quarterfinalsContainer.innerHTML = html;
     }
 
     async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
