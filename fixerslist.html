@@ -291,37 +291,57 @@
             added++;
           }
         }
-
-        await savePointTable(groupName, groupTeams.map(team => ({
-          team,
-          played: 0,
-          win: 0,
-          loss: 0,
-          draw: 0,
-          goals: 0,
-          points: 0
-        })));
       }
 
       Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
       loadFixers();
     });
 
-    async function savePointTable(groupName, teams) {
-      await addDoc(collection(db, "pointTables"), {
-        groupName,
-        teams: teams.map(t => ({
-          team: t.team,
-          played: t.played,
-          win: t.win,
-          loss: t.loss,
-          draw: t.draw,
-          goals: t.goals,
-          points: t.points
-        })),
-      });
-      console.log("Point table for " + groupName + " saved successfully.");
-    }
+    document.getElementById("addPointTableBtn").addEventListener("click", async () => {
+      const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
+      const groupCount = parseInt(document.getElementById("groupCount").value);
+
+      if (selectedTeams.length < 4 || isNaN(groupCount)) {
+        Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+        return;
+      }
+
+      if (selectedTeams.length !== groupCount * 4) {
+        Swal.fire({ icon: 'error', title: `Select ${groupCount * 4} teams.`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
+        return;
+      }
+
+      const groups = [];
+      let added = 0;
+
+      for (let g = 0; g < groupCount; g++) {
+        const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
+        const groupName = `Group ${String.fromCharCode(65 + g)}`;
+
+        groups.push({
+          groupName,
+          teams: groupTeams.map(team => ({
+            team,
+            played: 0,
+            win: 0,
+            loss: 0,
+            draw: 0,
+            goals: 0,
+            points: 0
+          }))
+        });
+
+        added++;
+      }
+
+      // Save point tables to Firebase
+      for (const group of groups) {
+        await addDoc(collection(db, "pointTables"), group);
+      }
+
+      Swal.fire({ icon: 'success', title: `${added} point tables added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      loadPointTables();
+    });
 
     document.getElementById("selectAllTeams").addEventListener("change", (e) => {
       const options = document.getElementById("teamSelector").options;
