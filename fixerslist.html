@@ -287,15 +287,6 @@
     }
   });
 
-  // Hide selected teams from the pointTableTeamSelector dropdown
-  document.getElementById("pointTableTeamSelector").addEventListener("change", () => {
-    const selectedTeams = Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).map(opt => opt.value);
-    const options = document.getElementById("pointTableTeamSelector").options;
-    for (let option of options) {
-      option.style.display = selectedTeams.includes(option.value) ? "none" : "block";
-    }
-  });
-
   // Adding new point table with check for previously used group
   document.getElementById("addPointTableBtn").addEventListener("click", async () => {
     const selectedTeams = Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).map(opt => opt.value);
