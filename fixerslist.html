@@ -143,9 +143,6 @@
     teamList = Array.from(teams);
     document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     document.getElementById("pointTableTeamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
-
-    // Hide the teams that are already used in point tables
-    hideUsedTeamsInPointTables();
   }
 
   async function loadFixers() {
@@ -282,26 +279,6 @@
     pointTablesContainer.innerHTML = allPointsHTML;
   }
 
-  // Function to hide used teams from pointTableTeamSelector dropdown
-  async function hideUsedTeamsInPointTables() {
-    const snapshot = await getDocs(collection(db, "pointTables"));
-    const usedTeams = new Set();
-
-    snapshot.forEach(doc => {
-      const pointTable = doc.data();
-      pointTable.teams.forEach(team => usedTeams.add(team.team));
-    });
-
-    const options = document.getElementById("pointTableTeamSelector").options;
-    for (let option of options) {
-      if (usedTeams.has(option.value)) {
-        option.style.display = "none"; // Hide teams that are already used in point tables
-      } else {
-        option.style.display = "block"; // Show teams that are not used
-      }
-    }
-  }
-
   // Select All Teams checkbox functionality
   document.getElementById("selectAllTeams").addEventListener("change", (e) => {
     const options = document.getElementById("teamSelector").options;
@@ -310,15 +287,12 @@
     }
   });
 
-  // Adding new fixer
-  document.getElementById("addFixerBtn").addEventListener("click", async () => {
-    const team1 = document.getElementById("team1Selector").value;
-    const team2 = document.getElementById("team2Selector").value;
-    const team1Goal = document.getElementById("team1Goal").value;
-    const team2Goal = document.getElementById("team2Goal").value;
-    const date = document.getElementById("fixDate").value;
+  // Adding new point table with check for previously used group
+  document.getElementById("addPointTableBtn").addEventListener("click", async () => {
+    const selectedTeams = Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).map(opt => opt.value);
+    const selectedGroup = document.getElementById("pointTableGroupSelector").value;
 
-    if (!team1 || !team2 || !team1Goal || !team2Goal || !date) {
+    if (selectedTeams.length < 4 || !selectedGroup) {
       Swal.fire({
         icon: 'warning',
         title: 'Please fill out all fields.',
@@ -330,28 +304,51 @@
       return;
     }
 
-    const fixer = {
-      team1,
-      team2,
-      team1Goal: parseInt(team1Goal),
-      team2Goal: parseInt(team2Goal),
-      date,
-      status: "Pending",
+    // Check if the selected group is already used
+    const snapshot = await getDocs(collection(db, "pointTables"));
+    const existingGroups = snapshot.docs.map(doc => doc.data().groupName);
+    if (existingGroups.includes(selectedGroup)) {
+      Swal.fire({
+        icon: 'error',
+        title: `Group ${selectedGroup} is already used!`,
+        position: 'top-end',
+        toast: true,
+        timer: 4000,
+        showConfirmButton: false
+      });
+      return;
+    }
+
+    const pointTable = {
+      groupName: selectedGroup,
+      teams: selectedTeams.map(team => ({
+        team,
+        played: 0,
+        win: 0,
+        loss: 0,
+        draw: 0,
+        goals: 0,
+        points: 0
+      }))
     };
 
-    // Save fixer to Firebase
-    await addDoc(collection(db, "fixers"), fixer);
+    // Save point table to Firebase
+    await addDoc(collection(db, "pointTables"), pointTable);
 
     Swal.fire({
       icon: 'success',
-      title: 'Fixer added.',
+      title: 'Point table added.',
       position: 'top-end',
       toast: true,
       timer: 3000,
       showConfirmButton: false
     });
+    loadPointTables();
+  });
 
-    loadFixers();
+  document.getElementById("selectAllPointTableTeams").addEventListener("change", (e) => {
+    const options = document.getElementById("pointTableTeamSelector").options;
+    for (let option of options) option.selected = e.target.checked;
   });
 
   document.getElementById("deleteAllBtn").addEventListener("click", async () => {
@@ -372,7 +369,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-    </script>
+                      </script>
 
 </body>
 </html>
