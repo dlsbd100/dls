@@ -123,7 +123,6 @@
   const db = getFirestore(app);
 
   let teamList = [];
-  let usedGroups = [];
 
   onAuthStateChanged(auth, (user) => {
     if (!user) window.location.href = "login.html";
@@ -156,13 +155,65 @@
     }
 
     const fixers = [];
+    let groupIndex = 0;
+
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
+      const docRef = doc(db, "fixers", docSnap.id);
+
+      const g1 = data.team1Goal;
+      const g2 = data.team2Goal;
+      let status = (typeof g1 === 'number' && typeof g2 === 'number') ? "Finished" : "Pending";
+
+      if (data.status !== status) {
+        updateDoc(docRef, { status });
+        data.status = status;
+      }
+
       fixers.push(data);
     });
 
-    // Check already used groups
-    usedGroups = fixers.map(fixer => fixer.groupName);
+    const fixersByDate = {};
+    fixers.forEach(fix => {
+      const key = fix.date;
+      if (!fixersByDate[key]) fixersByDate[key] = [];
+      fixersByDate[key].push(fix);
+    });
+
+    const sortedDates = Object.keys(fixersByDate).sort();
+    let html = "";
+    groupIndex = 0;
+
+    sortedDates.forEach(date => {
+      const groupName = String.fromCharCode(65 + groupIndex);
+      html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
+      const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+
+      matches.forEach((match) => {
+        let winner = "None";
+        if (typeof match.team1Goal === "number" && typeof match.team2Goal === "number") {
+          if (match.team1Goal > match.team2Goal) winner = match.team1;
+          else if (match.team2Goal > match.team1Goal) winner = match.team2;
+          else winner = "Draw";
+        }
+
+        html += `
+          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+            <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date}</div>
+            <div class="flex justify-between items-center px-2">
+              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
+              <div class="text-base font-bold text-red-500">VS</div>
+              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
+            </div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
+            <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
+          </div>`;
+      });
+
+      groupIndex++;
+    });
+
+    fixersContainer.innerHTML = html;
   }
 
   async function loadPointTables() {
@@ -228,22 +279,62 @@
     pointTablesContainer.innerHTML = allPointsHTML;
   }
 
+  // Select All Teams checkbox functionality
+  document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+    const options = document.getElementById("teamSelector").options;
+    for (let option of options) {
+      option.selected = e.target.checked;
+    }
+  });
+
+  document.getElementById("addFixerBtn").addEventListener("click", async () => {
+    const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
+    const baseDate = document.getElementById("fixerDate").value;
+    const groupCount = parseInt(document.getElementById("groupCount").value);
+
+    if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
+      Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      return;
+    }
+
+    if (selectedTeams.length !== groupCount * 4) {
+      Swal.fire({ icon: 'error', title: `Select ${groupCount * 4} teams.`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
+      return;
+    }
+
+    const start = new Date(baseDate);
+    let added = 0;
+
+    for (let g = 0; g < groupCount; g++) {
+      const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
+      const matchDate = new Date(start);
+      matchDate.setDate(start.getDate() + g);
+      const dateStr = matchDate.toISOString().split("T")[0];
+      const groupName = `Group ${String.fromCharCode(65 + g)}`;
+
+      for (let i = 0; i < groupTeams.length; i++) {
+        for (let j = i + 1; j < groupTeams.length; j++) {
+          await addDoc(collection(db, "fixers"), {
+            team1: groupTeams[i],
+            team2: groupTeams[j],
+            date: dateStr,
+            team1Goal: null,
+            team2Goal: null,
+            status: "Pending",
+            groupName: groupName // Added groupName here
+          });
+          added++;
+        }
+      }
+    }
+
+    Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+    loadFixers();
+  });
+
   document.getElementById("addPointTableBtn").addEventListener("click", async () => {
     const selectedTeams = Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).map(opt => opt.value);
     const selectedGroup = document.getElementById("pointTableGroupSelector").value;
-
-    // Check if group is already used
-    if (usedGroups.includes(selectedGroup)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'This group has already been used!',
-        position: 'top-end',
-        toast: true,
-        timer: 3000,
-        showConfirmButton: false
-      });
-      return;
-    }
 
     if (selectedTeams.length < 4 || !selectedGroup) {
       Swal.fire({
@@ -285,9 +376,6 @@
     // Save point table to Firebase
     await addDoc(collection(db, "pointTables"), pointTable);
 
-    // Update used groups
-    usedGroups.push(selectedGroup);
-
     Swal.fire({
       icon: 'success',
       title: 'Point table added.',
@@ -297,14 +385,6 @@
       showConfirmButton: false
     });
     loadPointTables();
-  });
-
-  // Select All Teams checkbox functionality
-  document.getElementById("selectAllTeams").addEventListener("change", (e) => {
-    const options = document.getElementById("teamSelector").options;
-    for (let option of options) {
-      option.selected = e.target.checked;
-    }
   });
 
   document.getElementById("selectAllPointTableTeams").addEventListener("change", (e) => {
@@ -330,7 +410,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-</script>
+          </script>
 
 
 </body>
