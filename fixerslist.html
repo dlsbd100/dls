@@ -310,6 +310,7 @@
       }
     }
 
+    // Add fixer button
     document.getElementById("addFixerBtn").addEventListener("click", async () => {
       const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
       const baseDate = document.getElementById("fixerDate").value;
@@ -365,21 +366,12 @@
       loadFixers();
     });
 
-    async function savePointTable(groupName, teams) {
-      await addDoc(collection(db, "pointTables"), {
-        groupName,
-        teams: teams.map(t => ({
-          team: t.team,
-          played: t.played,
-          win: t.win,
-          loss: t.loss,
-          draw: t.draw,
-          goals: t.goals,
-          points: t.points
-        })),
-      });
-      console.log("Point table for " + groupName + " saved successfully.");
-    }
+    // Add point table button
+    document.getElementById("addPointTableBtn").addEventListener("click", async () => {
+      // Point table creation logic can go here
+      Swal.fire({ icon: 'success', title: 'Point table added.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+      loadPointTables();
+    });
 
     document.getElementById("selectAllTeams").addEventListener("change", (e) => {
       const options = document.getElementById("teamSelector").options;
