@@ -97,279 +97,279 @@
   </main>
 
     <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import {
-    getFirestore,
-    collection,
-    getDocs,
-    addDoc,
-    deleteDoc,
-    updateDoc,
-    doc
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    addDoc,
+    deleteDoc,
+    updateDoc,
+    doc
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
-    authDomain: "dlstournament-31ac1.firebaseapp.com",
-    projectId: "dlstournament-31ac1",
-    storageBucket: "dlstournament-31ac1.appspot.com",
-    messagingSenderId: "874377019055",
-    appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
-  };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
+    authDomain: "dlstournament-31ac1.firebaseapp.com",
+    projectId: "dlstournament-31ac1",
+    storageBucket: "dlstournament-31ac1.appspot.com",
+    messagingSenderId: "874377019055",
+    appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
+  };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-  let teamList = [];
+  let teamList = [];
 
-  onAuthStateChanged(auth, (user) => {
-    if (!user) window.location.href = "login.html";
-    else {
-      loadTeams();
-      loadFixers();
-      loadPointTables();
-    }
-  });
+  onAuthStateChanged(auth, (user) => {
+    if (!user) window.location.href = "login.html";
+    else {
+      loadTeams();
+      loadFixers();
+      loadPointTables();
+    }
+  });
 
-  async function loadTeams() {
-    const snapshot = await getDocs(collection(db, "playersform"));
-    const teams = new Set();
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      if (data.team) teams.add(data.team);
-    });
-    teamList = Array.from(teams);
-    document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
-    document.getElementById("pointTableTeamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
-  }
+  async function loadTeams() {
+    const snapshot = await getDocs(collection(db, "playersform"));
+    const teams = new Set();
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.team) teams.add(data.team);
+    });
+    teamList = Array.from(teams);
+    document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
+    document.getElementById("pointTableTeamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
+  }
 
-  async function loadFixers() {
-    const snapshot = await getDocs(collection(db, "fixers"));
-    const fixersContainer = document.getElementById("fixersContainer");
+  async function loadFixers() {
+    const snapshot = await getDocs(collection(db, "fixers"));
+    const fixersContainer = document.getElementById("fixersContainer");
 
-    if (snapshot.empty) {
-      fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
-      return;
-    }
+    if (snapshot.empty) {
+      fixersContainer.innerHTML = `<p class="text-gray-500 text-center">No fixers found.</p>`;
+      return;
+    }
 
-    const fixers = [];
-    let groupIndex = 0;
+    const fixers = [];
+    let groupIndex = 0;
 
-    snapshot.forEach(docSnap => {
-      const data = docSnap.data();
-      const docRef = doc(db, "fixers", docSnap.id);
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      const docRef = doc(db, "fixers", docSnap.id);
 
-      const g1 = data.team1Goal;
-      const g2 = data.team2Goal;
-      let status = (typeof g1 === 'number' && typeof g2 === 'number') ? "Finished" : "Pending";
+      const g1 = data.team1Goal;
+      const g2 = data.team2Goal;
+      let status = (typeof g1 === 'number' && typeof g2 === 'number') ? "Finished" : "Pending";
 
-      if (data.status !== status) {
-        updateDoc(docRef, { status });
-        data.status = status;
-      }
+      if (data.status !== status) {
+        updateDoc(docRef, { status });
+        data.status = status;
+      }
 
-      fixers.push(data);
-    });
+      fixers.push(data);
+    });
 
-    const fixersByDate = {};
-    fixers.forEach(fix => {
-      const key = fix.date;
-      if (!fixersByDate[key]) fixersByDate[key] = [];
-      fixersByDate[key].push(fix);
-    });
+    const fixersByDate = {};
+    fixers.forEach(fix => {
+      const key = fix.date;
+      if (!fixersByDate[key]) fixersByDate[key] = [];
+      fixersByDate[key].push(fix);
+    });
 
-    const sortedDates = Object.keys(fixersByDate).sort();
-    let html = "";
-    groupIndex = 0;
+    const sortedDates = Object.keys(fixersByDate).sort();
+    let html = "";
+    groupIndex = 0;
 
-    sortedDates.forEach(date => {
-      const groupName = String.fromCharCode(65 + groupIndex);
-      html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
-      const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
+    sortedDates.forEach(date => {
+      const groupName = String.fromCharCode(65 + groupIndex);
+      html += `<div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">Group ${groupName}</div>`;
+      const matches = fixersByDate[date].sort((a, b) => a.team1.localeCompare(b.team1));
 
-      matches.forEach((match) => {
-        let winner = "None";
-        if (typeof match.team1Goal === "number" && typeof match.team2Goal === "number") {
-          if (match.team1Goal > match.team2Goal) winner = match.team1;
-          else if (match.team2Goal > match.team1Goal) winner = match.team2;
-          else winner = "Draw";
-        }
+      matches.forEach((match) => {
+        let winner = "None";
+        if (typeof match.team1Goal === "number" && typeof match.team2Goal === "number") {
+          if (match.team1Goal > match.team2Goal) winner = match.team1;
+          else if (match.team2Goal > match.team1Goal) winner = match.team2;
+          else winner = "Draw";
+        }
 
-        html += `
-          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-            <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date}</div>
-            <div class="flex justify-between items-center px-2">
-              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
-              <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
-            </div>
-            <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-            <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
-          </div>`;
-      });
+        html += `
+          <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+            <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date}</div>
+            <div class="flex justify-between items-center px-2">
+              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal ?? "-"})</span></div>
+              <div class="text-base font-bold text-red-500">VS</div>
+              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal ?? "-"})</span></div>
+            </div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
+            <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
+          </div>`;
+      });
 
-      groupIndex++;
-    });
+      groupIndex++;
+    });
 
-    fixersContainer.innerHTML = html;
-  }
+    fixersContainer.innerHTML = html;
+  }
 
-  async function loadPointTables() {
-    const snapshot = await getDocs(collection(db, "pointTables"));
-    const pointTablesContainer = document.getElementById("pointTablesContainer");
+  async function loadPointTables() {
+    const snapshot = await getDocs(collection(db, "pointTables"));
+    const pointTablesContainer = document.getElementById("pointTablesContainer");
 
-    if (snapshot.empty) {
-      pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-      return;
-    }
+    if (snapshot.empty) {
+      pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+      return;
+    }
 
-    const pointTables = [];
-    snapshot.forEach(doc => pointTables.push(doc.data()));
+    const pointTables = [];
+    snapshot.forEach(doc => pointTables.push(doc.data()));
 
-    let allPointsHTML = "";
-    if (pointTables.length === 0) {
-      allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-    } else {
-      allPointsHTML = pointTables.map((pointTable, index) => {
-        pointTable.teams.sort((a, b) => {
-          if (b.points === a.points) {
-            return b.goals - a.goals;
-          }
-          return b.points - a.points;
-        });
+    let allPointsHTML = "";
+    if (pointTables.length === 0) {
+      allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
+    } else {
+      allPointsHTML = pointTables.map((pointTable, index) => {
+        pointTable.teams.sort((a, b) => {
+          if (b.points === a.points) {
+            return b.goals - a.goals;
+          }
+          return b.points - a.points;
+        });
 
-        return `
-          <div class="mb-4">
-            <div class="font-semibold mb-1 text-blue-700">Point Table - Group ${String.fromCharCode(65 + index)}</div>
-            <table class="text-sm w-full table-auto border border-gray-200">
-              <thead>
-                <tr class="bg-gray-200">
-                  <th class="px-2 py-1 border">#</th>
-                  <th class="px-2 py-1 border">Team</th>
-                  <th class="px-2 py-1 border text-center">Played</th>
-                  <th class="px-2 py-1 border text-center">Win</th>
-                  <th class="px-2 py-1 border text-center">Loss</th>
-                  <th class="px-2 py-1 border text-center">Draw</th>
-                  <th class="px-2 py-1 border text-center">Goals</th>
-                  <th class="px-2 py-1 border text-center">Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${pointTable.teams.map((team, i) => `
-                  <tr>
-                    <td class="px-2 py-1 border text-center">${i + 1}</td>
-                    <td class="px-2 py-1 border">${team.team}</td>
-                    <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
-                    <td class="px-2 py-1 border text-center">${team.win}</td>
-                    <td class="px-2 py-1 border text-center">${team.loss}</td>
-                    <td class="px-2 py-1 border text-center">${team.draw}</td>
-                    <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
-                    <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }).join('');
-    }
+        return `
+          <div class="mb-4">
+            <div class="font-semibold mb-1 text-blue-700">Point Table - Group ${String.fromCharCode(65 + index)}</div>
+            <table class="text-sm w-full table-auto border border-gray-200">
+              <thead>
+                <tr class="bg-gray-200">
+                  <th class="px-2 py-1 border">#</th>
+                  <th class="px-2 py-1 border">Team</th>
+                  <th class="px-2 py-1 border text-center">Played</th>
+                  <th class="px-2 py-1 border text-center">Win</th>
+                  <th class="px-2 py-1 border text-center">Loss</th>
+                  <th class="px-2 py-1 border text-center">Draw</th>
+                  <th class="px-2 py-1 border text-center">Goals</th>
+                  <th class="px-2 py-1 border text-center">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pointTable.teams.map((team, i) => `
+                  <tr>
+                    <td class="px-2 py-1 border text-center">${i + 1}</td>
+                    <td class="px-2 py-1 border">${team.team}</td>
+                    <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
+                    <td class="px-2 py-1 border text-center">${team.win}</td>
+                    <td class="px-2 py-1 border text-center">${team.loss}</td>
+                    <td class="px-2 py-1 border text-center">${team.draw}</td>
+                    <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
+                    <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }).join('');
+    }
 
-    pointTablesContainer.innerHTML = allPointsHTML;
-  }
+    pointTablesContainer.innerHTML = allPointsHTML;
+  }
 
-  // Select All Teams checkbox functionality
-  document.getElementById("selectAllTeams").addEventListener("change", (e) => {
-    const options = document.getElementById("teamSelector").options;
-    for (let option of options) {
-      option.selected = e.target.checked;
-    }
-  });
+  // Select All Teams checkbox functionality
+  document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+    const options = document.getElementById("teamSelector").options;
+    for (let option of options) {
+      option.selected = e.target.checked;
+    }
+  });
 
-  // Adding new point table with check for previously used group
-  document.getElementById("addPointTableBtn").addEventListener("click", async () => {
-    const selectedTeams = Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).map(opt => opt.value);
-    const selectedGroup = document.getElementById("pointTableGroupSelector").value;
+  // Adding new point table with check for previously used group
+  document.getElementById("addPointTableBtn").addEventListener("click", async () => {
+    const selectedTeams = Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).map(opt => opt.value);
+    const selectedGroup = document.getElementById("pointTableGroupSelector").value;
 
-    if (selectedTeams.length < 4 || !selectedGroup) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Please fill out all fields.',
-        position: 'top-end',
-        toast: true,
-        timer: 3000,
-        showConfirmButton: false
-      });
-      return;
-    }
+    if (selectedTeams.length < 4 || !selectedGroup) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Please fill out all fields.',
+        position: 'top-end',
+        toast: true,
+        timer: 3000,
+        showConfirmButton: false
+      });
+      return;
+    }
 
-    // Check if the selected group is already used
-    const snapshot = await getDocs(collection(db, "pointTables"));
-    const existingGroups = snapshot.docs.map(doc => doc.data().groupName);
-    if (existingGroups.includes(selectedGroup)) {
-      Swal.fire({
-        icon: 'error',
-        title: `Group ${selectedGroup} is already used!`,
-        position: 'top-end',
-        toast: true,
-        timer: 4000,
-        showConfirmButton: false
-      });
-      return;
-    }
+    // Check if the selected group is already used
+    const snapshot = await getDocs(collection(db, "pointTables"));
+    const existingGroups = snapshot.docs.map(doc => doc.data().groupName);
+    if (existingGroups.includes(selectedGroup)) {
+      Swal.fire({
+        icon: 'error',
+        title: `Group ${selectedGroup} is already used!`,
+        position: 'top-end',
+        toast: true,
+        timer: 4000,
+        showConfirmButton: false
+      });
+      return;
+    }
 
-    const pointTable = {
-      groupName: selectedGroup,
-      teams: selectedTeams.map(team => ({
-        team,
-        played: 0,
-        win: 0,
-        loss: 0,
-        draw: 0,
-        goals: 0,
-        points: 0
-      }))
-    };
+    const pointTable = {
+      groupName: selectedGroup,
+      teams: selectedTeams.map(team => ({
+        team,
+        played: 0,
+        win: 0,
+        loss: 0,
+        draw: 0,
+        goals: 0,
+        points: 0
+      }))
+    };
 
-    // Save point table to Firebase
-    await addDoc(collection(db, "pointTables"), pointTable);
+    // Save point table to Firebase
+    await addDoc(collection(db, "pointTables"), pointTable);
 
-    Swal.fire({
-      icon: 'success',
-      title: 'Point table added.',
-      position: 'top-end',
-      toast: true,
-      timer: 3000,
-      showConfirmButton: false
-    });
-    loadPointTables();
-  });
+    Swal.fire({
+      icon: 'success',
+      title: 'Point table added.',
+      position: 'top-end',
+      toast: true,
+      timer: 3000,
+      showConfirmButton: false
+    });
+    loadPointTables();
+  });
 
-  document.getElementById("selectAllPointTableTeams").addEventListener("change", (e) => {
-    const options = document.getElementById("pointTableTeamSelector").options;
-    for (let option of options) option.selected = e.target.checked;
-  });
+  document.getElementById("selectAllPointTableTeams").addEventListener("change", (e) => {
+    const options = document.getElementById("pointTableTeamSelector").options;
+    for (let option of options) option.selected = e.target.checked;
+  });
 
-  document.getElementById("deleteAllBtn").addEventListener("click", async () => {
-    const confirm = await Swal.fire({
-      title: 'Are you sure?',
-      text: "All matches will be deleted!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, delete all!',
-    });
+  document.getElementById("deleteAllBtn").addEventListener("click", async () => {
+    const confirm = await Swal.fire({
+      title: 'Are you sure?',
+      text: "All matches will be deleted!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete all!',
+    });
 
-    if (!confirm.isConfirmed) return;
+    if (!confirm.isConfirmed) return;
 
-    const snapshot = await getDocs(collection(db, "fixers"));
-    const deletions = snapshot.docs.map(docSnap => deleteDoc(doc(db, "fixers", docSnap.id)));
-    await Promise.all(deletions);
+    const snapshot = await getDocs(collection(db, "fixers"));
+    const deletions = snapshot.docs.map(docSnap => deleteDoc(doc(db, "fixers", docSnap.id)));
+    await Promise.all(deletions);
 
-    Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-    loadFixers();
-  });
-</script>
+    Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
+    loadFixers();
+  });
+    </script>
 
 </body>
 </html>
