@@ -80,6 +80,7 @@
     collection,
     getDocs,
     addDoc,
+    deleteDoc,
     updateDoc,
     doc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -270,6 +271,81 @@
     }
 
     pointTablesContainer.innerHTML = allPointsHTML;
+
+    generateQuarterfinals(pointTables);
+  }
+
+  async function generateQuarterfinals(pointTables) {
+    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+    let quarterfinals = [];
+
+    pointTables.forEach(group => {
+      const topTeams = group.teams.slice(0, 2);  // Top 2 teams from each group
+      quarterfinals.push(...topTeams);
+    });
+
+    let html = "<div class='mb-4'><div class='font-semibold mb-1 text-red-700'>Quarterfinals</div>";
+    const baseDate = new Date(); // Set the starting date for the quarterfinals
+    let matchDate = baseDate;
+
+    for (let i = 0; i < quarterfinals.length; i += 2) {
+      let team1Goals = quarterfinals[i].goals || "-";
+      let team2Goals = quarterfinals[i + 1].goals || "-";
+
+      let winner = "None";
+      let status = "Pending";
+
+      if (team1Goals !== "-" && team2Goals !== "-") {
+        if (team1Goals > team2Goals) {
+          winner = quarterfinals[i].team;
+          status = "Finished";
+        } else if (team2Goals > team1Goals) {
+          winner = quarterfinals[i + 1].team;
+          status = "Finished";
+        } else {
+          winner = "Draw";
+          status = "Finished";
+        }
+      }
+
+      html += `
+        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+          <div class="text-center text-[13px] text-gray-500 font-semibold">Date: ${matchDate.toISOString().split("T")[0]}</div>
+          <div class="text-center text-[13px] text-gray-500 font-semibold">Match ${i / 2 + 1}</div>
+          <div class="flex justify-between items-center px-2">
+            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i].team} <span class="text-black">(${team1Goals})</span></div>
+            <div class="text-base font-bold text-red-500">VS</div>
+            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i + 1].team} <span class="text-black">(${team2Goals})</span></div>
+          </div>
+          <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
+          <div class="text-center text-blue-600 text-xs font-medium">Status: ${status}</div>
+        </div>`;
+      matchDate.setDate(matchDate.getDate() + 1); // Move to the next day
+    }
+    html += "</div>";
+    quarterfinalsContainer.innerHTML = html;
+
+    // Save quarterfinals in Firestore
+    await saveQuarterfinals(quarterfinals);
+  }
+
+  async function saveQuarterfinals(quarterfinals) {
+    const batch = db.batch();
+    quarterfinals.forEach((match, index) => {
+      const docRef = doc(collection(db, "quarterfinals"));
+      batch.set(docRef, {
+        team1: match.team,
+        team2: quarterfinals[index + 1] ? quarterfinals[index + 1].team : null, // Add second team if available
+        date: new Date().toISOString().split("T")[0], // Current date, or you can specify the match date
+        team1Goal: null,
+        team2Goal: null,
+        status: "Pending",
+        winner: "None",
+      });
+    });
+
+    await batch.commit();
+    console.log("Quarterfinals saved.");
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
@@ -402,7 +478,8 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-    </script>
+</script>
+
   
 </body>
   </html>
