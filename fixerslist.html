@@ -234,14 +234,9 @@
           return b.points - a.points;
         });
 
-        const groupIndex = String.fromCharCode(65 + index);
-        const groupTeams = pointTable.teams.map((team, idx) => {
-          return { ...team, group: groupIndex, serial: idx + 1 };
-        });
-
         return `
           <div class="mb-4">
-            <div class="font-semibold mb-1 text-blue-700">Point Table - Group ${groupIndex}</div>
+            <div class="font-semibold mb-1 text-blue-700">Point Table - Group ${String.fromCharCode(65 + index)}</div>
             <table class="text-sm w-full table-auto border border-gray-200">
               <thead>
                 <tr class="bg-gray-200">
@@ -256,9 +251,9 @@
                 </tr>
               </thead>
               <tbody>
-                ${groupTeams.map((team, i) => `
+                ${pointTable.teams.map((team, i) => `
                   <tr>
-                    <td class="px-2 py-1 border text-center">${team.serial}</td>
+                    <td class="px-2 py-1 border text-center">${i + 1}</td>
                     <td class="px-2 py-1 border">${team.team}</td>
                     <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
                     <td class="px-2 py-1 border text-center">${team.win}</td>
@@ -276,20 +271,8 @@
     }
 
     pointTablesContainer.innerHTML = allPointsHTML;
-    generateQuarterfinals(pointTables);
-  }
 
-  async function savePointTable(groupName, teams) {
-    const groupIndex = String.fromCharCode(65 + pointTables.length);
-    await addDoc(collection(db, "pointTables"), {
-      groupName: groupName,
-      teams: teams.map((team, idx) => ({
-        ...team,
-        group: groupIndex,
-        serial: idx + 1
-      })),
-    });
-    console.log("Point table for " + groupName + " saved successfully.");
+    generateQuarterfinals(pointTables);
   }
 
   async function generateQuarterfinals(pointTables) {
@@ -302,17 +285,44 @@
     });
 
     let html = "<div class='mb-4'><div class='font-semibold mb-1 text-red-700'>Quarterfinals</div>";
+    const baseDate = new Date(); // Set the starting date for the quarterfinals
+    let matchDate = baseDate;
+
     for (let i = 0; i < quarterfinals.length; i += 2) {
+      let team1Goals = quarterfinals[i].goals || "-";
+      let team2Goals = quarterfinals[i + 1].goals || "-";
+
+      let winner = "None";
+      let status = "Pending";
+
+      if (team1Goals !== "-" && team2Goals !== "-") {
+        if (team1Goals > team2Goals) {
+          winner = quarterfinals[i].team;
+          status = "Finished";
+        } else if (team2Goals > team1Goals) {
+          winner = quarterfinals[i + 1].team;
+          status = "Finished";
+        } else {
+          winner = "Draw";
+          status = "Finished";
+        }
+      }
+
+      // Display match date for each quarterfinal
       html += `
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+          <div class="text-center text-[13px] text-gray-500 font-semibold">Date: ${matchDate.toISOString().split("T")[0]}</div>
           <div class="text-center text-[13px] text-gray-500 font-semibold">Match ${i / 2 + 1}</div>
           <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i].team}</div>
+            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i].team} <span class="text-black">(${team1Goals})</span></div>
             <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i + 1].team}</div>
+            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i + 1].team} <span class="text-black">(${team2Goals})</span></div>
           </div>
+          <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
+          <div class="text-center text-blue-600 text-xs font-medium">Status: ${status}</div>
         </div>
       `;
+      matchDate.setDate(matchDate.getDate() + 1); // Move to the next day
     }
     html += "</div>";
     quarterfinalsContainer.innerHTML = html;
@@ -388,7 +398,7 @@
             team1Goal: null,
             team2Goal: null,
             status: "Pending",
-            groupName: groupName // Added groupName here
+            groupName: groupName
           });
           added++;
         }
@@ -408,6 +418,22 @@
     Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
+
+  async function savePointTable(groupName, teams) {
+    await addDoc(collection(db, "pointTables"), {
+      groupName,
+      teams: teams.map(t => ({
+        team: t.team,
+        played: t.played,
+        win: t.win,
+        loss: t.loss,
+        draw: t.draw,
+        goals: t.goals,
+        points: t.points
+      })),
+    });
+    console.log("Point table for " + groupName + " saved successfully.");
+  }
 
   document.getElementById("selectAllTeams").addEventListener("change", (e) => {
     const options = document.getElementById("teamSelector").options;
@@ -432,7 +458,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-              </script>
+   </script>
 
 </body>
-</html>
+  </html>
