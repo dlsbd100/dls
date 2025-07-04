@@ -143,6 +143,9 @@
     teamList = Array.from(teams);
     document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
     document.getElementById("pointTableTeamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
+
+    // Hide the teams that are already used in point tables
+    hideUsedTeamsInPointTables();
   }
 
   async function loadFixers() {
@@ -277,6 +280,26 @@
     }
 
     pointTablesContainer.innerHTML = allPointsHTML;
+  }
+
+  // Function to hide used teams from pointTableTeamSelector dropdown
+  async function hideUsedTeamsInPointTables() {
+    const snapshot = await getDocs(collection(db, "pointTables"));
+    const usedTeams = new Set();
+
+    snapshot.forEach(doc => {
+      const pointTable = doc.data();
+      pointTable.teams.forEach(team => usedTeams.add(team.team));
+    });
+
+    const options = document.getElementById("pointTableTeamSelector").options;
+    for (let option of options) {
+      if (usedTeams.has(option.value)) {
+        option.style.display = "none"; // Hide teams that are already used in point tables
+      } else {
+        option.style.display = "block"; // Show teams that are not used
+      }
+    }
   }
 
   // Select All Teams checkbox functionality
