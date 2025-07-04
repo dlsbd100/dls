@@ -279,7 +279,14 @@
     pointTablesContainer.innerHTML = allPointsHTML;
   }
 
-  // Adding point table and match fixers
+  // Select All Teams checkbox functionality
+  document.getElementById("selectAllTeams").addEventListener("change", (e) => {
+    const options = document.getElementById("teamSelector").options;
+    for (let option of options) {
+      option.selected = e.target.checked;
+    }
+  });
+
   document.getElementById("addFixerBtn").addEventListener("click", async () => {
     const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
     const baseDate = document.getElementById("fixerDate").value;
@@ -380,12 +387,9 @@
     loadPointTables();
   });
 
-  // Select All Teams checkbox functionality
-  document.getElementById("selectAllTeams").addEventListener("change", (e) => {
-    const options = document.getElementById("teamSelector").options;
-    for (let option of options) {
-      option.selected = e.target.checked;
-    }
+  document.getElementById("selectAllPointTableTeams").addEventListener("change", (e) => {
+    const options = document.getElementById("pointTableTeamSelector").options;
+    for (let option of options) option.selected = e.target.checked;
   });
 
   document.getElementById("deleteAllBtn").addEventListener("click", async () => {
@@ -406,7 +410,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-                     </script>
+   </script>
   
 </body>
 </html>
