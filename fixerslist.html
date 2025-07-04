@@ -287,51 +287,7 @@
     }
   });
 
-  document.getElementById("addFixerBtn").addEventListener("click", async () => {
-    const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
-    const baseDate = document.getElementById("fixerDate").value;
-    const groupCount = parseInt(document.getElementById("groupCount").value);
-
-    if (selectedTeams.length < 2 || !baseDate || isNaN(groupCount)) {
-      Swal.fire({ icon: 'warning', title: 'Please fill out all fields.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-      return;
-    }
-
-    if (selectedTeams.length !== groupCount * 4) {
-      Swal.fire({ icon: 'error', title: `Select ${groupCount * 4} teams.`, position: 'top-end', toast: true, timer: 4000, showConfirmButton: false });
-      return;
-    }
-
-    const start = new Date(baseDate);
-    let added = 0;
-
-    for (let g = 0; g < groupCount; g++) {
-      const groupTeams = selectedTeams.slice(g * 4, (g + 1) * 4);
-      const matchDate = new Date(start);
-      matchDate.setDate(start.getDate() + g);
-      const dateStr = matchDate.toISOString().split("T")[0];
-      const groupName = `Group ${String.fromCharCode(65 + g)}`;
-
-      for (let i = 0; i < groupTeams.length; i++) {
-        for (let j = i + 1; j < groupTeams.length; j++) {
-          await addDoc(collection(db, "fixers"), {
-            team1: groupTeams[i],
-            team2: groupTeams[j],
-            date: dateStr,
-            team1Goal: null,
-            team2Goal: null,
-            status: "Pending",
-            groupName: groupName // Added groupName here
-          });
-          added++;
-        }
-      }
-    }
-
-    Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
-    loadFixers();
-  });
-
+  // Adding new point table with check for previously used group
   document.getElementById("addPointTableBtn").addEventListener("click", async () => {
     const selectedTeams = Array.from(document.getElementById("pointTableTeamSelector").selectedOptions).map(opt => opt.value);
     const selectedGroup = document.getElementById("pointTableGroupSelector").value;
@@ -348,10 +304,13 @@
       return;
     }
 
-    if (selectedTeams.length !== 4) {
+    // Check if the selected group is already used
+    const snapshot = await getDocs(collection(db, "pointTables"));
+    const existingGroups = snapshot.docs.map(doc => doc.data().groupName);
+    if (existingGroups.includes(selectedGroup)) {
       Swal.fire({
         icon: 'error',
-        title: 'Select exactly 4 teams.',
+        title: `Group ${selectedGroup} is already used!`,
         position: 'top-end',
         toast: true,
         timer: 4000,
@@ -410,7 +369,8 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-          </script>
+</script>
+
 
 </body>
 </html>
