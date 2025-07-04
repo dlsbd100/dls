@@ -227,9 +227,9 @@
       allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
     } else {
       allPointsHTML = pointTables.map((pointTable, index) => {
-        // Remove the "Group D" related text
-        if (pointTable.groupName === "Group D") return '';
-
+        // Remove the "Point Table - Group C" text
+        if (pointTable.groupName === "Group C") return '';  // Skip Group C
+        
         pointTable.teams.sort((a, b) => {
           if (b.points === a.points) {
             return b.goals - a.goals;
@@ -406,7 +406,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-    </script>
+   </script>
 
 </body>
 </html>
