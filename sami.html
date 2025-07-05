@@ -145,7 +145,7 @@
       quarterfinalsSnapshot.forEach(doc => {
         const match = doc.data();
 
-        // Match display logic
+        // Match display logic with separate match date per match
         html += `
           <div class="border p-3 rounded shadow-sm mb-2">
             <div class="text-center text-gray-500 text-xs">Match Date: ${match.matchDate || 'TBD'}</div>
