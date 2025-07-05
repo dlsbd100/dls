@@ -43,7 +43,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -64,7 +64,6 @@
         window.location.href = "login.html";
       } else {
         loadTopTeams();
-        loadQuarterfinalMatches();
       }
     });
 
@@ -72,6 +71,7 @@
       try {
         const pointTablesSnapshot = await getDocs(collection(db, "pointTables"));
         const topTeamsContainer = document.getElementById("topTeams");
+        const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
         if (pointTablesSnapshot.empty) {
           topTeamsContainer.innerHTML = `<div class="text-center text-gray-500">No point tables available.</div>`;
@@ -121,6 +121,8 @@
       const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
       let html = `<div class="bg-gray-100 p-3 rounded font-semibold text-gray-700 mb-3">Quarterfinals Matches</div>`;
       
+      const quarterfinalMatches = [];
+
       // Pair the top teams in the quarterfinals
       for (let i = 0; i < topTeams.length; i += 2) {
         const team1 = topTeams[i];
@@ -147,6 +149,15 @@
           }
         }
 
+        quarterfinalMatches.push({
+          team1: team1.team,
+          team2: team2.team,
+          team1Goal: team1Goal,
+          team2Goal: team2Goal,
+          winner: winner,
+          status: status
+        });
+
         // Add each match to the quarterfinals section
         html += `
           <div class="border p-3 rounded shadow-sm mb-2">
@@ -160,70 +171,28 @@
             <div class="text-center text-blue-600 text-xs font-medium">Status: ${status}</div>
           </div>
         `;
-
-        // Save each match as an individual document in Firestore
-        await saveQuarterfinalMatch(team1, team2, team1Goal, team2Goal, winner, status);
       }
 
       quarterfinalsContainer.innerHTML = html;
+
+      // Save quarterfinals to the database
+      saveQuarterfinals(quarterfinalMatches);
     }
 
-    async function saveQuarterfinalMatch(team1, team2, team1Goal, team2Goal, winner, status) {
+    async function saveQuarterfinals(matches) {
       try {
-        // Save each match as an individual document in the Firestore 'quarterfinals' collection
-        const docRef = await addDoc(collection(db, "quarterfinals"), {
-          team1: team1.team,
-          team2: team2.team,
-          team1Goal,
-          team2Goal,
-          winner,
-          status,
-          createdAt: new Date()
-        });
+        // Save the quarterfinals matches to the database
+        const quarterfinalsRef = collection(db, "quarterfinals");
 
-        console.log("Quarterfinal match saved with ID: ", docRef.id);
-      } catch (e) {
-        console.error("Error saving quarterfinal match: ", e);
-      }
-    }
-
-    async function loadQuarterfinalMatches() {
-      try {
-        const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
-        const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
-
-        if (quarterfinalsSnapshot.empty) {
-          quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">No quarterfinal matches available.</div>`;
-          return;
+        for (const match of matches) {
+          await addDoc(quarterfinalsRef, match);
         }
 
-        let html = `<div class="bg-gray-100 p-3 rounded font-semibold text-gray-700 mb-3">Quarterfinals Matches</div>`;
-
-        quarterfinalsSnapshot.forEach(doc => {
-          const match = doc.data();
-          
-          html += `
-            <div class="border p-3 rounded shadow-sm mb-2">
-              <div class="text-center text-gray-500 text-xs">Match Date: TBD</div>
-              <div class="flex justify-between items-center">
-                <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal})</span></div>
-                <div class="text-base font-bold text-red-500">VS</div>
-                <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal})</span></div>
-              </div>
-              <div class="text-center text-green-600 text-xs font-medium">Winner: ${match.winner}</div>
-              <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
-            </div>
-          `;
-        });
-
-        quarterfinalsContainer.innerHTML = html;
-
+        console.log("Quarterfinal matches saved successfully!");
       } catch (e) {
-        console.error("Error loading quarterfinal matches:", e);
-        document.getElementById("quarterfinalsContainer").innerHTML = `<div class="text-center text-red-600">Error loading quarterfinals: ${e.message}</div>`;
+        console.error("Error saving quarterfinal matches:", e);
       }
     }
-
   </script>
 
 </body>
