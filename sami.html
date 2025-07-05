@@ -1,1 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Top Team List</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
 
+  <!-- Header -->
+  <header class="bg-white shadow-md relative">
+    <div class="max-w-7xl mx-auto px-4 py-3 relative flex items-center justify-center">
+      <p onclick="window.location.href='admin.html'" class="absolute left-4 text-gray-700 cursor-pointer">
+        <i class="fas fa-arrow-left text-2xl"></i>
+      </p>
+      <h1 class="text-xl font-bold text-gray-800">Top Team List</h1>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="p-4 md:p-6 space-y-6 overflow-auto flex-grow">
+
+    <!-- Point Tables Section -->
+    <div class="bg-white shadow rounded p-4">
+      <div class="text-xl font-semibold text-blue-700 mb-4">Top 2 Teams from Each Group</div>
+      <div id="topTeamsContainer" class="space-y-4">
+        <div class="p-3 text-center text-gray-500">Loading top teams...</div>
+      </div>
+    </div>
+
+    <!-- Quarterfinal Fixtures Section -->
+    <div class="bg-white shadow rounded p-4">
+      <div class="text-xl font-semibold text-blue-700 mb-4">Quarterfinal Fixtures</div>
+      <div id="quarterfinalsContainer" class="space-y-4">
+        <div class="p-3 text-center text-gray-500">Loading fixtures...</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Firebase + Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
+      authDomain: "dlstournament-31ac1.firebaseapp.com",
+      projectId: "dlstournament-31ac1",
+      storageBucket: "dlstournament-31ac1.appspot.com",
+      messagingSenderId: "874377019055",
+      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
+      measurementId: "G-0DGFJEV6GL"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        loadTopTeams(); // Loading top 2 teams after players
+      }
+    });
+
+    async function loadTopTeams() {
+      try {
+        const pointTablesSnapshot = await getDocs(collection(db, "pointTables"));
+        const topTeamsContainer = document.getElementById("topTeamsContainer");
+
+        if (pointTablesSnapshot.empty) {
+          topTeamsContainer.innerHTML = `<div class="text-center p-3 text-gray-500">No point tables found.</div>`;
+          return;
+        }
+
+        let topTeams = [];
+        let groupCounter = 1; // Counter for group serials (A, B, C, etc.)
+        pointTablesSnapshot.forEach(doc => {
+          const pointTable = doc.data();
+          const sortedTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2); // Get top 2 teams
+          topTeams.push(...sortedTeams); // Push the top 2 teams from each group into the array
+
+          topTeamsContainer.innerHTML += `
+            <div class="bg-gray-100 p-4 rounded">
+              <div class="font-semibold text-blue-700">Group- ${String.fromCharCode(64 + groupCounter)}</div> <!-- Group A, B, C, etc. -->
+              <div class="space-y-2">
+                ${sortedTeams.map((team, index) => `
+                  <div class="flex justify-between text-sm text-gray-600">
+                    <span>${index + 1}. ${team.team}</span>
+                    <span class="font-semibold">${team.points} Points</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+          groupCounter++; // Increment the group serial
+        });
+
+        // Generate Quarterfinal Fixtures
+        generateQuarterfinals(topTeams);
+
+      } catch (e) {
+        console.error("Error loading top teams:", e);
+        document.getElementById("topTeamsContainer").innerHTML = `<div class="text-center text-red-600 p-3">${e.message}</div>`;
+      }
+    }
+
+    async function generateQuarterfinals(teams) {
+      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+
+      if (teams.length < 8) {
+        quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">Not enough teams for quarterfinals.</div>`;
+        return;
+      }
+
+      // Get last match date from "fixers" collection
+      const fixersQuery = query(collection(db, "fixers"), orderBy("date", "desc"), limit(1));
+      const fixersSnapshot = await getDocs(fixersQuery);
+      let lastMatchDate = 'TBA'; // Default value if no match is found
+
+      if (!fixersSnapshot.empty) {
+        const lastMatch = fixersSnapshot.docs[0].data();
+        lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
+      }
+
+      // Fixtures for quarterfinals: top 2 teams from each group
+      const fixtures = [
+        { match: `${teams[0].team} vs ${teams[7].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${teams[1].team} vs ${teams[6].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${teams[2].team} vs ${teams[5].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
+        { match: `${teams[3].team} vs ${teams[4].team}`, date: lastMatchDate, status: 'Pending', team1Goal: null, team2Goal: null },
+      ];
+
+      quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
+        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+          <div class="flex justify-center gap-1">
+            <div class="text-sm font-semibold text-gray-600">Quarterfinal ${index + 1} -</div>
+            <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
+          </div>
+          <div class="flex justify-between items-center px-2">
+            <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[0]} <span class="text-black">(${fixture.team1Goal ?? "-"})</span></div>
+            <div class="text-base font-bold text-red-500">VS</div>
+            <div class="text-sm font-semibold text-gray-600">${fixture.match.split(" vs ")[1]} <span class="text-black">(${fixture.team2Goal ?? "-"})</span></div>
+          </div>
+          <div class="text-center text-green-600 text-xs font-medium">Winner: ${fixture.team1Goal !== null && fixture.team2Goal !== null ? (fixture.team1Goal > fixture.team2Goal ? fixture.match.split(" vs ")[0] : fixture.match.split(" vs ")[1]) : "None"}</div>
+          <div class="text-center text-blue-600 text-xs font-medium">Status: ${fixture.status}</div>
+        </div>
+      `).join('');
+    }
+
+  </script>
+
+</body>
+</html>
