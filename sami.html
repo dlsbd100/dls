@@ -130,6 +130,23 @@
         const team1Goal = team1.goal || '-';  // Replace with actual logic to fetch team1 goals
         const team2Goal = team2.goal || '-';  // Replace with actual logic to fetch team2 goals
         
+        // Determine winner
+        let winner = "None";
+        let status = "Pending";
+
+        if (team1Goal !== '-' && team2Goal !== '-') {
+          if (team1Goal > team2Goal) {
+            winner = team1.team;
+            status = "Finished";
+          } else if (team2Goal > team1Goal) {
+            winner = team2.team;
+            status = "Finished";
+          } else {
+            winner = "Draw";
+            status = "Finished";
+          }
+        }
+
         // Add each match to the quarterfinals section
         html += `
           <div class="border p-3 rounded shadow-sm mb-2">
@@ -139,6 +156,8 @@
               <div class="text-base font-bold text-red-500">VS</div>
               <div class="text-sm font-semibold text-gray-600">${team2.team} <span class="text-black">(${team2Goal})</span></div>
             </div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
+            <div class="text-center text-blue-600 text-xs font-medium">Status: ${status}</div>
           </div>
         `;
       }
