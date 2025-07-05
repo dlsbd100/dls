@@ -43,7 +43,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -175,22 +175,21 @@
 
       quarterfinalsContainer.innerHTML = html;
 
-      // Save each match as a separate document in Firestore
-      saveQuarterfinalMatches(quarterfinalMatches);
+      // Save only the number of quarterfinal matches to the Firestore database
+      saveQuarterfinals(quarterfinalMatches.length);  // Save the count of matches instead of saving all matches
     }
 
-    async function saveQuarterfinalMatches(matches) {
+    async function saveQuarterfinals(matchCount) {
       try {
-        // Save the quarterfinals matches to the database
+        // Save the number of quarterfinal matches to the database (the total count)
         const quarterfinalsRef = collection(db, "quarterfinals");
+        
+        // Add the match count as a document
+        await addDoc(quarterfinalsRef, { matchCount });
 
-        for (const match of matches) {
-          await addDoc(quarterfinalsRef, match);
-        }
-
-        console.log("Quarterfinal matches saved successfully!");
+        console.log(`Successfully saved ${matchCount} quarterfinal match documents!`);
       } catch (e) {
-        console.error("Error saving quarterfinal matches:", e);
+        console.error("Error saving quarterfinal match count:", e);
       }
     }
   </script>
