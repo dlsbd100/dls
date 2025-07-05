@@ -37,6 +37,17 @@
       <!-- Quarterfinals will be generated here -->
     </div>
 
+    <!-- Add Quarterfinal Match Section -->
+    <div class="bg-white shadow rounded p-4 mt-6">
+      <div class="text-lg font-semibold text-green-700 mb-2">Add Quarterfinal Match</div>
+      <div class="flex items-center gap-4">
+        <input type="date" id="quarterfinalDate" class="border border-gray-300 rounded p-2 text-sm h-9">
+        <button id="addQuarterfinalBtn" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700">
+          Add Quarterfinal
+        </button>
+      </div>
+    </div>
+
   </main>
 
   <!-- Firebase + Logic -->
@@ -150,6 +161,40 @@
 
       quarterfinalsContainer.innerHTML = html;
     }
+
+    document.getElementById("addQuarterfinalBtn").addEventListener("click", async () => {
+      const date = document.getElementById("quarterfinalDate").value;
+
+      if (!date) {
+        alert("Please select a date.");
+        return;
+      }
+
+      // Fetch the top 2 teams from each group to generate quarterfinal matches
+      const pointTablesSnapshot = await getDocs(collection(db, "pointTables"));
+      const quarterfinals = [];
+
+      pointTablesSnapshot.forEach(doc => {
+        const pointTable = doc.data();
+        const topTeams = pointTable.teams.sort((a, b) => b.points - a.points).slice(0, 2);
+        quarterfinals.push(topTeams);
+      });
+
+      // Add quarterfinal matches to Firestore
+      quarterfinals.forEach((teams, index) => {
+        const [team1, team2] = teams;
+        addDoc(collection(db, "quarterfinals"), {
+          matchDate: date,
+          team1: team1.team,
+          team2: team2.team,
+          team1Goal: null,
+          team2Goal: null,
+          status: "Pending"
+        });
+      });
+
+      loadQuarterfinals(); // Reload the quarterfinals section
+    });
   </script>
 
 </body>
