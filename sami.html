@@ -43,7 +43,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, query, where, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -108,13 +108,29 @@
 
         topTeamsContainer.innerHTML = html;
 
-        // Generate quarterfinals fixtures after getting top 2 teams
-        generateQuarterfinals(topTeams);
+        // Check and generate quarterfinals if not already generated
+        checkAndGenerateQuarterfinals(topTeams);
 
       } catch (e) {
         console.error("Error loading point tables:", e);
         document.getElementById("topTeams").innerHTML = `<div class="text-center text-red-600">Error loading top teams: ${e.message}</div>`;
       }
+    }
+
+    async function checkAndGenerateQuarterfinals(topTeams) {
+      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+
+      // Query Firestore to check if any quarterfinals matches already exist
+      const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
+      
+      if (!quarterfinalsSnapshot.empty) {
+        // If matches already exist, just fetch and display them
+        displayQuarterfinals(quarterfinalsSnapshot);
+        return;
+      }
+
+      // If no matches exist, generate and save them
+      generateQuarterfinals(topTeams);
     }
 
     async function generateQuarterfinals(topTeams) {
@@ -171,6 +187,30 @@
           </div>
         `;
       }
+
+      quarterfinalsContainer.innerHTML = html;
+    }
+
+    function displayQuarterfinals(quarterfinalsSnapshot) {
+      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+      let html = `<div class="bg-gray-100 p-3 rounded font-semibold text-gray-700 mb-3">Quarterfinals Matches</div>`;
+      
+      quarterfinalsSnapshot.forEach(doc => {
+        const match = doc.data();
+        
+        html += `
+          <div class="border p-3 rounded shadow-sm mb-2">
+            <div class="text-center text-gray-500 text-xs">Match Date: ${match.matchDate}</div>
+            <div class="flex justify-between items-center">
+              <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal})</span></div>
+              <div class="text-base font-bold text-red-500">VS</div>
+              <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal})</span></div>
+            </div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${match.status === "Finished" ? match.team1Goal > match.team2Goal ? match.team1 : match.team2 : "Pending"}</div>
+            <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
+          </div>
+        `;
+      });
 
       quarterfinalsContainer.innerHTML = html;
     }
