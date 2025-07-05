@@ -7,8 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  <!-- SweetAlert2 CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- SweetAlert2 CDN -->
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
@@ -55,7 +54,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -142,16 +141,13 @@
 
       // Display quarterfinals from Firestore
       let html = `<div class="bg-gray-100 p-3 rounded font-semibold text-gray-700 mb-3">Quarterfinals Matches</div>`;
-      let matchIndex = 1;
-
       quarterfinalsSnapshot.forEach(doc => {
         const match = doc.data();
-        let matchDate = new Date(match.matchDate);
 
-        // Match display logic with serial number and date
+        // Match display logic
         html += `
           <div class="border p-3 rounded shadow-sm mb-2">
-            <div class="text-center text-gray-500 text-xs">Quarterfinal ${matchIndex} - ${matchDate.toISOString().split('T')[0]}</div>
+            <div class="text-center text-gray-500 text-xs">Match Date: ${match.matchDate || 'TBD'}</div>
             <div class="flex justify-between items-center">
               <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal})</span></div>
               <div class="text-base font-bold text-red-500">VS</div>
@@ -161,7 +157,6 @@
             <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
           </div>
         `;
-        matchIndex++;
       });
 
       quarterfinalsContainer.innerHTML = html;
@@ -169,14 +164,16 @@
 
     document.getElementById("addQuarterfinalsBtn").addEventListener("click", async () => {
       const selectedDate = document.getElementById("quarterfinalsDate").value;
-      if (!selectedDate) {
+
+      // Check if quarterfinals already exist in Firestore
+      const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
+      if (!quarterfinalsSnapshot.empty) {
         Swal.fire({
-          icon: 'warning',
-          title: 'Please select a date for the quarterfinals!',
-          toast: true,
+          icon: 'info',
+          title: 'Quarterfinals Already Added',
           position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000
+          timer: 3000,
+          showConfirmButton: false
         });
         return;
       }
@@ -192,37 +189,17 @@
         topTeams.push(...topTwoTeams);
       });
 
-      // Check if quarterfinals already exist
-      const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
-      if (!quarterfinalsSnapshot.empty) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Quarterfinals matches already added!',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000
-        });
-        return;
-      }
-
       // Generate Quarterfinals matches from top 2 teams of each group
       const quarterfinalMatches = [];
-      let matchDate = new Date(selectedDate); // Start from the selected date
-
       for (let i = 0; i < topTeams.length; i += 2) {
-        const matchDateString = matchDate.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
         quarterfinalMatches.push({
           team1: topTeams[i].team,
           team2: topTeams[i + 1].team,
-          matchDate: matchDateString,
+          matchDate: selectedDate,
           team1Goal: null,
           team2Goal: null,
           status: "Pending"
         });
-
-        // Increment the date by one day for the next match
-        matchDate.setDate(matchDate.getDate() + 1);
       }
 
       // Add quarterfinals to Firestore
