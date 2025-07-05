@@ -130,24 +130,31 @@
         // Get last match date from the "fixers" collection
         const fixersQuery = query(collection(db, "fixers"), orderBy("date", "desc"), limit(1));
         const fixersSnapshot = await getDocs(fixersQuery);
-        let baseDate = 'TBA'; // Default value if no match is found
+        let lastMatchDate = 'TBA'; // Default value if no match is found
 
         if (!fixersSnapshot.empty) {
           const lastMatch = fixersSnapshot.docs[0].data();
-          baseDate = lastMatch.date; // Assuming the match date field is named "date"
+          lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
         }
 
+        // Increment the date by 1 day for each quarterfinal
+        const fixtureDates = Array(4).fill(lastMatchDate).map((date, index) => {
+          const dateObj = new Date(date);
+          dateObj.setDate(dateObj.getDate() + index + 1); // Increment by 1, 2, 3, 4
+          return dateObj.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        });
+
         const fixtures = [
-          { match: `${topTeams[0].team} vs ${topTeams[7].team}`, date: baseDate, team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[1].team} vs ${topTeams[6].team}`, date: baseDate, team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[2].team} vs ${topTeams[5].team}`, date: baseDate, team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[3].team} vs ${topTeams[4].team}`, date: baseDate, team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[0].team} vs ${topTeams[7].team}`, date: fixtureDates[0], team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[1].team} vs ${topTeams[6].team}`, date: fixtureDates[1], team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[2].team} vs ${topTeams[5].team}`, date: fixtureDates[2], team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[3].team} vs ${topTeams[4].team}`, date: fixtureDates[3], team1Goal: null, team2Goal: null, status: 'Pending' },
         ];
 
-        quarterfinalsContainer.innerHTML = fixtures.map((fixture, idx) => `
+        quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
           <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
             <div class="flex justify-center gap-1">
-              <div class="text-sm font-semibold text-gray-600">Quarterfinal ${idx + 1} -</div>
+              <div class="text-sm font-semibold text-gray-600">Quarterfinal ${index + 1} -</div>
               <div class="text-sm font-semibold text-gray-600">${fixture.date}</div>
             </div>
             <div class="flex justify-between items-center px-2">
