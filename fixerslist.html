@@ -71,7 +71,8 @@
       </div>
     </div>
   </main>
-    <script type="module">
+
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
@@ -117,12 +118,6 @@
     });
     teamList = Array.from(teams);
     document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
-  }
-
-  function addDays(dateStr, days) {
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() + days);
-    return d.toISOString().split("T")[0];
   }
 
   async function loadFixers() {
@@ -209,6 +204,43 @@
     fixersContainer.innerHTML = html;
   }
 
+  // New Function to Display Quarterfinal Fixers
+  async function loadQuarterfinals() {
+    const snapshot = await getDocs(collection(db, "pointTables"));
+    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+
+    if (snapshot.empty) {
+      quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No quarterfinals found.</p>`;
+      return;
+    }
+
+    const pointTables = [];
+    snapshot.forEach(doc => pointTables.push(doc.data()));
+
+    const topTeams = [];
+    pointTables.forEach(table => {
+      // Get top 2 teams from each group
+      table.teams.sort((a, b) => b.points - a.points || b.goals - a.goals);
+      topTeams.push(table.teams[0], table.teams[1]);
+    });
+
+    // Create Quarterfinal Matches
+    let html = "<div class='mb-4 text-lg font-semibold text-red-700'>Quarterfinal Matches</div>";
+    for (let i = 0; i < topTeams.length; i += 2) {
+      html += `
+        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+          <div class="text-center text-[13px] text-gray-500 font-semibold">Quarterfinal ${i / 2 + 1}</div>
+          <div class="flex justify-between items-center px-2">
+            <div class="text-sm font-semibold text-gray-600">${topTeams[i].team}</div>
+            <div class="text-base font-bold text-red-500">VS</div>
+            <div class="text-sm font-semibold text-gray-600">${topTeams[i + 1].team}</div>
+          </div>
+        </div>`;
+    }
+
+    quarterfinalsContainer.innerHTML = html;
+  }
+
   async function loadPointTables() {
     const snapshot = await getDocs(collection(db, "pointTables"));
     const pointTablesContainer = document.getElementById("pointTablesContainer");
@@ -272,8 +304,10 @@
     }
 
     pointTablesContainer.innerHTML = allPointsHTML;
+    loadQuarterfinals(); // Display quarterfinals after point tables
   }
 
+  // Existing function to update points after a match
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
     const snapshot = await getDocs(collection(db, "pointTables"));
     let teamUpdated = false;
