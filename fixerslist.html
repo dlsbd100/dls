@@ -354,27 +354,29 @@
         draw: 0,
         goals: 0,
         points: 0
-      })));
+      })), g);  // Pass groupIndex here
     }
 
     Swal.fire({ icon: 'success', title: `${added} matches added.`, position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
 
-  async function savePointTable(groupName, teams) {
+  async function savePointTable(groupName, teams, groupIndex) {
+    const serialGroupName = `${groupIndex + 1} ${groupName}`;  // Prepend serial number to the group name
+
     await addDoc(collection(db, "pointTables"), {
-      groupName,
-      teams: teams.map(t => ({
-        team: t.team,
-        played: t.played,
-        win: t.win,
-        loss: t.loss,
-        draw: t.draw,
-        goals: t.goals,
-        points: t.points
-      })),
+        groupName: serialGroupName,  // Save the serial number + group name
+        teams: teams.map(t => ({
+            team: t.team,
+            played: t.played,
+            win: t.win,
+            loss: t.loss,
+            draw: t.draw,
+            goals: t.goals,
+            points: t.points
+        })),
     });
-    console.log("Point table for " + groupName + " saved successfully.");
+    console.log("Point table for " + serialGroupName + " saved successfully.");
   }
 
   document.getElementById("selectAllTeams").addEventListener("change", (e) => {
@@ -401,6 +403,7 @@
     loadFixers();
   });
 </script>
+
 
 </body>
 </html>
