@@ -29,8 +29,8 @@
       <div class="overflow-x-auto max-h-[600px]">
         <!-- Custom Design for Player Divs -->
         <div id="playersList" class="space-y-4">
-          <div class="player-item p-4 border rounded-md shadow-md">
-            <div class="text-lg font-bold text-gray-800">Loading players...</div>
+          <div class="player-item p-3 border rounded-md shadow-md max-w-xs mx-auto">
+            <div class="text-sm font-bold text-gray-800">Loading players...</div>
           </div>
         </div>
       </div>
@@ -80,8 +80,8 @@
         playersSnapshot.forEach(doc => {
           const p = doc.data();
           html += `
-            <div class="player-item p-4 border rounded-md shadow-md hover:bg-gray-50">
-              <div class="text-lg font-bold text-gray-800">${p.team || "N/A"}</div>
+            <div class="player-item p-3 border rounded-md shadow-md max-w-xs mx-auto hover:bg-gray-50">
+              <div class="text-sm font-bold text-gray-800">${p.team || "N/A"}</div>
             </div>`;
         });
 
