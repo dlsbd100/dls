@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- SweetAlert2 CDN -->
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
@@ -53,7 +54,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -163,6 +164,21 @@
 
     document.getElementById("addQuarterfinalsBtn").addEventListener("click", async () => {
       const selectedDate = document.getElementById("quarterfinalsDate").value;
+
+      // Check if quarterfinals already exist in Firestore
+      const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
+      if (!quarterfinalsSnapshot.empty) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Quarterfinals Already Added',
+          text: 'The quarterfinals matches have already been added.',
+          position: 'top-end',
+          timer: 3000,
+          showConfirmButton: false
+        });
+        return;
+      }
+
       const topTeamsSnapshot = await getDocs(collection(db, "pointTables"));
 
       let topTeams = [];
