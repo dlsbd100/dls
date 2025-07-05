@@ -107,10 +107,11 @@
       loadTeams();
       loadFixers();
       loadPointTables();
-      loadQuarterfinals();  // Load Quarterfinals when user is authenticated
+      loadQuarterfinals();  // Load quarterfinals
     }
   });
 
+  // Existing function for loading teams
   async function loadTeams() {
     const snapshot = await getDocs(collection(db, "playersform"));
     const teams = new Set();
@@ -120,12 +121,6 @@
     });
     teamList = Array.from(teams);
     document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
-  }
-
-  function addDays(dateStr, days) {
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() + days);
-    return d.toISOString().split("T")[0];
   }
 
   async function loadFixers() {
@@ -210,7 +205,7 @@
     });
 
     fixersContainer.innerHTML = html;
-    await generateQuarterfinals();  // Generate quarterfinals after loading fixers
+    await generateQuarterfinals();  // Ensure quarterfinals are generated after fixers load
   }
 
   async function generateQuarterfinals() {
@@ -241,7 +236,7 @@
 
     await batch.commit();
     console.log("Quarterfinals saved successfully.");
-    loadQuarterfinals();  // Reload quarterfinals after saving
+    loadQuarterfinals();  // Load quarterfinals after saving
   }
 
   async function loadQuarterfinals() {
@@ -253,10 +248,10 @@
       return;
     }
 
-    let quarterfinalsHtml = "";
+    let html = "";
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
-      quarterfinalsHtml += `
+      html += `
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
           <div class="flex justify-between items-center px-2">
             <div class="text-sm font-semibold text-gray-600">${data.team1}</div>
@@ -267,7 +262,7 @@
         </div>`;
     });
 
-    quarterfinalsContainer.innerHTML = quarterfinalsHtml;
+    quarterfinalsContainer.innerHTML = html;
   }
 
   async function loadPointTables() {
@@ -466,6 +461,7 @@
     loadFixers();
   });
 </script>
+
 
 
 </body>
