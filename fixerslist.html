@@ -137,18 +137,11 @@
           lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
         }
 
-        // Increment the date by 1 day for each quarterfinal
-        const fixtureDates = Array(4).fill(lastMatchDate).map((date, index) => {
-          const dateObj = new Date(date);
-          dateObj.setDate(dateObj.getDate() + index + 1); // Increment by 1, 2, 3, 4
-          return dateObj.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-        });
-
         const fixtures = [
-          { match: `${topTeams[0].team} vs ${topTeams[7].team}`, date: fixtureDates[0], team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[1].team} vs ${topTeams[6].team}`, date: fixtureDates[1], team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[2].team} vs ${topTeams[5].team}`, date: fixtureDates[2], team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[3].team} vs ${topTeams[4].team}`, date: fixtureDates[3], team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[0].team} vs ${topTeams[7].team}`, date: lastMatchDate, team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[1].team} vs ${topTeams[6].team}`, date: lastMatchDate, team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[2].team} vs ${topTeams[5].team}`, date: lastMatchDate, team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[3].team} vs ${topTeams[4].team}`, date: lastMatchDate, team1Goal: null, team2Goal: null, status: 'Pending' },
         ];
 
         quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
