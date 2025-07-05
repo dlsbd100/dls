@@ -71,8 +71,7 @@
       </div>
     </div>
   </main>
-
-   <script type="module">
+    <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
@@ -382,33 +381,6 @@
     console.log("Point table for " + groupName + " saved successfully.");
   }
 
-  // Generate Quarterfinals Function
-  async function generateQuarterfinals(pointTables) {
-    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
-    let quarterfinals = [];
-
-    pointTables.forEach(group => {
-      const topTeams = group.teams.slice(0, 2);  // Top 2 teams from each group
-      quarterfinals.push(...topTeams);
-    });
-
-    let html = "<div class='mb-4'><div class='font-semibold mb-1 text-red-700'>Quarterfinals</div>";
-    for (let i = 0; i < quarterfinals.length; i += 2) {
-      html += `
-        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
-          <div class="text-center text-[13px] text-gray-500 font-semibold">Match ${i / 2 + 1}</div>
-          <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i].team}</div>
-            <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${quarterfinals[i + 1].team}</div>
-          </div>
-        </div>
-      `;
-    }
-    html += "</div>";
-    quarterfinalsContainer.innerHTML = html;
-  }
-
   document.getElementById("selectAllTeams").addEventListener("change", (e) => {
     const options = document.getElementById("teamSelector").options;
     for (let option of options) option.selected = e.target.checked;
@@ -433,8 +405,6 @@
     loadFixers();
   });
 </script>
-
-
 
 </body>
 </html>
