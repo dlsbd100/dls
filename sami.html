@@ -175,11 +175,11 @@
 
       quarterfinalsContainer.innerHTML = html;
 
-      // Save quarterfinals to the database
-      saveQuarterfinals(quarterfinalMatches);
+      // Save each match as a separate document in Firestore
+      saveQuarterfinalMatches(quarterfinalMatches);
     }
 
-    async function saveQuarterfinals(matches) {
+    async function saveQuarterfinalMatches(matches) {
       try {
         // Save the quarterfinals matches to the database
         const quarterfinalsRef = collection(db, "quarterfinals");
