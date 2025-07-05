@@ -272,7 +272,7 @@
 
   async function savePointTable(groupName, teams) {
     const serializedGroupName = groupName || `Group ${String.fromCharCode(65 + teams.length)}`;
-    
+
     await addDoc(collection(db, "pointTables"), {
       groupName: serializedGroupName,
       teams: teams.map(t => ({
@@ -366,9 +366,7 @@
     Swal.fire({ icon: 'success', title: 'All fixers deleted.', position: 'top-end', toast: true, timer: 3000, showConfirmButton: false });
     loadFixers();
   });
-</script>
-
-
+  </script>
 
 </body>
 </html>
