@@ -127,11 +127,21 @@
           return;
         }
 
+        // Get last match date from the "fixers" collection
+        const fixersQuery = query(collection(db, "fixers"), orderBy("date", "desc"), limit(1));
+        const fixersSnapshot = await getDocs(fixersQuery);
+        let lastMatchDate = 'TBA'; // Default value if no match is found
+
+        if (!fixersSnapshot.empty) {
+          const lastMatch = fixersSnapshot.docs[0].data();
+          lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
+        }
+
         const fixtures = [
-          { match: `${topTeams[0].team} vs ${topTeams[7].team}`, date: 'TBA', team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[1].team} vs ${topTeams[6].team}`, date: 'TBA', team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[2].team} vs ${topTeams[5].team}`, date: 'TBA', team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[3].team} vs ${topTeams[4].team}`, date: 'TBA', team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[0].team} vs ${topTeams[7].team}`, date: lastMatchDate, team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[1].team} vs ${topTeams[6].team}`, date: lastMatchDate, team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[2].team} vs ${topTeams[5].team}`, date: lastMatchDate, team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[3].team} vs ${topTeams[4].team}`, date: lastMatchDate, team1Goal: null, team2Goal: null, status: 'Pending' },
         ];
 
         quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
