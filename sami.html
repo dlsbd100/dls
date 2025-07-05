@@ -36,13 +36,11 @@
       </div>
     </div>
 
-    <!-- Top 2 Teams from Each Group -->
+    <!-- Top 2 Teams Section -->
     <div class="bg-white shadow rounded p-4">
-      <div class="text-xl font-semibold text-blue-700 mb-4">Top 2 Teams from Each Group</div>
-      <div id="topTeamsList" class="overflow-x-auto max-h-[600px]">
-        <div class="team-item p-2 w-48 border rounded-md shadow-md">
-          <div class="text-sm font-semibold text-gray-800">Loading top teams...</div>
-        </div>
+      <div class="text-xl font-semibold text-blue-700 mb-4">Top 2 Teams by Group</div>
+      <div id="topTeams" class="space-y-4">
+        <!-- Top teams will be displayed here -->
       </div>
     </div>
 
@@ -107,35 +105,36 @@
     async function loadTopTeams() {
       try {
         const pointTablesSnapshot = await getDocs(collection(db, "pointTables"));
-        const topTeamsList = document.getElementById("topTeamsList");
+        const topTeamsContainer = document.getElementById("topTeams");
 
         if (pointTablesSnapshot.empty) {
-          topTeamsList.innerHTML = `<div class="p-2 w-48 text-center text-gray-500">No point tables found.</div>`;
+          topTeamsContainer.innerHTML = `<div class="text-center text-gray-500">No point tables available.</div>`;
           return;
         }
 
         let html = "";
         pointTablesSnapshot.forEach(doc => {
-          const data = doc.data();
-          const group = data.group;
-          const teams = data.teams; // Assuming each team object has a "points" field
-          
-          // Sort teams by points (assuming a "points" field exists)
-          const sortedTeams = teams.sort((a, b) => b.points - a.points).slice(0, 2);
+          const pointTable = doc.data();
+          const topTeams = pointTable.teams
+            .sort((a, b) => b.points - a.points)
+            .slice(0, 2);
 
           html += `
-            <div class="team-item p-2 w-48 border rounded-md shadow-md hover:bg-gray-50">
-              <div class="text-sm font-semibold text-gray-800">Group: ${group}</div>
-              <div class="text-xs text-gray-600">Top 2 Teams:</div>
-              ${sortedTeams.map(team => `<div class="text-sm font-semibold text-gray-800">${team.name || "N/A"}</div>`).join('')}
-            </div>`;
+            <div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">
+              <div class="text-lg">Top 2 Teams - ${pointTable.groupName || "Group"}</div>
+              <ul class="space-y-1">
+                ${topTeams.map(team => `
+                  <li class="text-gray-600">${team.team} - ${team.points} Points</li>
+                `).join('')}
+              </ul>
+            </div>
+          `;
         });
 
-        topTeamsList.innerHTML = html;
-
+        topTeamsContainer.innerHTML = html;
       } catch (e) {
-        console.error("Error loading top teams:", e);
-        document.getElementById("topTeamsList").innerHTML = `<div class="p-2 w-48 text-center text-red-600">${e.message}</div>`;
+        console.error("Error loading point tables:", e);
+        document.getElementById("topTeams").innerHTML = `<div class="text-center text-red-600">Error loading top teams: ${e.message}</div>`;
       }
     }
   </script>
