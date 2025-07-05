@@ -127,28 +127,22 @@
           return;
         }
 
-        // Get the last match date from the "fixers" collection
-        const fixersQuery = query(collection(db, "fixers"), orderBy("date", "desc"), limit(1));
-        const fixersSnapshot = await getDocs(fixersQuery);
-        let lastMatchDate = '2025-07-08'; // Default last match date if no match is found
+        // Get the current date
+        const currentDate = new Date();
 
-        if (!fixersSnapshot.empty) {
-          const lastMatch = fixersSnapshot.docs[0].data();
-          lastMatchDate = lastMatch.date; // Assuming the match date field is named "date"
-        }
-
-        // Incrementing the date by 2 days for each match
-        const generateNextDate = (baseDate, matchIndex) => {
+        // Function to increment the date by 2 days
+        const incrementDate = (baseDate, matchIndex) => {
           const date = new Date(baseDate);
           date.setDate(date.getDate() + 2 * matchIndex); // Increment by 2 days for each match
           return date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
         };
 
+        // Fixtures with dynamic date starting from current date
         const fixtures = [
-          { match: `${topTeams[0].team} vs ${topTeams[7].team}`, date: generateNextDate(lastMatchDate, 1), team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[1].team} vs ${topTeams[6].team}`, date: generateNextDate(lastMatchDate, 2), team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[2].team} vs ${topTeams[5].team}`, date: generateNextDate(lastMatchDate, 3), team1Goal: null, team2Goal: null, status: 'Pending' },
-          { match: `${topTeams[3].team} vs ${topTeams[4].team}`, date: generateNextDate(lastMatchDate, 4), team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[0].team} vs ${topTeams[7].team}`, date: incrementDate(currentDate, 1), team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[1].team} vs ${topTeams[6].team}`, date: incrementDate(currentDate, 2), team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[2].team} vs ${topTeams[5].team}`, date: incrementDate(currentDate, 3), team1Goal: null, team2Goal: null, status: 'Pending' },
+          { match: `${topTeams[3].team} vs ${topTeams[4].team}`, date: incrementDate(currentDate, 4), team1Goal: null, team2Goal: null, status: 'Pending' },
         ];
 
         quarterfinalsContainer.innerHTML = fixtures.map((fixture, index) => `
