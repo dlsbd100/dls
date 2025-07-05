@@ -71,7 +71,7 @@
       </div>
     </div>
   </main>
-    
+
     <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -82,7 +82,8 @@
     addDoc,
     deleteDoc,
     updateDoc,
-    doc
+    doc,
+    writeBatch
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -106,6 +107,7 @@
       loadTeams();
       loadFixers();
       loadPointTables();
+      loadQuarterfinals();  // Load Quarterfinals when user is authenticated
     }
   });
 
@@ -208,7 +210,7 @@
     });
 
     fixersContainer.innerHTML = html;
-    await generateQuarterfinals();
+    await generateQuarterfinals();  // Generate quarterfinals after loading fixers
   }
 
   async function generateQuarterfinals() {
@@ -239,6 +241,33 @@
 
     await batch.commit();
     console.log("Quarterfinals saved successfully.");
+    loadQuarterfinals();  // Reload quarterfinals after saving
+  }
+
+  async function loadQuarterfinals() {
+    const snapshot = await getDocs(collection(db, "quarterfinals"));
+    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+
+    if (snapshot.empty) {
+      quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No quarterfinals found.</p>`;
+      return;
+    }
+
+    let quarterfinalsHtml = "";
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      quarterfinalsHtml += `
+        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+          <div class="flex justify-between items-center px-2">
+            <div class="text-sm font-semibold text-gray-600">${data.team1}</div>
+            <div class="text-base font-bold text-red-500">VS</div>
+            <div class="text-sm font-semibold text-gray-600">${data.team2}</div>
+          </div>
+          <div class="text-center text-blue-600 text-xs font-medium">Status: ${data.status}</div>
+        </div>`;
+    });
+
+    quarterfinalsContainer.innerHTML = quarterfinalsHtml;
   }
 
   async function loadPointTables() {
@@ -437,7 +466,6 @@
     loadFixers();
   });
 </script>
-
 
 
 </body>
