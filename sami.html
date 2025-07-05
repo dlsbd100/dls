@@ -145,9 +145,10 @@
       quarterfinalsSnapshot.forEach(doc => {
         const match = doc.data();
 
-        // Match display logic with separate match date per match
+        // Match display logic with index and separate match date per match
         html += `
           <div class="border p-3 rounded shadow-sm mb-2">
+            <div class="text-center text-gray-500 text-xs">Match Index: ${match.matchIndex}</div>
             <div class="text-center text-gray-500 text-xs">Match Date: ${match.matchDate || 'TBD'}</div>
             <div class="flex justify-between items-center">
               <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal})</span></div>
@@ -205,10 +206,12 @@
       // Generate Quarterfinals matches from top 2 teams of each group
       const quarterfinalMatches = [];
       let matchDate = new Date(selectedDate); // Start from the selected date
+      let matchIndex = 1; // Starting index for matches
 
       for (let i = 0; i < topTeams.length; i += 2) {
         const matchDateString = matchDate.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
         quarterfinalMatches.push({
+          matchIndex: matchIndex++, // Increment match index
           team1: topTeams[i].team,
           team2: topTeams[i + 1].team,
           matchDate: matchDateString,
