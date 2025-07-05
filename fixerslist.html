@@ -107,11 +107,10 @@
       loadTeams();
       loadFixers();
       loadPointTables();
-      loadQuarterfinals();  // Load quarterfinals
+      loadQuarterfinals(); // Ensure this is called to load the quarterfinals as well
     }
   });
 
-  // Existing function for loading teams
   async function loadTeams() {
     const snapshot = await getDocs(collection(db, "playersform"));
     const teams = new Set();
@@ -121,6 +120,12 @@
     });
     teamList = Array.from(teams);
     document.getElementById("teamSelector").innerHTML = teamList.map(t => `<option value="${t}">${t}</option>`).join("");
+  }
+
+  function addDays(dateStr, days) {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split("T")[0];
   }
 
   async function loadFixers() {
@@ -205,7 +210,7 @@
     });
 
     fixersContainer.innerHTML = html;
-    await generateQuarterfinals();  // Ensure quarterfinals are generated after fixers load
+    await generateQuarterfinals();
   }
 
   async function generateQuarterfinals() {
@@ -236,7 +241,6 @@
 
     await batch.commit();
     console.log("Quarterfinals saved successfully.");
-    loadQuarterfinals();  // Load quarterfinals after saving
   }
 
   async function loadQuarterfinals() {
@@ -244,90 +248,28 @@
     const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
     if (snapshot.empty) {
-      quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No quarterfinals found.</p>`;
+      quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No quarterfinals to show.</p>`;
       return;
     }
 
+    const quarterfinals = [];
+    snapshot.forEach(doc => quarterfinals.push(doc.data()));
+
     let html = "";
-    snapshot.forEach(docSnap => {
-      const data = docSnap.data();
+    quarterfinals.forEach(match => {
       html += `
         <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+          <div class="text-center text-[13px] text-gray-500 font-semibold">${match.date}</div>
           <div class="flex justify-between items-center px-2">
-            <div class="text-sm font-semibold text-gray-600">${data.team1}</div>
+            <div class="text-sm font-semibold text-gray-600">${match.team1}</div>
             <div class="text-base font-bold text-red-500">VS</div>
-            <div class="text-sm font-semibold text-gray-600">${data.team2}</div>
+            <div class="text-sm font-semibold text-gray-600">${match.team2}</div>
           </div>
-          <div class="text-center text-blue-600 text-xs font-medium">Status: ${data.status}</div>
+          <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
         </div>`;
     });
 
     quarterfinalsContainer.innerHTML = html;
-  }
-
-  async function loadPointTables() {
-    const snapshot = await getDocs(collection(db, "pointTables"));
-    const pointTablesContainer = document.getElementById("pointTablesContainer");
-
-    if (snapshot.empty) {
-      pointTablesContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-      return;
-    }
-
-    const pointTables = [];
-    snapshot.forEach(doc => pointTables.push(doc.data()));
-
-    let allPointsHTML = "";
-    if (pointTables.length === 0) {
-      allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
-    } else {
-      allPointsHTML = pointTables.map((pointTable, index) => {
-        const groupNameFromFirestore = pointTable.groupName || `Group ${String.fromCharCode(65 + index)}`;
-
-        pointTable.teams.sort((a, b) => {
-          if (b.points === a.points) {
-            return b.goals - a.goals;
-          }
-          return b.points - a.points;
-        });
-
-        return `
-          <div class="mb-4">
-            <div class="font-semibold mb-1 text-blue-700">Point Table - ${groupNameFromFirestore}</div>
-            <table class="text-sm w-full table-auto border border-gray-200">
-              <thead>
-                <tr class="bg-gray-200">
-                  <th class="px-2 py-1 border">#</th>
-                  <th class="px-2 py-1 border">Team</th>
-                  <th class="px-2 py-1 border text-center">Played</th>
-                  <th class="px-2 py-1 border text-center">Win</th>
-                  <th class="px-2 py-1 border text-center">Loss</th>
-                  <th class="px-2 py-1 border text-center">Draw</th>
-                  <th class="px-2 py-1 border text-center">Goals</th>
-                  <th class="px-2 py-1 border text-center">Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${pointTable.teams.map((team, i) => `
-                  <tr>
-                    <td class="px-2 py-1 border text-center">${i + 1}</td>
-                    <td class="px-2 py-1 border">${team.team}</td>
-                    <td class="px-2 py-1 border text-center font-semibold">${team.played}</td>
-                    <td class="px-2 py-1 border text-center">${team.win}</td>
-                    <td class="px-2 py-1 border text-center">${team.loss}</td>
-                    <td class="px-2 py-1 border text-center">${team.draw}</td>
-                    <td class="px-2 py-1 border text-center font-semibold">${team.goals}</td>
-                    <td class="px-2 py-1 border text-center font-bold">${team.points}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }).join('');
-    }
-
-    pointTablesContainer.innerHTML = allPointsHTML;
   }
 
   async function updatePointsInFirestore(team, points, goalsFor, goalsAgainst) {
@@ -461,7 +403,6 @@
     loadFixers();
   });
 </script>
-
 
 
 </body>
