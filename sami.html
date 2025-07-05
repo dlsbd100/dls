@@ -27,7 +27,8 @@
     <div class="bg-white shadow rounded p-4">
       <div class="text-xl font-semibold text-blue-700 mb-4">Top 2 Teams from Each Group</div>
       <div id="topTeamsContainer" class="space-y-4">
-        <div class="p-3 text-center text-gray-500">Loading top teams...</div>
+        <!-- Loading message will be replaced after data is fetched -->
+        <div class="p-3 text-center text-gray-500" id="loadingMessage">Loading top teams...</div>
       </div>
     </div>
 
@@ -56,9 +57,11 @@
     async function loadTopTeams() {
       const snapshot = await getDocs(collection(db, "pointTables"));
       const topTeamsContainer = document.getElementById("topTeamsContainer");
+      const loadingMessage = document.getElementById("loadingMessage");
 
       if (snapshot.empty) {
         topTeamsContainer.innerHTML = `<p class="text-gray-500 text-center">No point tables available.</p>`;
+        loadingMessage.style.display = "none";
         return;
       }
 
@@ -92,6 +95,8 @@
         `;
       });
 
+      // Hide the loading message and display the top teams
+      loadingMessage.style.display = "none";
       topTeamsContainer.innerHTML = allTopTeamsHTML;
     }
 
