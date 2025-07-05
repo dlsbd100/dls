@@ -165,6 +165,18 @@
 
     document.getElementById("addQuarterfinalsBtn").addEventListener("click", async () => {
       const selectedDate = document.getElementById("quarterfinalsDate").value;
+      if (!selectedDate) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Please select a date for the quarterfinals!',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        });
+        return;
+      }
+
       const topTeamsSnapshot = await getDocs(collection(db, "pointTables"));
 
       let topTeams = [];
@@ -181,7 +193,7 @@
       if (!quarterfinalsSnapshot.empty) {
         Swal.fire({
           icon: 'warning',
-          title: 'Already Matches Added!',
+          title: 'Quarterfinals matches already added!',
           toast: true,
           position: 'top-end',
           showConfirmButton: false,
@@ -192,15 +204,21 @@
 
       // Generate Quarterfinals matches from top 2 teams of each group
       const quarterfinalMatches = [];
+      let matchDate = new Date(selectedDate); // Start from the selected date
+
       for (let i = 0; i < topTeams.length; i += 2) {
+        const matchDateString = matchDate.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
         quarterfinalMatches.push({
           team1: topTeams[i].team,
           team2: topTeams[i + 1].team,
-          matchDate: selectedDate,
+          matchDate: matchDateString,
           team1Goal: null,
           team2Goal: null,
           status: "Pending"
         });
+
+        // Increment the date by one day for the next match
+        matchDate.setDate(matchDate.getDate() + 1);
       }
 
       // Add quarterfinals to Firestore
