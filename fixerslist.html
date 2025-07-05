@@ -66,12 +66,12 @@
       </div>
 
       <div id="quarterfinalsContainer" class="bg-white shadow rounded p-4 mt-6">
-        <h2 class="text-lg font-semibold text-red-700 mb-3">Quarterfinals</h2>
+        <h2 class="text-lg font-semibold text-red-700 mb-3">Quarterfinals Fixers</h2>
         <!-- Quarterfinals will be generated here -->
       </div>
     </div>
   </main>
-
+    
     <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -106,6 +106,7 @@
       loadTeams();
       loadFixers();
       loadPointTables();
+      loadQuarterfinals();
     }
   });
 
@@ -210,6 +211,32 @@
     fixersContainer.innerHTML = html;
   }
 
+  async function loadQuarterfinals() {
+    const snapshot = await getDocs(collection(db, "quarterfinals"));
+    const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+
+    if (snapshot.empty) {
+      quarterfinalsContainer.innerHTML = `<p class="text-gray-500 text-center">No quarterfinals found.</p>`;
+      return;
+    }
+
+    let html = "";
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      html += `
+        <div class="border p-2 rounded shadow-sm text-xs space-y-1 bg-white mb-1">
+          <div class="text-center text-[13px] text-gray-500 font-semibold">${data.date}</div>
+          <div class="flex justify-between items-center px-2">
+            <div class="text-sm font-semibold text-gray-600">${data.team1}</div>
+            <div class="text-base font-bold text-red-500">VS</div>
+            <div class="text-sm font-semibold text-gray-600">${data.team2}</div>
+          </div>
+        </div>`;
+    });
+
+    quarterfinalsContainer.innerHTML = html;
+  }
+
   async function loadPointTables() {
     const snapshot = await getDocs(collection(db, "pointTables"));
     const pointTablesContainer = document.getElementById("pointTablesContainer");
@@ -227,10 +254,7 @@
       allPointsHTML = `<p class="text-gray-500 text-center">No point tables to show.</p>`;
     } else {
       allPointsHTML = pointTables.map((pointTable, index) => {
-        // Here, we set the correct group name based on the index
         const groupNameFromFirestore = pointTable.groupName || `Group ${String.fromCharCode(65 + index)}`;
-
-        // Sorting the teams based on points and goals
         pointTable.teams.sort((a, b) => {
           if (b.points === a.points) {
             return b.goals - a.goals;
@@ -313,6 +337,39 @@
     }
   }
 
+  async function generateQuarterfinals() {
+    const snapshot = await getDocs(collection(db, "pointTables"));
+    const qualifiedTeams = [];
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      // Take top 2 teams from each group
+      const topTeams = data.teams.sort((a, b) => b.points - a.points).slice(0, 2);
+      qualifiedTeams.push(...topTeams);
+    });
+
+    const quarterfinalFixers = [];
+
+    // Create quarterfinal fixers from qualified teams
+    for (let i = 0; i < qualifiedTeams.length; i += 2) {
+      quarterfinalFixers.push({
+        team1: qualifiedTeams[i].team,
+        team2: qualifiedTeams[i + 1].team,
+        date: new Date().toISOString().split("T")[0], // Set the date for the quarterfinal match
+      });
+    }
+
+    // Save quarterfinal fixers in Firestore
+    for (const fixer of quarterfinalFixers) {
+      await addDoc(collection(db, "quarterfinals"), fixer);
+    }
+
+    loadQuarterfinals(); // Load quarterfinals after saving
+  }
+
+  // Call the generateQuarterfinals function once group stages are done
+  document.getElementById("generateQuarterfinalsBtn").addEventListener("click", generateQuarterfinals);
+
   document.getElementById("addFixerBtn").addEventListener("click", async () => {
     const selectedTeams = Array.from(document.getElementById("teamSelector").selectedOptions).map(opt => opt.value);
     const baseDate = document.getElementById("fixerDate").value;
@@ -347,7 +404,7 @@
             team1Goal: null,
             team2Goal: null,
             status: "Pending",
-            groupName: groupName // Added groupName here
+            groupName: groupName
           });
           added++;
         }
