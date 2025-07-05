@@ -31,12 +31,10 @@
       </div>
     </div>
 
-    <!-- Quarterfinal Fixers Section -->
-    <div class="bg-white shadow rounded p-2 w-full max-w-md mx-auto">
-      <div class="text-lg font-semibold text-red-700 mb-2">Quarterfinal Fixers</div>
-      <div id="quarterfinalFixers" class="space-y-2">
-        <!-- Quarterfinal fixers will be displayed here -->
-      </div>
+    <!-- Quarterfinals Section -->
+    <div id="quarterfinalsContainer" class="bg-white shadow rounded p-4 mt-6">
+      <h2 class="text-lg font-semibold text-red-700 mb-3">Quarterfinals</h2>
+      <!-- Quarterfinals will be generated here -->
     </div>
 
   </main>
@@ -45,7 +43,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -66,33 +64,41 @@
         window.location.href = "login.html";
       } else {
         loadTopTeams();
-        loadQuarterfinalFixers();
       }
     });
 
-    // Load top 2 teams from pointTables collection
     async function loadTopTeams() {
       try {
         const pointTablesSnapshot = await getDocs(collection(db, "pointTables"));
         const topTeamsContainer = document.getElementById("topTeams");
+        const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
         if (pointTablesSnapshot.empty) {
           topTeamsContainer.innerHTML = `<div class="text-center text-gray-500">No point tables available.</div>`;
           return;
         }
 
+        let topTeams = [];
         let html = "";
+        
         pointTablesSnapshot.forEach(doc => {
           const pointTable = doc.data();
-          const topTeams = pointTable.teams
+          const groupName = pointTable.groupName || "Group";
+          
+          // Get top 2 teams
+          const topTwoTeams = pointTable.teams
             .sort((a, b) => b.points - a.points)
             .slice(0, 2);
+          
+          // Add to the topTeams list
+          topTeams.push(...topTwoTeams);
 
+          // Display top 2 teams by group
           html += `
             <div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">
-              <div class="text-lg">Top 2 Teams - ${pointTable.groupName || "Group"}</div>
+              <div class="text-lg">Top 2 Teams - ${groupName}</div>
               <ul class="space-y-1">
-                ${topTeams.map(team => `
+                ${topTwoTeams.map(team => `
                   <li class="text-gray-600">${team.team} - ${team.points} Points</li>
                 `).join('')}
               </ul>
@@ -101,51 +107,40 @@
         });
 
         topTeamsContainer.innerHTML = html;
+
+        // Generate quarterfinals fixtures after getting top 2 teams
+        generateQuarterfinals(topTeams);
+
       } catch (e) {
         console.error("Error loading point tables:", e);
         document.getElementById("topTeams").innerHTML = `<div class="text-center text-red-600">Error loading top teams: ${e.message}</div>`;
       }
     }
 
-    // Load Quarterfinal fixers
-    async function loadQuarterfinalFixers() {
-      try {
-        const fixersSnapshot = await getDocs(collection(db, "fixers"));
-        const quarterfinalFixersContainer = document.getElementById("quarterfinalFixers");
-
-        if (fixersSnapshot.empty) {
-          quarterfinalFixersContainer.innerHTML = `<div class="text-center text-gray-500">No quarterfinal fixers available.</div>`;
-          return;
-        }
-
-        let html = "";
-        fixersSnapshot.forEach(doc => {
-          const fixer = doc.data();
-          // Only display quarterfinals matches
-          if (fixer.status === "Pending" && fixer.date && isQuarterfinalMatch(fixer)) {
-            html += `
-              <div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">
-                <div class="text-lg">Quarterfinal - ${fixer.team1} VS ${fixer.team2}</div>
-                <div class="text-gray-600">Date: ${fixer.date}</div>
-              </div>
-            `;
-          }
-        });
-
-        quarterfinalFixersContainer.innerHTML = html;
-      } catch (e) {
-        console.error("Error loading quarterfinal fixers:", e);
-        document.getElementById("quarterfinalFixers").innerHTML = `<div class="text-center text-red-600">Error loading quarterfinal fixers: ${e.message}</div>`;
+    async function generateQuarterfinals(topTeams) {
+      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+      let html = `<div class="bg-gray-100 p-3 rounded font-semibold text-gray-700 mb-3">Quarterfinals Matches</div>`;
+      
+      // Pair the top teams in the quarterfinals
+      for (let i = 0; i < topTeams.length; i += 2) {
+        const team1 = topTeams[i];
+        const team2 = topTeams[i + 1];
+        
+        // Add each match to the quarterfinals section
+        html += `
+          <div class="border p-3 rounded shadow-sm mb-2">
+            <div class="flex justify-between items-center">
+              <div class="text-sm font-semibold text-gray-600">${team1.team}</div>
+              <div class="text-base font-bold text-red-500">VS</div>
+              <div class="text-sm font-semibold text-gray-600">${team2.team}</div>
+            </div>
+            <div class="text-center text-gray-500 text-xs">Match Date: TBD</div>
+          </div>
+        `;
       }
-    }
 
-    // Function to check if the match is a quarterfinal
-    function isQuarterfinalMatch(fixer) {
-      // Add your custom logic for identifying quarterfinals here
-      // For now, let's assume it's based on a group stage being complete.
-      return fixer.groupName && fixer.groupName.includes("Quarterfinal");
+      quarterfinalsContainer.innerHTML = html;
     }
-
   </script>
 
 </body>
