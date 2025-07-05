@@ -43,7 +43,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -126,14 +126,18 @@
         const team1 = topTeams[i];
         const team2 = topTeams[i + 1];
         
+        // Assuming team1Goal and team2Goal are available from the database or user input
+        const team1Goal = team1.goal || '-';  // Replace with actual logic to fetch team1 goals
+        const team2Goal = team2.goal || '-';  // Replace with actual logic to fetch team2 goals
+        
         // Add each match to the quarterfinals section
         html += `
           <div class="border p-3 rounded shadow-sm mb-2">
-              <div class="text-center text-gray-500 text-xs">Match Date: TBD</div>
-              <div class="flex justify-between items-center">
-              <div class="text-sm font-semibold text-gray-600">${team1.team}</div>
+            <div class="text-center text-gray-500 text-xs">Match Date: TBD</div>
+            <div class="flex justify-between items-center">
+              <div class="text-sm font-semibold text-gray-600">${team1.team} <span class="text-black">(${team1Goal})</span></div>
               <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${team2.team}</div>
+              <div class="text-sm font-semibold text-gray-600">${team2.team} <span class="text-black">(${team2Goal})</span></div>
             </div>
           </div>
         `;
