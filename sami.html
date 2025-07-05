@@ -121,8 +121,6 @@
       const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
       let html = `<div class="bg-gray-100 p-3 rounded font-semibold text-gray-700 mb-3">Quarterfinals Matches</div>`;
       
-      const quarterfinalsMatches = [];
-
       // Pair the top teams in the quarterfinals
       for (let i = 0; i < topTeams.length; i += 2) {
         const team1 = topTeams[i];
@@ -149,17 +147,6 @@
           }
         }
 
-        // Save match to quarterfinals database
-        const match = {
-          team1: team1.team,
-          team2: team2.team,
-          team1Goal,
-          team2Goal,
-          winner,
-          status,
-        };
-        quarterfinalsMatches.push(match);
-        
         // Add each match to the quarterfinals section
         html += `
           <div class="border p-3 rounded shadow-sm mb-2">
@@ -173,25 +160,30 @@
             <div class="text-center text-blue-600 text-xs font-medium">Status: ${status}</div>
           </div>
         `;
+
+        // Save each match as an individual document in Firestore
+        await saveQuarterfinalMatch(team1, team2, team1Goal, team2Goal, winner, status);
       }
 
       quarterfinalsContainer.innerHTML = html;
-
-      // Save quarterfinals matches to Firestore
-      saveQuarterfinalsMatches(quarterfinalsMatches);
     }
 
-    async function saveQuarterfinalsMatches(matches) {
+    async function saveQuarterfinalMatch(team1, team2, team1Goal, team2Goal, winner, status) {
       try {
-        // Save the quarterfinal matches to Firestore
+        // Save each match as an individual document in the Firestore 'quarterfinals' collection
         const docRef = await addDoc(collection(db, "quarterfinals"), {
-          matches: matches,
-          createdAt: new Date(),
+          team1: team1.team,
+          team2: team2.team,
+          team1Goal,
+          team2Goal,
+          winner,
+          status,
+          createdAt: new Date()
         });
 
-        console.log("Quarterfinals saved with ID: ", docRef.id);
+        console.log("Quarterfinal match saved with ID: ", docRef.id);
       } catch (e) {
-        console.error("Error saving quarterfinals: ", e);
+        console.error("Error saving quarterfinal match: ", e);
       }
     }
 
