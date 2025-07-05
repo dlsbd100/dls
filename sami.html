@@ -108,8 +108,8 @@
 
         topTeamsContainer.innerHTML = html;
 
-        // Check and generate quarterfinals if not already generated
-        checkAndGenerateQuarterfinals(topTeams);
+        // Fetch and display quarterfinals matches if they exist
+        loadQuarterfinals();
 
       } catch (e) {
         console.error("Error loading point tables:", e);
@@ -117,96 +117,32 @@
       }
     }
 
-    async function checkAndGenerateQuarterfinals(topTeams) {
+    async function loadQuarterfinals() {
       const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
 
-      // Query Firestore to check if any quarterfinals matches already exist
+      // Query Firestore to fetch existing quarterfinals
       const quarterfinalsSnapshot = await getDocs(collection(db, "quarterfinals"));
       
-      if (!quarterfinalsSnapshot.empty) {
-        // If matches already exist, just fetch and display them
-        displayQuarterfinals(quarterfinalsSnapshot);
+      if (quarterfinalsSnapshot.empty) {
+        quarterfinalsContainer.innerHTML = `<div class="text-center text-gray-500">No quarterfinals matches available.</div>`;
         return;
       }
 
-      // If no matches exist, generate and save them
-      generateQuarterfinals(topTeams);
-    }
-
-    async function generateQuarterfinals(topTeams) {
-      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
+      // Display quarterfinals from Firestore
       let html = `<div class="bg-gray-100 p-3 rounded font-semibold text-gray-700 mb-3">Quarterfinals Matches</div>`;
-      
-      // Pair the top teams in the quarterfinals
-      for (let i = 0; i < topTeams.length; i += 2) {
-        const team1 = topTeams[i];
-        const team2 = topTeams[i + 1];
-        
-        // Assuming team1Goal and team2Goal are available from the database or user input
-        const team1Goal = team1.goal || '-';  // Replace with actual logic to fetch team1 goals
-        const team2Goal = team2.goal || '-';  // Replace with actual logic to fetch team2 goals
-        
-        // Determine winner
-        let winner = "None";
-        let status = "Pending";
-
-        if (team1Goal !== '-' && team2Goal !== '-') {
-          if (team1Goal > team2Goal) {
-            winner = team1.team;
-            status = "Finished";
-          } else if (team2Goal > team1Goal) {
-            winner = team2.team;
-            status = "Finished";
-          } else {
-            winner = "Draw";
-            status = "Finished";
-          }
-        }
-
-        // Add each match to Firestore
-        await addDoc(collection(db, "quarterfinals"), {
-          team1: team1.team,
-          team2: team2.team,
-          team1Goal: team1Goal,
-          team2Goal: team2Goal,
-          status: status,
-          matchDate: "TBD",  // Add match date logic if available
-        });
-
-        // Add each match to the quarterfinals section
-        html += `
-          <div class="border p-3 rounded shadow-sm mb-2">
-            <div class="text-center text-gray-500 text-xs">Match Date: TBD</div>
-            <div class="flex justify-between items-center">
-              <div class="text-sm font-semibold text-gray-600">${team1.team} <span class="text-black">(${team1Goal})</span></div>
-              <div class="text-base font-bold text-red-500">VS</div>
-              <div class="text-sm font-semibold text-gray-600">${team2.team} <span class="text-black">(${team2Goal})</span></div>
-            </div>
-            <div class="text-center text-green-600 text-xs font-medium">Winner: ${winner}</div>
-            <div class="text-center text-blue-600 text-xs font-medium">Status: ${status}</div>
-          </div>
-        `;
-      }
-
-      quarterfinalsContainer.innerHTML = html;
-    }
-
-    function displayQuarterfinals(quarterfinalsSnapshot) {
-      const quarterfinalsContainer = document.getElementById("quarterfinalsContainer");
-      let html = `<div class="bg-gray-100 p-3 rounded font-semibold text-gray-700 mb-3">Quarterfinals Matches</div>`;
-      
       quarterfinalsSnapshot.forEach(doc => {
         const match = doc.data();
-        
+
+        // Match display logic
         html += `
           <div class="border p-3 rounded shadow-sm mb-2">
-            <div class="text-center text-gray-500 text-xs">Match Date: ${match.matchDate}</div>
+            <div class="text-center text-gray-500 text-xs">Match Date: ${match.matchDate || 'TBD'}</div>
             <div class="flex justify-between items-center">
               <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal})</span></div>
               <div class="text-base font-bold text-red-500">VS</div>
               <div class="text-sm font-semibold text-gray-600">${match.team2} <span class="text-black">(${match.team2Goal})</span></div>
             </div>
-            <div class="text-center text-green-600 text-xs font-medium">Winner: ${match.status === "Finished" ? match.team1Goal > match.team2Goal ? match.team1 : match.team2 : "Pending"}</div>
+            <div class="text-center text-green-600 text-xs font-medium">Winner: ${match.status === "Finished" ? (match.team1Goal > match.team2Goal ? match.team1 : match.team2) : "Pending"}</div>
             <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
           </div>
         `;
