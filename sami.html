@@ -26,7 +26,7 @@
     <!-- Top 2 Teams Section (Small Size) -->
     <div class="bg-white shadow rounded p-2 w-full max-w-md mx-auto">
       <div class="text-lg font-semibold text-blue-700 mb-2">Top 2 Teams by Group</div>
-      <div id="topTeams" class="space-y-2">
+      <div id="topTeams" class="space-y-4">
         <!-- Top teams will be displayed here -->
       </div>
     </div>
@@ -72,15 +72,19 @@
         }
 
         let html = "";
+        let groupCounter = 1; // To track group names like Group A, Group B, etc.
         pointTablesSnapshot.forEach(doc => {
           const pointTable = doc.data();
           const topTeams = pointTable.teams
             .sort((a, b) => b.points - a.points)
             .slice(0, 2);
 
+          // Serial group name (Group A, Group B, etc.)
+          const groupName = `Group ${String.fromCharCode(64 + groupCounter++)}`;
+
           html += `
             <div class="bg-gray-100 px-3 py-2 rounded font-semibold text-gray-700 mb-2">
-              <div class="text-lg">Top 2 Teams - ${pointTable.groupName || "Group"}</div>
+              <div class="text-lg">${groupName}</div>
               <ul class="space-y-1">
                 ${topTeams.map(team => `
                   <li class="text-gray-600">${team.team} - ${team.points} Points</li>
