@@ -139,16 +139,16 @@
         return;
       }
 
-      // Display quarterfinals from Firestore
+      // Display quarterfinals from Firestore with numbered labels
       let html = `<div class="bg-gray-100 p-3 rounded font-semibold text-gray-700 mb-3">Quarterfinals Matches</div>`;
-      let matchCount = 1;
+      let matchIndex = 1;
       quarterfinalsSnapshot.forEach(doc => {
         const match = doc.data();
 
-        // Match display logic with Match 1, Match 2 format
+        // Match display logic with numbered Quarterfinals
         html += `
           <div class="border p-3 rounded shadow-sm mb-2">
-            <div class="text-center text-gray-500 text-xs">Match Date: ${match.matchDate || 'TBD'}</div>
+            <div class="text-center text-gray-500 text-xs">Quarterfinal ${matchIndex++} - ${match.matchDate || 'TBD'}</div>
             <div class="flex justify-between items-center">
               <div class="text-sm font-semibold text-gray-600">${match.team1} <span class="text-black">(${match.team1Goal})</span></div>
               <div class="text-base font-bold text-red-500">VS</div>
@@ -158,7 +158,6 @@
             <div class="text-center text-blue-600 text-xs font-medium">Status: ${match.status}</div>
           </div>
         `;
-        matchCount++;
       });
 
       quarterfinalsContainer.innerHTML = html;
